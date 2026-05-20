@@ -68,6 +68,15 @@ struct GitWorktreeServiceTests {
         return (workspace, baseURL)
     }
 
+    private func makeGitRepoWithAgents(name: String = "Workstation Project") throws -> (ProjectWorkspace, URL) {
+        let (workspace, baseURL) = try makeGitRepo(name: name)
+        let agentsURL = workspace.inspectionURL.appendingPathComponent("AGENTS.md")
+        try "Project guidance\n".write(to: agentsURL, atomically: true, encoding: .utf8)
+        try runGit(arguments: ["add", "AGENTS.md"], in: workspace.inspectionURL)
+        try runGit(arguments: ["commit", "-m", "add agents"], in: workspace.inspectionURL)
+        return (workspace, baseURL)
+    }
+
     @Test("location derives a stable worktree folder and branch from the project and issue")
     func locationDerivationUsesSanitizedIdentifiers() throws {
         let (workspace, baseURL) = try makeWorkspace(rootName: "Workstation Project")
@@ -315,6 +324,114 @@ struct GitWorktreeServiceTests {
             workingDirectory: location.worktreeURL
         )
         #expect(branchResult.stdout.trimmingCharacters(in: .whitespacesAndNewlines) == location.branchName)
+    }
+
+    @Test("preflightLaunch is ready when setup, tree, and branch are clean")
+    func preflightLaunchReadyOnCleanTree() async throws {
+        let (workspace, baseURL) = try makeGitRepoWithAgents(name: "Clean Preflight")
+        defer { try? FileManager.default.removeItem(at: baseURL) }
+
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
+        let issue = BeadIssue(
+            id: "bd-clean",
+            title: "Clean preflight",
+            status: "open",
+            priority: 2,
+            issueType: "feature"
+        )
+
+        let preflight = await service.preflightLaunch(for: issue, in: workspace)
+
+        #expect(preflight.isBlocked == false)
+        #expect(preflight.requiresConfirmation == false)
+        #expect(preflight.workspaceSetupHints.isEmpty)
+        #expect(preflight.statusSummary?.isDirty == false)
+        #expect(preflight.existingWorktreePath == nil)
+        #expect(preflight.branchConflictName == nil)
+    }
+
+    @Test("preflightLaunch surfaces missing setup hints")
+    func preflightLaunchSurfacesSetupHints() async throws {
+        let (baseWorkspace, baseURL) = try makeGitRepo(name: "Setup Missing")
+        defer { try? FileManager.default.removeItem(at: baseURL) }
+
+        let workspace = ProjectWorkspace(
+            selectedURL: baseWorkspace.selectedURL,
+            rootURL: baseWorkspace.rootURL,
+            inspectionURL: baseWorkspace.inspectionURL,
+            name: baseWorkspace.name,
+            validationState: .valid,
+            checks: [
+                WorkspaceCheck(id: ".git", title: ".git", state: .ok),
+                WorkspaceCheck(id: ".beads", title: ".beads", state: .ok),
+                WorkspaceCheck(id: "AGENTS.md", title: "AGENTS.md", state: .missing),
+                WorkspaceCheck(id: "bd-cli", title: "bd CLI", state: .ok),
+                WorkspaceCheck(id: "bd-list", title: "bd list", state: .ok)
+            ]
+        )
+
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
+        let issue = BeadIssue(
+            id: "bd-setup",
+            title: "Missing setup",
+            status: "open",
+            priority: 2,
+            issueType: "feature"
+        )
+
+        let preflight = await service.preflightLaunch(for: issue, in: workspace)
+
+        #expect(preflight.isBlocked == true)
+        #expect(preflight.workspaceSetupHints.contains { $0.command == "bd setup claude" })
+        #expect(preflight.statusSummary?.isDirty == false)
+    }
+
+    @Test("preflightLaunch surfaces dirty tree confirmation")
+    func preflightLaunchSurfacesDirtyTree() async throws {
+        let (workspace, baseURL) = try makeGitRepoWithAgents(name: "Dirty Preflight")
+        defer { try? FileManager.default.removeItem(at: baseURL) }
+
+        let dirtyFileURL = workspace.inspectionURL.appendingPathComponent("notes.txt")
+        try "dirty\n".write(to: dirtyFileURL, atomically: true, encoding: .utf8)
+
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
+        let issue = BeadIssue(
+            id: "bd-dirty",
+            title: "Dirty tree",
+            status: "open",
+            priority: 2,
+            issueType: "feature"
+        )
+
+        let preflight = await service.preflightLaunch(for: issue, in: workspace)
+
+        #expect(preflight.requiresConfirmation == true)
+        #expect(preflight.statusSummary?.isDirty == true)
+        #expect(preflight.statusSummary?.changedFiles.contains(where: { $0.path == "notes.txt" }) == true)
+    }
+
+    @Test("preflightLaunch surfaces existing worktree and branch conflicts")
+    func preflightLaunchSurfacesConflicts() async throws {
+        let (workspace, baseURL) = try makeGitRepoWithAgents(name: "Conflict Preflight")
+        defer { try? FileManager.default.removeItem(at: baseURL) }
+
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
+        let issue = BeadIssue(
+            id: "bd-conflict",
+            title: "Conflict preflight",
+            status: "open",
+            priority: 2,
+            issueType: "feature"
+        )
+        let location = service.worktreeLocation(for: workspace, issueID: issue.id)
+        try FileManager.default.createDirectory(at: location.worktreeURL, withIntermediateDirectories: true)
+        try runGit(arguments: ["branch", location.branchName], in: workspace.inspectionURL)
+
+        let preflight = await service.preflightLaunch(for: issue, in: workspace)
+
+        #expect(preflight.existingWorktreePath == location.worktreeURL.path)
+        #expect(preflight.branchConflictName == location.branchName)
+        #expect(preflight.isBlocked == true)
     }
 
 }

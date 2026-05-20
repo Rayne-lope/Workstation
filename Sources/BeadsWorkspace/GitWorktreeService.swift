@@ -45,6 +45,42 @@ public enum GitWorktreeServiceError: LocalizedError, Sendable {
     }
 }
 
+public struct GitWorktreeLaunchPreflight: Hashable, Sendable {
+    public let location: GitWorktreeLocation
+    public let workspaceSetupHints: [WorkspaceSetupHint]
+    public let statusSummary: GitStatusSummary?
+    public let statusError: String?
+    public let existingWorktreePath: String?
+    public let branchConflictName: String?
+
+    public init(
+        location: GitWorktreeLocation,
+        workspaceSetupHints: [WorkspaceSetupHint],
+        statusSummary: GitStatusSummary?,
+        statusError: String?,
+        existingWorktreePath: String?,
+        branchConflictName: String?
+    ) {
+        self.location = location
+        self.workspaceSetupHints = workspaceSetupHints
+        self.statusSummary = statusSummary
+        self.statusError = statusError
+        self.existingWorktreePath = existingWorktreePath
+        self.branchConflictName = branchConflictName
+    }
+
+    public var isBlocked: Bool {
+        !workspaceSetupHints.isEmpty
+            || statusError != nil
+            || existingWorktreePath != nil
+            || branchConflictName != nil
+    }
+
+    public var requiresConfirmation: Bool {
+        statusSummary?.isDirty == true
+    }
+}
+
 public struct GitWorktreeService: @unchecked Sendable {
     private let commandRunner: any CommandRunning
     private let fileManager: FileManager
@@ -69,6 +105,41 @@ public struct GitWorktreeService: @unchecked Sendable {
             worktreeRootURL: rootURL,
             worktreeURL: worktreeURL,
             branchName: branchName
+        )
+    }
+
+    public func preflightLaunch(
+        for issue: BeadIssue,
+        in workspace: ProjectWorkspace
+    ) async -> GitWorktreeLaunchPreflight {
+        let location = worktreeLocation(for: workspace, issueID: issue.id)
+
+        var statusSummary: GitStatusSummary?
+        var statusError: String?
+        do {
+            statusSummary = try await GitStatusService(commandRunner: commandRunner).statusSummary(in: workspace.inspectionURL)
+        } catch {
+            statusError = error.localizedDescription
+        }
+
+        let existingWorktreePath = fileManager.fileExists(atPath: location.worktreeURL.path) ? location.worktreeURL.path : nil
+        var branchConflictName: String?
+        do {
+            branchConflictName = try await branchExists(named: location.branchName, in: workspace.inspectionURL) ? location.branchName : nil
+        } catch {
+            branchConflictName = nil
+            if statusError == nil {
+                statusError = error.localizedDescription
+            }
+        }
+
+        return GitWorktreeLaunchPreflight(
+            location: location,
+            workspaceSetupHints: workspace.setupHints,
+            statusSummary: statusSummary,
+            statusError: statusError,
+            existingWorktreePath: existingWorktreePath,
+            branchConflictName: branchConflictName
         )
     }
 

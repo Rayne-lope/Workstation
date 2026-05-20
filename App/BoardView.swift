@@ -69,6 +69,29 @@ struct BoardView: View {
                 onContinue: { appVM.continuePendingAgentLaunch() }
             )
         }
+        .sheet(item: $appVM.pendingWorktreeLaunch, onDismiss: { appVM.cancelPendingWorktreeLaunch() }) { pendingLaunch in
+            GitWorktreeLaunchSheet(
+                pendingLaunch: pendingLaunch,
+                onCancel: { appVM.cancelPendingWorktreeLaunch() },
+                onRetry: { appVM.retryPendingWorktreeLaunch() },
+                onContinue: { appVM.continuePendingWorktreeLaunch() },
+                onLaunchSetup: { hint in appVM.launchWorktreeSetup(for: hint) }
+            )
+        }
+        .sheet(isPresented: $appVM.isBulkClosePresented, onDismiss: { appVM.dismissBulkCloseSheet() }) {
+            BulkCloseSheet(
+                appVM: appVM,
+                store: store,
+                defaultReason: appVM.preferencesStore.preferences.defaultCloseReasonTemplate,
+                onDismiss: { appVM.dismissBulkCloseSheet() }
+            )
+        }
+        .background(
+            Button("") { appVM.clearMultiSelection() }
+                .keyboardShortcut(.escape, modifiers: [])
+                .opacity(0)
+                .allowsHitTesting(false)
+        )
     }
 
     private var workspaceHeader: some View {

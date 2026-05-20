@@ -54,6 +54,7 @@ final class AppViewModel {
     var isLocalAISettingsPresented = false
 
     var pendingAgentLaunch: PendingAgentLaunch?
+    var pendingWorktreeLaunch: PendingWorktreeLaunch?
     var launchErrorMessage: String?
     var terminalErrorMessage: String?
     var worktreeMessage: String?
@@ -201,6 +202,38 @@ final class AppViewModel {
 
     func launchAgentInWorktree(for issue: BeadIssue, profile: AgentProfile) {
         Task { await beginWorktreeAgentLaunch(for: issue, profile: profile) }
+    }
+
+    func retryPendingWorktreeLaunch() {
+        guard let pending = pendingWorktreeLaunch else { return }
+        let issue = pending.issue
+        let profile = pending.profile
+        pendingWorktreeLaunch = nil
+        Task {
+            await beginWorktreeAgentLaunch(for: issue, profile: profile)
+        }
+    }
+
+    func continuePendingWorktreeLaunch() {
+        guard let pending = pendingWorktreeLaunch else { return }
+        guard !pending.preflight.isBlocked else { return }
+        pendingWorktreeLaunch = nil
+        Task {
+            await performWorktreeAgentLaunch(
+                for: pending.issue,
+                profile: pending.profile,
+                workspace: pending.workspace
+            )
+        }
+    }
+
+    func cancelPendingWorktreeLaunch() {
+        pendingWorktreeLaunch = nil
+    }
+
+    func launchWorktreeSetup(for hint: WorkspaceSetupHint) {
+        guard let pending = pendingWorktreeLaunch else { return }
+        openTerminal(at: pending.workspace.inspectionURL, command: hint.command)
     }
 
     func openTerminal(at url: URL, command: String? = nil) {
@@ -608,10 +641,34 @@ final class AppViewModel {
         guard profile.canExecuteCode else { return }
 
         pendingAgentLaunch = nil
+        pendingWorktreeLaunch = nil
         launchErrorMessage = nil
         terminalErrorMessage = nil
         worktreeMessage = nil
 
+        let preflight = await gitWorktreeService.preflightLaunch(for: issue, in: workspace)
+        if preflight.isBlocked || preflight.requiresConfirmation {
+            pendingWorktreeLaunch = PendingWorktreeLaunch(
+                issue: issue,
+                profile: profile,
+                workspace: workspace,
+                preflight: preflight
+            )
+            return
+        }
+
+        await performWorktreeAgentLaunch(
+            for: issue,
+            profile: profile,
+            workspace: workspace
+        )
+    }
+
+    private func performWorktreeAgentLaunch(
+        for issue: BeadIssue,
+        profile: AgentProfile,
+        workspace: ProjectWorkspace
+    ) async {
         do {
             let worktree = try await gitWorktreeService.createWorktree(for: issue, in: workspace)
             let session = await agentLaunchFlowCoordinator.prepareLaunchSession(
