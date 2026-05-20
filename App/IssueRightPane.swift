@@ -21,6 +21,7 @@ struct IssueRightPane: View {
         }
         .animation(.easeInOut(duration: 0.18), value: appVM.detailPaneMode)
         .onChange(of: issue.id) { _, _ in
+            guard appVM.detailPaneMode != .bulkAction else { return }
             if !store.hasMultiSelection {
                 appVM.resetDetailPaneToIssue()
             }

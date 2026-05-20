@@ -125,6 +125,16 @@ struct BulkActionPanel: View {
             .disabled(store.isLoading)
 
             Button {
+                appVM.copyBulkPrompts()
+            } label: {
+                Label("Copy All Prompts", systemImage: "doc.on.doc")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(WorkstationGhostButtonStyle())
+            .disabled(selected.isEmpty)
+            .help("Copy gabungan prompt seluruh issue ke clipboard")
+
+            Button {
                 appVM.presentBulkCloseSheet()
             } label: {
                 Label("Close All…", systemImage: "checkmark.seal")

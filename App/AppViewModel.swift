@@ -627,13 +627,26 @@ final class AppViewModel {
     func bulkClose(reason: String) {
         guard let store = issueStore else { return }
         let ids = Array(store.selectedIssueIDs)
-        Task {
+        guard !ids.isEmpty else { return }
+        Task { @MainActor in
             for id in ids {
                 await store.close(id: id, reason: reason)
             }
             store.clearSelection()
             detailPaneMode = .issue
         }
+    }
+
+    func copyBulkPrompts() {
+        guard let store = issueStore else { return }
+        let issues = store.selectedIssues()
+        guard !issues.isEmpty else { return }
+        let total = issues.count
+        let blocks = issues.enumerated().map { idx, issue -> String in
+            let payload = agentLaunchPayload(for: issue)
+            return "--- ISSUE \(idx + 1)/\(total): \(issue.id) ---\n\(payload.prompt)"
+        }
+        Clipboard.copy(blocks.joined(separator: "\n\n"))
     }
 
     func clearMultiSelection() {

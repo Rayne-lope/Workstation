@@ -97,6 +97,10 @@ struct KanbanBoardView: View {
         } else if shift {
             store.selectRange(to: issue.id, within: items.map(\.id))
         } else {
+            if store.hasMultiSelection && store.selectedIssueIDs.contains(issue.id) {
+                appVM.showBulkActionPane()
+                return
+            }
             store.selectIssue(id: issue.id)
         }
         if store.hasMultiSelection {
