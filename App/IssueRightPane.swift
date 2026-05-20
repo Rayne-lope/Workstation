@@ -14,11 +14,16 @@ struct IssueRightPane: View {
             case .console:
                 AgentRunConsolePane(appVM: appVM, issue: issue)
                     .transition(.opacity)
+            case .bulkAction:
+                BulkActionPanel(appVM: appVM, store: store)
+                    .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.18), value: appVM.detailPaneMode)
         .onChange(of: issue.id) { _, _ in
-            appVM.resetDetailPaneToIssue()
+            if !store.hasMultiSelection {
+                appVM.resetDetailPaneToIssue()
+            }
         }
     }
 }
