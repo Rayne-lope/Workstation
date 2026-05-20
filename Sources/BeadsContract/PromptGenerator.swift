@@ -3,6 +3,8 @@ import Foundation
 public struct PromptGenerator: Sendable {
     public init() {}
 
+    private static let repoRulesDocsInstruction = "Read `GUIDE.md` and `AGENTS.md` for repo, Beads, and worktree rules."
+
     public func generateCommand(
         for profile: AgentProfile,
         issue: BeadIssue,
@@ -101,10 +103,11 @@ public struct PromptGenerator: Sendable {
 
         Workflow:
         1. Run `bd prime` to load project context and conventions.
-        2. Run `bd show \(issue.id) --json` to read the full issue payload.
-        3. Draft a clear specification with sections for goal, requirements, edge cases, and acceptance criteria.
-        4. Write acceptance criteria as concise bullet points, not a paragraph.
-        5. Write the spec into the issue via `bd update \(issue.id) --description=...` (or --notes / --acceptance / --design as appropriate).
+        2. \(Self.repoRulesDocsInstruction)
+        3. Run `bd show \(issue.id) --json` to read the full issue payload.
+        4. Draft a clear specification with sections for goal, requirements, edge cases, and acceptance criteria.
+        5. Write acceptance criteria as concise bullet points, not a paragraph.
+        6. Write the spec into the issue via `bd update \(issue.id) --description=...` (or --notes / --acceptance / --design as appropriate).
 
         Constraints:
         - Do not modify application source code.
@@ -137,7 +140,7 @@ public struct PromptGenerator: Sendable {
 
         Workflow:
         1. Run `bd prime` to load project context.
-        2. Read `GUIDE.md` for repo rules, Beads workflow, and completion conventions.
+        2. \(Self.repoRulesDocsInstruction)
         3. If the work touches UI or visual polish, read `references/workstations_style_guide.md` before designing the change.
         4. Run `bd show \(issue.id) --json` to read the spec.
         5. Run `bd update \(issue.id) --claim` to claim the issue.
@@ -165,10 +168,11 @@ public struct PromptGenerator: Sendable {
 
         Workflow:
         1. Run `bd prime` to load project context.
-        2. Run `bd show \(issue.id) --json` to read the spec and acceptance criteria.
-        3. Inspect the change via `git diff` (and `git log` for context).
-        4. Validate the diff against the acceptance criteria and project conventions.
-        5. Record findings via `bd update \(issue.id) --notes=...` — list approvals and required changes.
+        2. \(Self.repoRulesDocsInstruction)
+        3. Run `bd show \(issue.id) --json` to read the spec and acceptance criteria.
+        4. Inspect the change via `git diff` (and `git log` for context).
+        5. Validate the diff against the acceptance criteria and project conventions.
+        6. Record findings via `bd update \(issue.id) --notes=...` — list approvals and required changes.
 
         Constraints:
         - Do not modify source code; only review and report.
@@ -191,10 +195,11 @@ public struct PromptGenerator: Sendable {
 
         Workflow:
         1. Run `bd prime` to load project context.
-        2. Run `bd show \(issue.id) --json` to read the spec.
-        3. Add or extend tests only — do not modify production code.
-        4. Cover the acceptance criteria plus relevant edge cases and regressions.
-        5. Run the test suite and record results via `bd update \(issue.id) --notes=...`.
+        2. \(Self.repoRulesDocsInstruction)
+        3. Run `bd show \(issue.id) --json` to read the spec.
+        4. Add or extend tests only — do not modify production code.
+        5. Cover the acceptance criteria plus relevant edge cases and regressions.
+        6. Run the test suite and record results via `bd update \(issue.id) --notes=...`.
 
         Constraints:
         - Write tests only. Implementation changes are out of scope for this role.
@@ -216,8 +221,9 @@ public struct PromptGenerator: Sendable {
 
     Workflow:
     1. Run `bd prime` to load project context.
-    2. Run `bd show {{issue_id}} --json` to read the issue.
-    3. Perform the work described by your role and record progress via `bd update {{issue_id}} --notes=...`.
+    2. Read `GUIDE.md` and `AGENTS.md` for repo, Beads, and worktree rules.
+    3. Run `bd show {{issue_id}} --json` to read the issue.
+    4. Perform the work described by your role and record progress via `bd update {{issue_id}} --notes=...`.
 
     Assignee convention:
     - Use `claude` for Claude Code Executor.

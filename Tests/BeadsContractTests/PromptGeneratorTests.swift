@@ -20,6 +20,7 @@ struct PromptGeneratorTests {
             projectPath: projectPath
         )
         #expect(prompt.contains("bd prime"))
+        #expect(prompt.contains("AGENTS.md"))
         #expect(prompt.contains("bd show bd-42 --json"))
         #expect(prompt.contains("Do not modify application source code"))
         #expect(prompt.contains("Write acceptance criteria as concise bullet points"))
@@ -37,7 +38,7 @@ struct PromptGeneratorTests {
             projectPath: projectPath
         )
         #expect(prompt.contains("bd prime"))
-        #expect(prompt.contains("Read `GUIDE.md`"))
+        #expect(prompt.contains("Read `GUIDE.md` and `AGENTS.md`"))
         #expect(prompt.contains("references/workstations_style_guide.md"))
         #expect(prompt.contains("bd update bd-42 --claim"))
         #expect(prompt.contains("bd update bd-42 --add-label human"))
@@ -72,6 +73,7 @@ struct PromptGeneratorTests {
             projectPath: projectPath
         )
         #expect(prompt.contains("bd prime"))
+        #expect(prompt.contains("AGENTS.md"))
         #expect(prompt.contains("git diff"))
         #expect(prompt.contains("acceptance criteria"))
     }
@@ -84,6 +86,7 @@ struct PromptGeneratorTests {
             projectPath: projectPath
         )
         #expect(prompt.contains("bd prime"))
+        #expect(prompt.contains("AGENTS.md"))
         let lowered = prompt.lowercased()
         #expect(lowered.contains("tests only"))
     }
@@ -122,6 +125,7 @@ struct PromptGeneratorTests {
         #expect(prompt.contains("Implement feature X"))
         #expect(prompt.contains("Empty"))
         #expect(prompt.contains("Custom"))
+        #expect(prompt.contains("AGENTS.md"))
         #expect(!prompt.contains("{{"))
     }
 
