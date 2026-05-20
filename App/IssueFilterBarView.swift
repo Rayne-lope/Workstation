@@ -4,151 +4,186 @@ struct IssueFilterBarView: View {
     let store: IssueStore
     let onClearAll: () -> Void
 
+    @State private var isPresented = false
+
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    filterGroup(title: "Priority") {
-                        HStack(spacing: 8) {
-                            ForEach(store.availablePriorities, id: \.self) { priority in
-                                priorityChip(priority)
-                            }
-                        }
-                    }
+        Button {
+            isPresented.toggle()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .font(.system(size: 12, weight: .semibold))
 
-                    filterGroup(title: "Type") {
-                        HStack(spacing: 8) {
-                            ForEach(store.availableIssueTypes, id: \.self) { issueType in
-                                issueTypeChip(issueType)
-                            }
-                        }
-                    }
+                Text("Filter")
+                    .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
 
-                    filterGroup(title: "Assignee") {
-                        HStack(spacing: 8) {
-                            ForEach(store.availableAssigneeKinds) { assignee in
-                                assigneeChip(assignee)
-                            }
-                        }
-                    }
-
-                    if !store.availableLabels.isEmpty {
-                        filterGroup(title: "Label") {
-                            HStack(spacing: 8) {
-                                ForEach(store.availableLabels, id: \.self) { label in
-                                    labelChip(label)
-                                }
-                            }
-                        }
-                    }
+                if store.activeFilterCount > 0 {
+                    Text("\(store.activeFilterCount)")
+                        .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.background)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(WorkstationTheme.accent)
+                        )
                 }
-                .padding(.horizontal, 28)
-                .padding(.vertical, 10)
             }
-
-            if store.hasActiveFilters {
-                Button(action: onClearAll) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text("Clear all")
-                            .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
-                    }
-                    .foregroundStyle(WorkstationTheme.textPrimary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(WorkstationTheme.card)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .padding(.trailing, 28)
-            }
+            .foregroundStyle(store.hasActiveFilters ? WorkstationTheme.textPrimary : WorkstationTheme.textSecondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(store.hasActiveFilters ? WorkstationTheme.card : WorkstationTheme.surface)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(store.hasActiveFilters ? WorkstationTheme.accent : WorkstationTheme.borderStrong, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
         }
-        .background(WorkstationTheme.background)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(WorkstationTheme.borderSoft)
-                .frame(height: 1)
+        .buttonStyle(.plain)
+        .popover(isPresented: $isPresented, arrowEdge: .top) {
+            filterPopover
+                .frame(width: 430)
+                .background(WorkstationTheme.surface)
         }
     }
 
-    private func filterGroup<Content: View>(
-        title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        HStack(alignment: .center, spacing: 8) {
+    private var filterPopover: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Filtering")
+                        .font(WorkstationTheme.Fonts.display(18, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+
+                    Text("Pick any mix of priorities, types, assignees, and labels.")
+                        .font(WorkstationTheme.Fonts.body(12, weight: .regular))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                if store.hasActiveFilters {
+                    Button("Clear all", action: onClearAll)
+                        .buttonStyle(WorkstationGhostButtonStyle(compact: true))
+                }
+            }
+
+            Divider()
+                .overlay(WorkstationTheme.borderSoft)
+
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: 16) {
+                    filterSection(
+                        title: "Priority",
+                        chips: store.availablePriorities.map { priorityChip($0) }
+                    )
+
+                    filterSection(
+                        title: "Type",
+                        chips: store.availableIssueTypes.map { issueTypeChip($0) }
+                    )
+
+                    filterSection(
+                        title: "Assignee",
+                        chips: store.availableAssigneeKinds.map { assigneeChip($0) }
+                    )
+
+                    if !store.availableLabels.isEmpty {
+                        filterSection(
+                            title: "Label",
+                            chips: store.availableLabels.map { labelChip($0) }
+                        )
+                    }
+                }
+            }
+            .frame(maxHeight: 300)
+        }
+        .padding(16)
+    }
+
+    private func filterSection(title: String, chips: [AnyView]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
                 .font(WorkstationTheme.Fonts.label)
                 .foregroundStyle(WorkstationTheme.textMuted)
                 .tracking(0.8)
 
-            content()
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 80), spacing: 8, alignment: .leading)],
+                alignment: .leading,
+                spacing: 8
+            ) {
+                ForEach(Array(chips.enumerated()), id: \.offset) { _, chip in
+                    chip
+                }
+            }
         }
     }
 
-    @ViewBuilder
-    private func priorityChip(_ priority: Int) -> some View {
+    private func priorityChip(_ priority: Int) -> AnyView {
         let isActive = store.filterState.priorities.contains(priority)
-        Button {
-            store.togglePriority(priority)
-        } label: {
-            filterChip(
-                label: "P\(priority)",
-                isActive: isActive,
-                accent: WorkstationTheme.difficultyColor(priority)
-            )
-        }
-        .buttonStyle(.plain)
+        return AnyView(
+            Button {
+                store.togglePriority(priority)
+            } label: {
+                filterChip(
+                    label: "P\(priority)",
+                    isActive: isActive,
+                    accent: WorkstationTheme.difficultyColor(priority)
+                )
+            }
+            .buttonStyle(.plain)
+        )
     }
 
-    @ViewBuilder
-    private func issueTypeChip(_ issueType: String) -> some View {
+    private func issueTypeChip(_ issueType: String) -> AnyView {
         let normalized = issueType.lowercased()
         let isActive = store.filterState.issueTypes.contains(normalized)
-        Button {
-            store.toggleIssueType(issueType)
-        } label: {
-            filterChip(
-                label: issueType.capitalized,
-                isActive: isActive,
-                accent: WorkstationTheme.accent
-            )
-        }
-        .buttonStyle(.plain)
+        return AnyView(
+            Button {
+                store.toggleIssueType(issueType)
+            } label: {
+                filterChip(
+                    label: issueType.capitalized,
+                    isActive: isActive,
+                    accent: WorkstationTheme.accent
+                )
+            }
+            .buttonStyle(.plain)
+        )
     }
 
-    @ViewBuilder
-    private func assigneeChip(_ assignee: IssueFilterAssignee) -> some View {
+    private func assigneeChip(_ assignee: IssueFilterAssignee) -> AnyView {
         let isActive = store.filterState.assignees.contains(assignee)
-        Button {
-            store.toggleAssignee(assignee)
-        } label: {
-            filterChip(
-                label: assignee.displayName,
-                isActive: isActive,
-                accent: assigneeAccent(assignee)
-            )
-        }
-        .buttonStyle(.plain)
+        return AnyView(
+            Button {
+                store.toggleAssignee(assignee)
+            } label: {
+                filterChip(
+                    label: assignee.displayName,
+                    isActive: isActive,
+                    accent: assigneeAccent(assignee)
+                )
+            }
+            .buttonStyle(.plain)
+        )
     }
 
-    @ViewBuilder
-    private func labelChip(_ label: String) -> some View {
+    private func labelChip(_ label: String) -> AnyView {
         let isActive = store.filterState.labels.contains(label.lowercased())
-        Button {
-            store.toggleLabel(label)
-        } label: {
-            filterChip(
-                label: label,
-                isActive: isActive,
-                accent: WorkstationTheme.accent
-            )
-        }
-        .buttonStyle(.plain)
+        return AnyView(
+            Button {
+                store.toggleLabel(label)
+            } label: {
+                filterChip(
+                    label: label,
+                    isActive: isActive,
+                    accent: WorkstationTheme.accent
+                )
+            }
+            .buttonStyle(.plain)
+        )
     }
 
     private func filterChip(label: String, isActive: Bool, accent: Color) -> some View {
@@ -157,6 +192,7 @@ struct IssueFilterBarView: View {
             .foregroundStyle(isActive ? WorkstationTheme.background : WorkstationTheme.textSecondary)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .center)
             .background(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
                     .fill(isActive ? accent : WorkstationTheme.card)

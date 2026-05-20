@@ -295,6 +295,13 @@ public final class IssueStore {
         !filterState.isEmpty
     }
 
+    public var activeFilterCount: Int {
+        filterState.priorities.count
+            + filterState.issueTypes.count
+            + filterState.assignees.count
+            + filterState.labels.count
+    }
+
     public var availablePriorities: [Int] {
         Array(0...4)
     }

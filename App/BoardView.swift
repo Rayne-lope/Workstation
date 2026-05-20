@@ -128,12 +128,12 @@ struct BoardView: View {
                 }
                 .buttonStyle(WorkstationPrimaryButtonStyle())
                 .keyboardShortcut("n", modifiers: [.command])
-            }
 
-            IssueFilterBarView(
-                store: store,
-                onClearAll: { store.clearFilters() }
-            )
+                IssueFilterBarView(
+                    store: store,
+                    onClearAll: { store.clearFilters() }
+                )
+            }
 
             HStack(spacing: 26) {
                 viewModeTab(.kanban, systemName: "rectangle.grid.1x2")
