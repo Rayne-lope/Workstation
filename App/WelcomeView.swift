@@ -12,6 +12,7 @@ struct WelcomeView: View {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 20) {
                     heroCard
+                    localAISettingsCard
 
                     ViewThatFits(in: .horizontal) {
                         HStack(alignment: .top, spacing: 16) {
@@ -390,6 +391,12 @@ struct WelcomeView: View {
                     }
                 }
             }
+        }
+    }
+
+    private var localAISettingsCard: some View {
+        dashboardCard {
+            LocalAISettingsPanelView(appVM: appVM)
         }
     }
 

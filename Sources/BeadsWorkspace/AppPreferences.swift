@@ -11,6 +11,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
     public var defaultCloseReasonTemplate: String
     public var doneVisibilityWindowSeconds: TimeInterval
     public var filterState: [String: FilterState]
+    public var localAI: LocalAISettings
 
     public init(
         lastSelectedPath: String? = nil,
@@ -20,7 +21,8 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         defaultIssuePriority: Int = 2,
         defaultCloseReasonTemplate: String = "",
         doneVisibilityWindowSeconds: TimeInterval = AppPreferences.defaultDoneVisibilityWindowSeconds,
-        filterState: [String: FilterState] = [:]
+        filterState: [String: FilterState] = [:],
+        localAI: LocalAISettings = LocalAISettings()
     ) {
         self.lastSelectedPath = lastSelectedPath
         self.autoRestoreOnLaunch = autoRestoreOnLaunch
@@ -30,6 +32,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         self.defaultCloseReasonTemplate = defaultCloseReasonTemplate
         self.doneVisibilityWindowSeconds = doneVisibilityWindowSeconds
         self.filterState = filterState
+        self.localAI = localAI
     }
 
     enum CodingKeys: String, CodingKey {
@@ -41,6 +44,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         case defaultCloseReasonTemplate
         case doneVisibilityWindowSeconds
         case filterState
+        case localAI
     }
 
     public init(from decoder: Decoder) throws {
@@ -54,5 +58,6 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         doneVisibilityWindowSeconds = try c.decodeIfPresent(TimeInterval.self, forKey: .doneVisibilityWindowSeconds)
             ?? AppPreferences.defaultDoneVisibilityWindowSeconds
         filterState = try c.decodeIfPresent([String: FilterState].self, forKey: .filterState) ?? [:]
+        localAI = try c.decodeIfPresent(LocalAISettings.self, forKey: .localAI) ?? LocalAISettings()
     }
 }

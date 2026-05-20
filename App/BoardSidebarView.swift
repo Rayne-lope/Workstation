@@ -30,6 +30,13 @@ struct BoardSidebarView: View {
                 Label("Debug Panel", systemImage: "ladybug")
             }
             .buttonStyle(WorkstationGhostButtonStyle())
+
+            Button {
+                appVM.presentLocalAISettings()
+            } label: {
+                Label("Local AI", systemImage: "cpu")
+            }
+            .buttonStyle(WorkstationGhostButtonStyle())
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 20)
@@ -55,6 +62,14 @@ struct BoardSidebarView: View {
                 agentRunHistoryStore: appVM.agentRunHistoryStore,
                 onDismiss: { appVM.isDebugPresented = false }
             )
+        }
+        .sheet(isPresented: $appVM.isLocalAISettingsPresented, onDismiss: { appVM.dismissLocalAISettings() }) {
+            ScrollView {
+                LocalAISettingsPanelView(appVM: appVM)
+                    .padding(20)
+                    .frame(width: 720, alignment: .leading)
+            }
+            .frame(width: 760, height: 560)
         }
     }
 

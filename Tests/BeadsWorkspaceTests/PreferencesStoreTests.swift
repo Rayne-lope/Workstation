@@ -77,6 +77,7 @@ struct PreferencesStoreTests {
         #expect(store.preferences.defaultIssueType == "task")
         #expect(store.preferences.defaultIssuePriority == 2)
         #expect(store.preferences.autoRestoreOnLaunch == true)
+        #expect(store.preferences.localAI == LocalAISettings())
     }
 
     @Test("filterState persists per workspace key")
@@ -100,5 +101,30 @@ struct PreferencesStoreTests {
         #expect(restored?.issueTypes == ["bug"])
         #expect(restored?.assignees == [.claude, .me])
         #expect(restored?.labels == ["human"])
+    }
+
+    @Test("localAI settings persist and reload")
+    func localAISettingsPersist() {
+        let (defaults, _) = makeDefaults()
+        let store = PreferencesStore(userDefaults: defaults)
+
+        store.update {
+            $0.localAI = LocalAISettings(
+                isEnabled: true,
+                provider: .ollama,
+                baseURL: "http://localhost:11434",
+                fastModel: "qwen2.5-coder:3b",
+                strongModel: "qwen2.5-coder:7b"
+            )
+        }
+
+        let reloaded = PreferencesStore(userDefaults: defaults)
+        #expect(reloaded.preferences.localAI == LocalAISettings(
+            isEnabled: true,
+            provider: .ollama,
+            baseURL: "http://localhost:11434",
+            fastModel: "qwen2.5-coder:3b",
+            strongModel: "qwen2.5-coder:7b"
+        ))
     }
 }

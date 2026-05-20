@@ -18,6 +18,7 @@ enum BoardViewMode: String, CaseIterable, Identifiable, Hashable {
 enum DetailPaneMode: String, Hashable {
     case issue
     case console
+    case bulkAction
 }
 
 @MainActor
@@ -32,6 +33,7 @@ final class AppViewModel {
     let gitWorktreeService: GitWorktreeService
     let agentRunHistoryStore: AgentRunHistoryStore
     let agentRunTranscriptStore: AgentRunTranscriptStore
+    let localAIConnectionTester: any LocalAIConnectionTesting
     private let terminalLauncher: any TerminalLaunching
     private let agentLaunchFlowCoordinator: AgentLaunchFlowCoordinator
 
@@ -41,12 +43,14 @@ final class AppViewModel {
     var isCreatePresented = false
     var isClosePresented = false
     var closeIssueID: String?
+    var isBulkClosePresented = false
     var isReviewFollowupPresented = false
     var reviewFollowupIssueID: String?
     var isBlockerPickerPresented = false
     var blockerPickerIssueID: String?
     var blockerPickerExistingBlockerIDs: Set<String> = []
     var isDebugPresented = false
+    var isLocalAISettingsPresented = false
 
     var pendingAgentLaunch: PendingAgentLaunch?
     var launchErrorMessage: String?
@@ -54,6 +58,9 @@ final class AppViewModel {
     var worktreeMessage: String?
     var activeConsoleRunID: UUID?
     var detailPaneMode: DetailPaneMode = .issue
+    var localAIConnectionMessage: String?
+    var localAIConnectionMessageIsError = false
+    var isTestingLocalAIConnection = false
     private(set) var activeWorkspace: ProjectWorkspace?
     private var activeWorkspaceStorageKey: String?
 
@@ -67,7 +74,8 @@ final class AppViewModel {
         agentRunHistoryStore: AgentRunHistoryStore = AgentRunHistoryStore(),
         agentRunTranscriptStore: AgentRunTranscriptStore = AgentRunTranscriptStore(),
         gitWorktreeService: GitWorktreeService = GitWorktreeService(),
-        terminalLauncher: any TerminalLaunching = TerminalLauncherAdapter()
+        terminalLauncher: any TerminalLaunching = TerminalLauncherAdapter(),
+        localAIConnectionTester: any LocalAIConnectionTesting = OllamaConnectionTester()
     ) {
         self.shellRunner = shellRunner
         self.gitWorktreeService = gitWorktreeService
@@ -76,6 +84,7 @@ final class AppViewModel {
         self.preferencesStore = preferencesStore
         self.agentRunHistoryStore = agentRunHistoryStore
         self.agentRunTranscriptStore = agentRunTranscriptStore
+        self.localAIConnectionTester = localAIConnectionTester
         self.terminalLauncher = terminalLauncher
         self.agentLaunchFlowCoordinator = AgentLaunchFlowCoordinator(
             historyStore: agentRunHistoryStore,
@@ -317,6 +326,74 @@ final class AppViewModel {
         worktreeMessage = nil
     }
 
+    func presentLocalAISettings() {
+        isLocalAISettingsPresented = true
+    }
+
+    func dismissLocalAISettings() {
+        isLocalAISettingsPresented = false
+    }
+
+    var localAISettings: LocalAISettings {
+        preferencesStore.preferences.localAI
+    }
+
+    func setLocalAIEnabled(_ isEnabled: Bool) {
+        preferencesStore.update { $0.localAI.isEnabled = isEnabled }
+        clearLocalAIConnectionStatus()
+    }
+
+    func setLocalAIProvider(_ provider: LocalAIProvider) {
+        preferencesStore.update { $0.localAI.provider = provider }
+        clearLocalAIConnectionStatus()
+    }
+
+    func setLocalAIBaseURL(_ baseURL: String) {
+        preferencesStore.update { $0.localAI.baseURL = baseURL }
+        clearLocalAIConnectionStatus()
+    }
+
+    func setLocalAIFastModel(_ model: String) {
+        preferencesStore.update { $0.localAI.fastModel = model }
+        clearLocalAIConnectionStatus()
+    }
+
+    func setLocalAIStrongModel(_ model: String) {
+        preferencesStore.update { $0.localAI.strongModel = model }
+        clearLocalAIConnectionStatus()
+    }
+
+    func testLocalAIConnection() {
+        let settings = preferencesStore.preferences.localAI
+        localAIConnectionMessage = "Testing Ollama connection..."
+        localAIConnectionMessageIsError = false
+        isTestingLocalAIConnection = true
+        let tester = localAIConnectionTester
+
+        Task {
+            do {
+                let result = try await tester.testConnection(settings: settings)
+                await MainActor.run {
+                    self.isTestingLocalAIConnection = false
+                    self.localAIConnectionMessage = result.message
+                    self.localAIConnectionMessageIsError = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.isTestingLocalAIConnection = false
+                    self.localAIConnectionMessage = error.localizedDescription
+                    self.localAIConnectionMessageIsError = true
+                }
+            }
+        }
+    }
+
+    private func clearLocalAIConnectionStatus() {
+        localAIConnectionMessage = nil
+        localAIConnectionMessageIsError = false
+        isTestingLocalAIConnection = false
+    }
+
     func persistFilterState(_ filterState: FilterState) {
         guard let workspaceKey = activeWorkspaceStorageKey else { return }
         preferencesStore.update { preferences in
@@ -358,6 +435,59 @@ final class AppViewModel {
 
     func resetDetailPaneToIssue() {
         detailPaneMode = .issue
+    }
+
+    // MARK: - Multi-select bulk actions
+
+    func showBulkActionPane() {
+        detailPaneMode = .bulkAction
+    }
+
+    func presentBulkCloseSheet() {
+        isBulkClosePresented = true
+    }
+
+    func dismissBulkCloseSheet() {
+        isBulkClosePresented = false
+    }
+
+    func bulkClaim() {
+        guard let store = issueStore else { return }
+        let ids = Array(store.selectedIssueIDs)
+        Task {
+            for id in ids {
+                await store.claim(id: id)
+            }
+        }
+    }
+
+    func bulkMarkHumanReview() {
+        guard let store = issueStore else { return }
+        let ids = Array(store.selectedIssueIDs)
+        Task {
+            for id in ids {
+                await store.requestHumanReview(id: id)
+            }
+        }
+    }
+
+    func bulkClose(reason: String) {
+        guard let store = issueStore else { return }
+        let ids = Array(store.selectedIssueIDs)
+        Task {
+            for id in ids {
+                await store.close(id: id, reason: reason)
+            }
+            store.clearSelection()
+            detailPaneMode = .issue
+        }
+    }
+
+    func clearMultiSelection() {
+        issueStore?.clearSelection()
+        if detailPaneMode == .bulkAction {
+            detailPaneMode = .issue
+        }
     }
 
     func activeConsoleRecord() -> AgentRunRecord? {
