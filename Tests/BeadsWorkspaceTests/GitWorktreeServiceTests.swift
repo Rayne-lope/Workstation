@@ -150,24 +150,15 @@ struct GitWorktreeServiceTests {
         #expect(FileManager.default.fileExists(atPath: location.worktreeURL.appendingPathComponent(".beads").path))
     }
 
-    @Test("createWorktree refuses when the current tree is dirty")
-    func createWorktreeRefusesWhenDirty() async throws {
-        let (workspace, baseURL) = try makeWorkspace(rootName: "Dirty Tree")
+    @Test("createWorktree still works when the current tree is dirty")
+    func createWorktreeWorksWhenDirty() async throws {
+        let (workspace, baseURL) = try makeGitRepo(name: "Dirty Tree")
         defer { try? FileManager.default.removeItem(at: baseURL) }
 
-        let runner = StubCommandRunner()
-        runner.enqueue(arguments: ["rev-parse", "--is-inside-work-tree"], stdout: "true\n")
-        runner.enqueue(
-            arguments: ["status", "--porcelain"],
-            stdout: """
-            M  App/AppViewModel.swift
-            ?? Notes to keep.txt
-            """
-        )
-        runner.enqueue(arguments: ["branch", "--show-current"], stdout: "main\n")
-        runner.enqueue(arguments: ["log", "-1", "--pretty=format:%h%x20%s"], stdout: "abc123 Dirty tree\n")
+        let dirtyFileURL = workspace.inspectionURL.appendingPathComponent("Notes to keep.txt")
+        try "dirty\n".write(to: dirtyFileURL, atomically: true, encoding: .utf8)
 
-        let service = makeService(runner: runner)
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
         let issue = BeadIssue(
             id: "bd-123",
             title: "Dirty tree",
@@ -176,9 +167,19 @@ struct GitWorktreeServiceTests {
             issueType: "feature"
         )
 
-        await #expect(throws: GitWorktreeServiceError.self) {
-            _ = try await service.createWorktree(for: issue, in: workspace)
-        }
+        let location = service.worktreeLocation(for: workspace, issueID: issue.id)
+        let created = try await service.createWorktree(for: issue, in: workspace)
+
+        #expect(created == location)
+        #expect(FileManager.default.fileExists(atPath: location.worktreeURL.path))
+        #expect(FileManager.default.fileExists(atPath: location.worktreeURL.appendingPathComponent(".beads").path))
+
+        let sourceStatus = try await ShellCommandRunner(timeout: 10).run(
+            command: "git",
+            arguments: ["status", "--porcelain"],
+            workingDirectory: workspace.inspectionURL
+        )
+        #expect(sourceStatus.stdout.contains("Notes to keep.txt"))
     }
 
     @Test("createWorktree refuses when the target folder already exists")
@@ -206,8 +207,9 @@ struct GitWorktreeServiceTests {
         await #expect(throws: GitWorktreeServiceError.self) {
             _ = try await service.createWorktree(for: issue, in: workspace)
         }
-        #expect(runner.calls.contains { $0.arguments == ["status", "--porcelain"] })
-        #expect(runner.calls.contains { $0.arguments == ["branch", "--show-current"] })
+        #expect(runner.calls.contains { $0.arguments == ["rev-parse", "--is-inside-work-tree"] })
+        #expect(!runner.calls.contains { $0.arguments == ["status", "--porcelain"] })
+        #expect(!runner.calls.contains { $0.arguments == ["branch", "--show-current"] })
         #expect(!runner.calls.contains { $0.arguments == ["branch", "--list", location.branchName] })
     }
 

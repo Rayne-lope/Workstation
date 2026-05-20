@@ -46,13 +46,7 @@ public enum GitWorktreeServiceError: LocalizedError, Sendable {
 }
 
 public struct GitWorktreeService: @unchecked Sendable {
-    private static let passiveBeadsExportPaths: Set<String> = [
-        ".beads/issues.jsonl",
-        ".beads/interactions.jsonl"
-    ]
-
     private let commandRunner: any CommandRunning
-    private let gitStatusService: GitStatusService
     private let fileManager: FileManager
 
     public init(
@@ -60,7 +54,6 @@ public struct GitWorktreeService: @unchecked Sendable {
         fileManager: FileManager = .default
     ) {
         self.commandRunner = commandRunner
-        self.gitStatusService = GitStatusService(commandRunner: commandRunner)
         self.fileManager = fileManager
     }
 
@@ -84,12 +77,6 @@ public struct GitWorktreeService: @unchecked Sendable {
         in workspace: ProjectWorkspace
     ) async throws -> GitWorktreeLocation {
         try await ensureGitRepository(at: workspace.inspectionURL)
-
-        let statusSummary = try await gitStatusService.statusSummary(in: workspace.inspectionURL)
-        let filteredStatusSummary = statusSummary.filtered(ignoringPaths: Self.passiveBeadsExportPaths)
-        guard !filteredStatusSummary.isDirty else {
-            throw GitWorktreeServiceError.dirtyWorkingTree(changedFiles: filteredStatusSummary.changedFiles)
-        }
 
         let location = worktreeLocation(for: workspace, issueID: issue.id)
 
