@@ -318,25 +318,25 @@ private struct IssueActionsContextMenu: View {
             }
         }
 
-        Menu("Change Assignee") {
-            Button("Claude") {
-                Task {
-                    await store.update(id: issue.id, UpdateIssueInput(assignee: "claude"))
-                }
+        Menu("Assign…") {
+            Button("Claude (assign + launch)") {
+                appVM.assignAndLaunchIfExecutor(for: issue, assignee: "claude")
             }
-            Button("Codex") {
-                Task {
-                    await store.update(id: issue.id, UpdateIssueInput(assignee: "codex"))
-                }
+            Button("Codex (assign + launch)") {
+                appVM.assignAndLaunchIfExecutor(for: issue, assignee: "codex")
             }
-            Button("Other") {
-                Task {
-                    await store.update(id: issue.id, UpdateIssueInput(assignee: "other"))
-                }
+            Button("Other AI (assign + launch)") {
+                appVM.assignAndLaunchIfExecutor(for: issue, assignee: "other")
             }
+            Divider()
             Button("Me") {
                 Task {
                     await store.update(id: issue.id, UpdateIssueInput(assignee: "me"))
+                }
+            }
+            Button("Clear") {
+                Task {
+                    await store.update(id: issue.id, UpdateIssueInput(assignee: ""))
                 }
             }
         }

@@ -52,7 +52,11 @@ public struct AssigneeAvatarResolver: Sendable {
     }
 
     private func brandKind(forShortToken raw: String) -> AgentAvatarKind? {
-        let token = normalized(raw)
+        Self.brandKind(forShortToken: raw)
+    }
+
+    public static func brandKind(forShortToken raw: String) -> AgentAvatarKind? {
+        let token = staticNormalized(raw)
         let claudeAliases = ["claude", "claude-code", "claude_code", "anthropic"]
         let codexAliases = ["codex", "openai-codex", "openai"]
         let otherAliases = ["other", "gemini", "gpt", "llm", "bot", "ai-other", "agent"]
@@ -66,6 +70,12 @@ public struct AssigneeAvatarResolver: Sendable {
             return .other
         }
         return nil
+    }
+
+    private static func staticNormalized(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
     }
 
     private func normalized(_ value: String) -> String {

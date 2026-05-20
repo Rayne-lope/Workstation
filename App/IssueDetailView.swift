@@ -144,13 +144,35 @@ struct IssueDetailView: View {
 
             GridRow {
                 propertyLabel("Assignee")
-                if let assignee = issue.assignee, !assignee.isEmpty {
-                    AssigneeBadgeView(assignee: assignee, profiles: appVM.agentProfileStore.profiles, compact: true)
-                } else {
-                    Text("Unassigned")
-                        .font(WorkstationTheme.Fonts.body(13, weight: .medium))
-                        .foregroundStyle(WorkstationTheme.textMuted)
+                Menu {
+                    Button("Claude (assign + launch)") {
+                        appVM.assignAndLaunchIfExecutor(for: issue, assignee: "claude")
+                    }
+                    Button("Codex (assign + launch)") {
+                        appVM.assignAndLaunchIfExecutor(for: issue, assignee: "codex")
+                    }
+                    Button("Other AI (assign + launch)") {
+                        appVM.assignAndLaunchIfExecutor(for: issue, assignee: "other")
+                    }
+                    Divider()
+                    Button("Me") {
+                        Task { await store.update(id: issue.id, UpdateIssueInput(assignee: "me")) }
+                    }
+                    Button("Clear") {
+                        Task { await store.update(id: issue.id, UpdateIssueInput(assignee: "")) }
+                    }
+                } label: {
+                    if let assignee = issue.assignee, !assignee.isEmpty {
+                        AssigneeBadgeView(assignee: assignee, profiles: appVM.agentProfileStore.profiles, compact: true)
+                    } else {
+                        Text("Unassigned")
+                            .font(WorkstationTheme.Fonts.body(13, weight: .medium))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                    }
                 }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
             }
 
             if let updated = issue.updatedAt, !updated.isEmpty {

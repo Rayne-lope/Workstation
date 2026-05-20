@@ -292,4 +292,42 @@ struct AgentProfileStoreTests {
         #expect(custom?.shouldCloseIssue == false)
         #expect(store.errorMessage == nil)
     }
+
+    @Test("executorProfile resolves claude/codex tokens to built-in executors")
+    func executorProfileResolvesAIAssignees() {
+        let (defaults, _) = makeDefaults()
+        let store = AgentProfileStore(userDefaults: defaults)
+
+        let claude = store.executorProfile(forAssignee: "claude")
+        #expect(claude?.id == AgentProfile.codingExecutorID)
+        #expect(claude?.canExecuteCode == true)
+
+        let codex = store.executorProfile(forAssignee: "Codex")
+        #expect(codex?.id == AgentProfile.codexExecutorID)
+
+        let other = store.executorProfile(forAssignee: "other")
+        #expect(other?.canExecuteCode == true)
+        #expect(other?.avatarKind == .claude || other?.avatarKind == .other)
+    }
+
+    @Test("executorProfile returns nil for human assignees")
+    func executorProfileReturnsNilForHumans() {
+        let (defaults, _) = makeDefaults()
+        let store = AgentProfileStore(userDefaults: defaults)
+
+        #expect(store.executorProfile(forAssignee: "me") == nil)
+        #expect(store.executorProfile(forAssignee: "rapi") == nil)
+        #expect(store.executorProfile(forAssignee: "") == nil)
+        #expect(store.executorProfile(forAssignee: "   ") == nil)
+    }
+
+    @Test("executorProfile resolved profile is claim-capable")
+    func executorProfileIsClaimCapable() {
+        let (defaults, _) = makeDefaults()
+        let store = AgentProfileStore(userDefaults: defaults)
+
+        let claude = store.executorProfile(forAssignee: "claude")
+        #expect(claude?.shouldClaimIssue == true)
+        #expect(claude?.claimAssigneeToken == "claude")
+    }
 }

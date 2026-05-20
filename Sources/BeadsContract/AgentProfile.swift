@@ -179,6 +179,24 @@ public extension AgentProfile {
     }
 }
 
+public extension AgentProfile {
+    /// Canonical built-in executor profile for an avatar brand. Used as fallback
+    /// when no user profile matches an AI assignee token (e.g. "claude" → Claude Code Executor).
+    static func builtInExecutor(forBrand brand: AgentAvatarKind) -> AgentProfile? {
+        switch brand {
+        case .claude:
+            return builtInProfiles.first { $0.id == codingExecutorID }
+        case .codex:
+            return builtInProfiles.first { $0.id == codexExecutorID }
+        case .other:
+            return builtInProfiles.first { $0.canExecuteCode && $0.avatarKind == .other }
+                ?? builtInProfiles.first { $0.id == codingExecutorID }
+        case .initials:
+            return nil
+        }
+    }
+}
+
 public extension AgentAvatarKind {
     var claimAssigneeToken: String {
         switch self {

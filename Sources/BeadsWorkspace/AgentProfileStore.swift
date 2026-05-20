@@ -91,6 +91,20 @@ public final class AgentProfileStore {
         errorMessage = nil
     }
 
+    /// Map an assignee token (e.g. "claude", "codex", "other") to an executor profile.
+    /// Returns nil for human/unknown assignees so callers can fall back to plain assignment.
+    public func executorProfile(forAssignee token: String) -> AgentProfile? {
+        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        guard let brand = AssigneeAvatarResolver.brandKind(forShortToken: trimmed) else {
+            return nil
+        }
+        if let match = profiles.first(where: { $0.canExecuteCode && $0.avatarKind == brand }) {
+            return match
+        }
+        return AgentProfile.builtInExecutor(forBrand: brand)
+    }
+
     private func decodeCustomProfiles() -> [AgentProfile] {
         guard let data = userDefaults.data(forKey: storageKey) else { return [] }
         do {

@@ -243,6 +243,18 @@ final class AppViewModel {
         Task { await beginWorktreeAgentLaunch(for: issue, profile: profile) }
     }
 
+    /// Combined assign + launch handoff. If the assignee maps to an AI executor profile,
+    /// launches the agent in a worktree (which auto-claims via prepareLaunchSession).
+    /// Otherwise performs a plain assignee update.
+    func assignAndLaunchIfExecutor(for issue: BeadIssue, assignee: String) {
+        if let profile = agentProfileStore.executorProfile(forAssignee: assignee) {
+            launchAgentInWorktree(for: issue, profile: profile)
+        } else {
+            guard let store = issueStore else { return }
+            Task { await store.update(id: issue.id, UpdateIssueInput(assignee: assignee)) }
+        }
+    }
+
     func retryPendingWorktreeLaunch() {
         guard let pending = pendingWorktreeLaunch else { return }
         let issue = pending.issue
