@@ -16,6 +16,7 @@
 		231E101278DA73D074F6AF17 /* AgentLaunchFlowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ADC615F3F521A912A29CEC2 /* AgentLaunchFlowCoordinator.swift */; };
 		29BDC07D19B4784D59E4A2E8 /* CommandRunning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A116AD006CF35CA34ECE27 /* CommandRunning.swift */; };
 		2E0F554D8887BBF850410321 /* ShellCommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A267113D5EBBAFBD1F438D57 /* ShellCommandRunner.swift */; };
+		322D00C931CD361D7E7EA1DA /* AgentRunConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 626365BA4FBFF70061F5A8F6 /* AgentRunConsoleView.swift */; };
 		3D59BD01A9AD861FE5A1BC7A /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9CA4D850D4A89F102D5866F /* AppViewModel.swift */; };
 		41A8CFB9661979481337B872 /* KanbanDropResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F866B85B2A56E15F62680F /* KanbanDropResolver.swift */; };
 		4592B816E0522788375F8CE0 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30371A914B174F942233A4D /* BoardView.swift */; };
@@ -99,6 +100,7 @@
 		58A8C4D84422BBCE4A84BF81 /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
 		5B8EC6BEF8A451F9C6414377 /* ProcessCommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessCommandRunner.swift; sourceTree = "<group>"; };
 		5E60B6DE5CFDB845F26634AC /* GitWorktreeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitWorktreeService.swift; sourceTree = "<group>"; };
+		626365BA4FBFF70061F5A8F6 /* AgentRunConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunConsoleView.swift; sourceTree = "<group>"; };
 		63DB2BCFBFCEE719CA359921 /* UpdateIssueInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateIssueInput.swift; sourceTree = "<group>"; };
 		69572911E9CE07BDC6E47FE7 /* AssigneeAvatarResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssigneeAvatarResolver.swift; sourceTree = "<group>"; };
 		785B8EE3200E9AC7F2E588BC /* IssueFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFileWatcher.swift; sourceTree = "<group>"; };
@@ -225,6 +227,7 @@
 			isa = PBXGroup;
 			children = (
 				843DAFA24B80CDA5609E80E4 /* AgentLaunchState.swift */,
+				626365BA4FBFF70061F5A8F6 /* AgentRunConsoleView.swift */,
 				D9CA4D850D4A89F102D5866F /* AppViewModel.swift */,
 				47BC8D75D3F915672B7E87A3 /* AssigneeBadgeView.swift */,
 				833FF27F3DA76EFFBE825440 /* BeadsKanbanApp.swift */,
@@ -313,6 +316,7 @@
 				EFF3DBCE0D2A735D133EAEF5 /* AgentProfile.swift in Sources */,
 				514EDC774BDF539E62BBD18F /* AgentProfileStore.swift in Sources */,
 				176DC74B9B60C7C605517AA2 /* AgentRole.swift in Sources */,
+				322D00C931CD361D7E7EA1DA /* AgentRunConsoleView.swift in Sources */,
 				D1E282B1388DA98C1C479C90 /* AgentRunHistoryStore.swift in Sources */,
 				08F5B619F89B824DD89E920A /* AgentRunLaunchCoordinator.swift in Sources */,
 				57B1A1E222247DEA55F52900 /* AgentRunRecord.swift in Sources */,

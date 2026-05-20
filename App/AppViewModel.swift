@@ -45,6 +45,7 @@ final class AppViewModel {
     var launchErrorMessage: String?
     var terminalErrorMessage: String?
     var worktreeMessage: String?
+    var activeConsoleRunID: UUID?
     private(set) var activeWorkspace: ProjectWorkspace?
 
     @ObservationIgnored private var workspaceCancellable: AnyCancellable?
@@ -241,6 +242,43 @@ final class AppViewModel {
         worktreeMessage = nil
     }
 
+    func presentAgentRunConsole(runID: UUID) {
+        activeConsoleRunID = runID
+    }
+
+    func presentLatestAgentRunConsole(forIssueID issueID: String) {
+        if let record = agentRunHistoryStore.latestRecord(forIssueID: issueID) {
+            activeConsoleRunID = record.id
+        }
+    }
+
+    func dismissAgentRunConsole() {
+        activeConsoleRunID = nil
+    }
+
+    func activeConsoleRecord() -> AgentRunRecord? {
+        guard let id = activeConsoleRunID else { return nil }
+        return agentRunHistoryStore.record(id: id)
+    }
+
+    func updateAgentRunStatus(id: UUID, status: AgentRunStatus) {
+        agentRunHistoryStore.updateStatus(id: id, status: status)
+    }
+
+    func updateAgentRunNotes(id: UUID, notes: String) {
+        agentRunHistoryStore.updateNotes(id: id, notes: notes)
+    }
+
+    func openTerminalForAgentRun(_ record: AgentRunRecord) {
+        guard !record.projectPath.isEmpty else {
+            terminalErrorMessage = "No project path recorded for this run."
+            return
+        }
+        let url = URL(fileURLWithPath: record.projectPath, isDirectory: true)
+        let command = record.command.isEmpty ? nil : record.command
+        openTerminal(at: url, command: command)
+    }
+
     func cancelPendingAgentLaunch() {
         pendingAgentLaunch = nil
     }
@@ -320,6 +358,7 @@ final class AppViewModel {
             guard let session else { return }
 
             worktreeMessage = "Worktree created at \(worktree.worktreeURL.path)"
+            activeConsoleRunID = session.id
             Clipboard.copy(session.payload.prompt)
             do {
                 try agentLaunchFlowCoordinator.openTerminal(
@@ -350,6 +389,7 @@ final class AppViewModel {
             return
         }
 
+        activeConsoleRunID = session.id
         Clipboard.copy(session.payload.prompt)
         do {
             try agentLaunchFlowCoordinator.openTerminal(

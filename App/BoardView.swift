@@ -69,6 +69,23 @@ struct BoardView: View {
                 onContinue: { appVM.continuePendingAgentLaunch() }
             )
         }
+        .sheet(
+            isPresented: Binding(
+                get: { appVM.activeConsoleRunID != nil && appVM.activeConsoleRecord() != nil },
+                set: { isPresented in
+                    if !isPresented { appVM.dismissAgentRunConsole() }
+                }
+            ),
+            onDismiss: { appVM.dismissAgentRunConsole() }
+        ) {
+            if let record = appVM.activeConsoleRecord() {
+                AgentRunConsoleView(
+                    appVM: appVM,
+                    record: record,
+                    onDismiss: { appVM.dismissAgentRunConsole() }
+                )
+            }
+        }
     }
 
     private var workspaceHeader: some View {

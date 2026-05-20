@@ -65,6 +65,23 @@ public final class AgentRunHistoryStore {
         normalizeAndPersist()
     }
 
+    public func updateNotes(id: UUID, notes: String?) {
+        guard let index = records.firstIndex(where: { $0.id == id }) else { return }
+        var updated = records[index]
+        let trimmed = notes?.trimmingCharacters(in: .whitespacesAndNewlines)
+        updated.notes = (trimmed?.isEmpty ?? true) ? nil : notes
+        records[index] = updated
+        normalizeAndPersist()
+    }
+
+    public func record(id: UUID) -> AgentRunRecord? {
+        records.first { $0.id == id }
+    }
+
+    public func latestRecord(forIssueID issueID: String) -> AgentRunRecord? {
+        records.first { $0.issueID == issueID }
+    }
+
     public func clearErrorMessage() {
         errorMessage = nil
     }

@@ -97,6 +97,73 @@ struct AgentRunHistoryStoreTests {
         #expect(store.records.map(\.issueID) == ["bd-2", "bd-3", "bd-1"])
     }
 
+    @Test("updateNotes persists notes without touching status or completion")
+    func updateNotesPersistsNotes() {
+        let clock = MutableClock()
+        clock.now = Date(timeIntervalSince1970: 100)
+        let (store, fileURL, _) = makeStore(clock: clock)
+
+        let record = store.recordLaunchAttempt(
+            issueID: "bd-notes",
+            issueTitle: "Notes flow",
+            agentProfileID: nil,
+            agentName: "Claude",
+            command: "claude",
+            prompt: "prompt",
+            projectPath: "/tmp/notes"
+        )
+
+        clock.now = Date(timeIntervalSince1970: 400)
+        store.updateNotes(id: record.id, notes: "Followed up manually")
+
+        #expect(store.records.first?.notes == "Followed up manually")
+        #expect(store.records.first?.status == .prepared)
+        #expect(store.records.first?.completedAt == nil)
+
+        store.updateNotes(id: record.id, notes: "   ")
+        #expect(store.records.first?.notes == nil)
+
+        let reloaded = AgentRunHistoryStore(
+            fileURL: fileURL,
+            clock: { clock.now }
+        )
+        #expect(reloaded.records.first?.notes == nil)
+        #expect(reloaded.records.first?.status == .prepared)
+    }
+
+    @Test("record(id:) and latestRecord(forIssueID:) lookups")
+    func recordLookups() {
+        let clock = MutableClock()
+        let (store, _, _) = makeStore(clock: clock)
+
+        clock.now = Date(timeIntervalSince1970: 100)
+        let first = store.recordLaunchAttempt(
+            issueID: "bd-X",
+            issueTitle: "First",
+            agentProfileID: nil,
+            agentName: "Claude",
+            command: "claude",
+            prompt: "p1",
+            projectPath: "/tmp/x"
+        )
+
+        clock.now = Date(timeIntervalSince1970: 300)
+        let second = store.recordLaunchAttempt(
+            issueID: "bd-X",
+            issueTitle: "First",
+            agentProfileID: nil,
+            agentName: "Codex",
+            command: "codex",
+            prompt: "p2",
+            projectPath: "/tmp/x"
+        )
+
+        #expect(store.record(id: first.id)?.prompt == "p1")
+        #expect(store.record(id: UUID()) == nil)
+        #expect(store.latestRecord(forIssueID: "bd-X")?.id == second.id)
+        #expect(store.latestRecord(forIssueID: "bd-unknown") == nil)
+    }
+
     @Test("updateStatus persists notes and completion timestamp")
     func updateStatusPersistsCompletion() {
         let clock = MutableClock()

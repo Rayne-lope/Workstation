@@ -408,6 +408,16 @@ struct IssueDetailView: View {
                     .disabled(appVM.activeWorkspace == nil)
                 }
 
+                if appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id) != nil {
+                    Button {
+                        appVM.presentLatestAgentRunConsole(forIssueID: issue.id)
+                    } label: {
+                        Label("Run Console", systemImage: "rectangle.on.rectangle.angled")
+                    }
+                    .buttonStyle(WorkstationGhostButtonStyle(compact: true))
+                    .help("Open the local Agent Run Console for the latest run of this issue")
+                }
+
                 if !runnableProfiles.isEmpty {
                     Menu {
                         ForEach(runnableProfiles) { runnableProfile in
