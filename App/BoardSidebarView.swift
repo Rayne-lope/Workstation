@@ -133,6 +133,13 @@ struct BoardSidebarView: View {
             }
             .buttonStyle(SidebarNavButtonStyle(isActive: true))
             .keyboardShortcut("n", modifiers: [.command])
+
+            Button {
+                appVM.analyzeBacklog()
+            } label: {
+                Label("Analyze Backlog", systemImage: "sparkles")
+            }
+            .buttonStyle(SidebarNavButtonStyle())
         }
     }
 

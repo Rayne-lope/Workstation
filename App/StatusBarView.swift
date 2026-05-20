@@ -11,6 +11,8 @@ struct StatusBarView: View {
         let launchError = appVM.launchErrorMessage
         let terminalError = appVM.terminalErrorMessage
         let worktreeMessage = appVM.worktreeMessage
+        let localAIMessage = appVM.localAIStatusMessage
+        let localAIMessageIsError = appVM.localAIStatusMessageIsError
 
         VStack(alignment: .leading, spacing: 4) {
             if let issueError {
@@ -32,6 +34,17 @@ struct StatusBarView: View {
             if let worktreeMessage {
                 infoRow(label: "Worktree", message: worktreeMessage) {
                     appVM.clearWorktreeMessage()
+                }
+            }
+            if let localAIMessage {
+                if localAIMessageIsError {
+                    errorRow(label: "Local AI", message: localAIMessage) {
+                        appVM.clearLocalAIStatus()
+                    }
+                } else {
+                    infoRow(label: "Local AI", message: localAIMessage) {
+                        appVM.clearLocalAIStatus()
+                    }
                 }
             }
 

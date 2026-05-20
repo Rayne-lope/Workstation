@@ -24,8 +24,10 @@ struct LocalAIServiceTests {
 
         let backlogRequest = try service.buildRequest(for: .backlogAnalysis(issues: [issue]), settings: settings)
         #expect(backlogRequest.model == "strong-model")
-        #expect(backlogRequest.prompt.contains("Analyze the selected Beads backlog issues"))
+        #expect(backlogRequest.prompt.contains("Analyze the provided Beads backlog issues"))
         #expect(backlogRequest.prompt.contains("Build the login flow"))
+        #expect(backlogRequest.prompt.contains("split candidates"))
+        #expect(backlogRequest.prompt.contains("issues that should be refined"))
 
         let promptRequest = try service.buildRequest(
             for: .promptOptimization(prompt: "Make this shorter"),

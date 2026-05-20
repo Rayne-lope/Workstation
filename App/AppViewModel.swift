@@ -53,6 +53,8 @@ final class AppViewModel {
     var isDebugPresented = false
     var isLocalAISettingsPresented = false
     var localAISuggestionPreview: LocalAISuggestionPreviewState?
+    var localAIStatusMessage: String?
+    var localAIStatusMessageIsError = false
 
     var pendingAgentLaunch: PendingAgentLaunch?
     var pendingWorktreeLaunch: PendingWorktreeLaunch?
@@ -187,6 +189,42 @@ final class AppViewModel {
     func copyAgentCommand(for issue: BeadIssue) {
         let payload = agentLaunchPayload(for: issue)
         Clipboard.copy(payload.command)
+    }
+
+    func analyzeBacklog() {
+        guard let store = issueStore else { return }
+        let snapshot = backlogAnalysisSnapshot(from: store)
+        let action = LocalAIAction.backlogAnalysis(issues: snapshot.issues)
+        localAIStatusMessage = "Analyzing \(snapshot.sourceLabel.lowercased())..."
+        localAIStatusMessageIsError = false
+
+        Task {
+            do {
+                let suggestion = try await self.requestLocalAIResponse(for: action)
+                await MainActor.run {
+                    self.presentLocalAISuggestionPreview(
+                        title: "Backlog Organization Suggestions",
+                        subtitle: snapshot.subtitle,
+                        sourceLabel: snapshot.sourceLabel,
+                        generatedText: suggestion,
+                        primaryActionTitle: "Done",
+                        regenerate: { [weak self] in
+                            guard let self else { throw CancellationError() }
+                            return try await self.requestLocalAIResponse(for: action)
+                        },
+                        onApply: { [weak self] _ in
+                            self?.dismissLocalAISuggestionPreview()
+                        }
+                    )
+                    self.clearLocalAIStatus()
+                }
+            } catch {
+                await MainActor.run {
+                    self.localAIStatusMessage = error.localizedDescription
+                    self.localAIStatusMessageIsError = true
+                }
+            }
+        }
     }
 
     func launchSelectedAgent(for issue: BeadIssue) {
@@ -434,6 +472,7 @@ final class AppViewModel {
         subtitle: String,
         sourceLabel: String,
         generatedText: String,
+        primaryActionTitle: String = "Apply",
         regenerate: @escaping @MainActor () async throws -> String,
         onApply: @escaping @MainActor (String) -> Void
     ) {
@@ -442,6 +481,7 @@ final class AppViewModel {
             subtitle: subtitle,
             sourceLabel: sourceLabel,
             generatedText: generatedText,
+            primaryActionTitle: primaryActionTitle,
             regenerate: regenerate,
             onApply: onApply
         )
@@ -451,10 +491,48 @@ final class AppViewModel {
         localAISuggestionPreview = nil
     }
 
+    func clearLocalAIStatus() {
+        localAIStatusMessage = nil
+        localAIStatusMessageIsError = false
+    }
+
     private func clearLocalAIConnectionStatus() {
+        clearLocalAIStatus()
         localAIConnectionMessage = nil
         localAIConnectionMessageIsError = false
         isTestingLocalAIConnection = false
+    }
+
+    private func backlogAnalysisSnapshot(from store: IssueStore) -> (issues: [BeadIssue], sourceLabel: String, subtitle: String) {
+        let selectedIssues = store.selectedIssues()
+        if !selectedIssues.isEmpty {
+            let selectedBacklogIssues = selectedIssues.filter { issue in
+                KanbanStateMapper.column(
+                    for: issue,
+                    readyIDs: store.readyIssueIDs,
+                    blockedIDs: store.blockedByDependencyIDs
+                ) == .backlog
+            }
+            if !selectedBacklogIssues.isEmpty {
+                return (
+                    issues: selectedBacklogIssues,
+                    sourceLabel: "Selected Backlog",
+                    subtitle: analysisSubtitle(for: selectedBacklogIssues.count, source: "selected backlog")
+                )
+            }
+        }
+
+        let backlogIssues = store.backlogIssues
+        return (
+            issues: backlogIssues,
+            sourceLabel: "Visible Backlog",
+            subtitle: analysisSubtitle(for: backlogIssues.count, source: "visible backlog")
+        )
+    }
+
+    private func analysisSubtitle(for issueCount: Int, source: String) -> String {
+        let noun = issueCount == 1 ? "issue" : "issues"
+        return "\(issueCount) \(noun) · \(source)"
     }
 
     func persistFilterState(_ filterState: FilterState) {

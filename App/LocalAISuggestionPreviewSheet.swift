@@ -155,7 +155,7 @@ struct LocalAISuggestionPreviewSheet: View {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 11, weight: .bold))
-                        Text("Apply")
+                        Text(preview.primaryActionTitle)
                     }
                 }
                 .buttonStyle(WorkstationPrimaryButtonStyle())

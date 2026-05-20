@@ -9,6 +9,7 @@ final class LocalAISuggestionPreviewState: Identifiable {
     let subtitle: String
     let sourceLabel: String
     let originalText: String
+    let primaryActionTitle: String
 
     var draftText: String
     var isRegenerating = false
@@ -22,6 +23,7 @@ final class LocalAISuggestionPreviewState: Identifiable {
         subtitle: String,
         sourceLabel: String,
         generatedText: String,
+        primaryActionTitle: String = "Apply",
         regenerate: @escaping @MainActor () async throws -> String,
         onApply: @escaping @MainActor (String) -> Void
     ) {
@@ -29,6 +31,7 @@ final class LocalAISuggestionPreviewState: Identifiable {
         self.subtitle = subtitle
         self.sourceLabel = sourceLabel
         self.originalText = generatedText
+        self.primaryActionTitle = primaryActionTitle
         self.draftText = generatedText
         self.regenerateAction = regenerate
         self.applyAction = onApply

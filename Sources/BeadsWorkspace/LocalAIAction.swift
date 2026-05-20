@@ -52,13 +52,13 @@ public enum LocalAIAction: Equatable, Sendable {
         case let .backlogAnalysis(issues):
             let renderedIssues = issues.isEmpty ? "(no issues provided)" : issues.map(Self.renderIssue).joined(separator: "\n\n")
             return """
-            Analyze the selected Beads backlog issues and suggest organization improvements.
+            Analyze the provided Beads backlog issues and suggest organization improvements.
 
             Issues:
             \(renderedIssues)
 
             Output requirements:
-            - Suggest duplicates, oversized issues, missing dependencies, and priority adjustments.
+            - Suggest duplicates, oversized issues, missing dependencies, priority adjustments, split candidates, and issues that should be refined.
             - Do not mutate issues or produce CLI commands.
             - Return suggestions only, grouped by issue when helpful.
             """
