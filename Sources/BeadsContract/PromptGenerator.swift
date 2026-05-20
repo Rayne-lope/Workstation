@@ -102,8 +102,9 @@ public struct PromptGenerator: Sendable {
         Workflow:
         1. Run `bd prime` to load project context and conventions.
         2. Run `bd show \(issue.id) --json` to read the full issue payload.
-        3. Draft a clear specification: goal, requirements, edge cases, acceptance criteria.
-        4. Write the spec into the issue via `bd update \(issue.id) --description=...` (or --notes / --acceptance / --design as appropriate).
+        3. Draft a clear specification with sections for goal, requirements, edge cases, and acceptance criteria.
+        4. Write acceptance criteria as concise bullet points, not a paragraph.
+        5. Write the spec into the issue via `bd update \(issue.id) --description=...` (or --notes / --acceptance / --design as appropriate).
 
         Constraints:
         - Do not modify application source code.

@@ -22,6 +22,7 @@ struct PromptGeneratorTests {
         #expect(prompt.contains("bd prime"))
         #expect(prompt.contains("bd show bd-42 --json"))
         #expect(prompt.contains("Do not modify application source code"))
+        #expect(prompt.contains("Write acceptance criteria as concise bullet points"))
         #expect(prompt.contains("bd-42"))
         #expect(prompt.contains("Implement feature X"))
     }
