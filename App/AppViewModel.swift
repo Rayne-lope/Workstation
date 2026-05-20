@@ -34,6 +34,7 @@ final class AppViewModel {
     let agentRunHistoryStore: AgentRunHistoryStore
     let agentRunTranscriptStore: AgentRunTranscriptStore
     let localAIConnectionTester: any LocalAIConnectionTesting
+    let localAIService: LocalAIService
     private let terminalLauncher: any TerminalLaunching
     private let agentLaunchFlowCoordinator: AgentLaunchFlowCoordinator
 
@@ -75,7 +76,8 @@ final class AppViewModel {
         agentRunTranscriptStore: AgentRunTranscriptStore = AgentRunTranscriptStore(),
         gitWorktreeService: GitWorktreeService = GitWorktreeService(),
         terminalLauncher: any TerminalLaunching = TerminalLauncherAdapter(),
-        localAIConnectionTester: any LocalAIConnectionTesting = OllamaConnectionTester()
+        localAIConnectionTester: any LocalAIConnectionTesting = OllamaConnectionTester(),
+        localAIService: LocalAIService = LocalAIService()
     ) {
         self.shellRunner = shellRunner
         self.gitWorktreeService = gitWorktreeService
@@ -85,6 +87,7 @@ final class AppViewModel {
         self.agentRunHistoryStore = agentRunHistoryStore
         self.agentRunTranscriptStore = agentRunTranscriptStore
         self.localAIConnectionTester = localAIConnectionTester
+        self.localAIService = localAIService
         self.terminalLauncher = terminalLauncher
         self.agentLaunchFlowCoordinator = AgentLaunchFlowCoordinator(
             historyStore: agentRunHistoryStore,
@@ -386,6 +389,10 @@ final class AppViewModel {
                 }
             }
         }
+    }
+
+    func requestLocalAIResponse(for action: LocalAIAction) async throws -> String {
+        try await localAIService.generate(for: action, settings: preferencesStore.preferences.localAI)
     }
 
     private func clearLocalAIConnectionStatus() {
