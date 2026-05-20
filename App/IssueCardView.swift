@@ -159,6 +159,8 @@ struct IssueCardView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 9, weight: .bold))
             Text("Blocked")
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .font(WorkstationTheme.Fonts.body(10, weight: .bold))
         .foregroundStyle(WorkstationTheme.red)
