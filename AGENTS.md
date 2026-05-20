@@ -32,6 +32,18 @@ open .derivedData/Build/Products/Debug/BeadsKanbanApp.app
 - Phase 2 command history is useful for debugging failures, so preserve metadata when adding new commands.
 - Keep any new shell execution code timeout-aware and cancellation-aware.
 
+## Worktree Testing
+
+- Run tests from the worktree you are actively changing, not from the main tree.
+- Treat each worktree as the source of truth for that task's `swift test` and `xcodebuild` runs.
+- Keep the main tree as the coordination view only, then review and merge after the worktree passes checks.
+- Use the same validation commands in every worktree:
+  ```bash
+  swift test
+  xcodebuild -project BeadsKanbanApp.xcodeproj -scheme BeadsKanbanApp -configuration Debug build
+  ```
+- If you are unsure which checkout you are in, run `pwd` or `git worktree list` before testing.
+
 ## Recurring Tasks
 
 This project supports **recurring tasks** — issues that repeat on a cadence with run history. They are **not** plain labels: each recurring issue has a sidecar `.beads/recurring/<issue-id>.json` containing `isRecurring`, `cadenceDays`, and a `history[]` array of run entries.
