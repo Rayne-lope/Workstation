@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct BoardSidebarView: View {
@@ -49,6 +50,7 @@ struct BoardSidebarView: View {
         }
         .sheet(isPresented: $appVM.isCreatePresented) {
             CreateIssueSheet(
+                appVM: appVM,
                 store: store,
                 defaultIssueType: appVM.preferencesStore.preferences.defaultIssueType,
                 defaultPriority: appVM.preferencesStore.preferences.defaultIssuePriority,
@@ -73,20 +75,34 @@ struct BoardSidebarView: View {
         }
     }
 
+    @ViewBuilder
     private func brandHeader(workspace: ProjectWorkspace?) -> some View {
         HStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                .fill(Color(hex: "1A1608"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                        .stroke(Color(hex: "2A2508"), lineWidth: 1)
-                )
-                .frame(width: 36, height: 36)
-                .overlay(
-                    Text("B")
-                        .font(WorkstationTheme.Fonts.display(15, weight: .heavy))
-                        .foregroundStyle(WorkstationTheme.accent)
-                )
+            let size = CGSize(width: 36, height: 36)
+            if let image = bundledImage(named: "workstation_logo", fitting: size) {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 36, height: 36)
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .fill(Color(hex: "1A1608"))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(Color(hex: "2A2508"), lineWidth: 1)
+                    )
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        Text("B")
+                            .font(WorkstationTheme.Fonts.display(15, weight: .heavy))
+                            .foregroundStyle(WorkstationTheme.accent)
+                    )
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(workspace?.name ?? "Workspace")
@@ -99,6 +115,27 @@ struct BoardSidebarView: View {
             }
         }
         .padding(.bottom, 6)
+    }
+
+    private func bundledImage(named name: String, fitting size: CGSize) -> NSImage? {
+        guard let sourceImage = Bundle.main
+            .url(forResource: name, withExtension: "png")
+            .flatMap(NSImage.init(contentsOf:))
+        else {
+            return nil
+        }
+
+        let targetRect = NSRect(origin: .zero, size: size)
+        let resizedImage = NSImage(size: size)
+        resizedImage.lockFocus()
+        sourceImage.draw(
+            in: targetRect,
+            from: NSRect(origin: .zero, size: sourceImage.size),
+            operation: .sourceOver,
+            fraction: 1
+        )
+        resizedImage.unlockFocus()
+        return resizedImage
     }
 
     private var navSection: some View {
