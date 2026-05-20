@@ -18,7 +18,7 @@ struct BoardView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if let selected = store.selectedIssue {
-                    IssueDetailView(appVM: appVM, store: store, issue: selected)
+                    IssueRightPane(appVM: appVM, store: store, issue: selected)
                         .frame(width: 440)
                 }
             }
@@ -68,23 +68,6 @@ struct BoardView: View {
                 onCancel: { appVM.cancelPendingAgentLaunch() },
                 onContinue: { appVM.continuePendingAgentLaunch() }
             )
-        }
-        .sheet(
-            isPresented: Binding(
-                get: { appVM.activeConsoleRunID != nil && appVM.activeConsoleRecord() != nil },
-                set: { isPresented in
-                    if !isPresented { appVM.dismissAgentRunConsole() }
-                }
-            ),
-            onDismiss: { appVM.dismissAgentRunConsole() }
-        ) {
-            if let record = appVM.activeConsoleRecord() {
-                AgentRunConsoleView(
-                    appVM: appVM,
-                    record: record,
-                    onDismiss: { appVM.dismissAgentRunConsole() }
-                )
-            }
         }
     }
 

@@ -37,7 +37,8 @@ struct IssueDetailView: View {
     }
 
     private var panelHeader: some View {
-        HStack(spacing: 8) {
+        let hasRunRecord = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id) != nil
+        return HStack(spacing: 6) {
             Text("Issue / ")
                 .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                 .foregroundStyle(WorkstationTheme.textSubtle)
@@ -46,6 +47,17 @@ struct IssueDetailView: View {
                 .foregroundStyle(statusColor)
 
             Spacer()
+
+            Button {
+                appVM.showConsolePane(forIssueID: issue.id)
+            } label: {
+                Image(systemName: "rectangle.on.rectangle.angled")
+                    .frame(width: 30, height: 30)
+            }
+            .buttonStyle(IconButtonStyle())
+            .disabled(!hasRunRecord)
+            .opacity(hasRunRecord ? 1 : 0.35)
+            .help(hasRunRecord ? "Open Run Console" : "No agent run recorded yet")
 
             Button {
                 appVM.copyPrompt(for: issue)
@@ -373,17 +385,39 @@ struct IssueDetailView: View {
     private var agentSection: some View {
         let profile = appVM.selectedAgentProfile()
         let runnableProfiles = appVM.agentProfileStore.profiles.filter(\.canExecuteCode)
+        let canExecute = profile.canExecuteCode
+        let workspaceMissing = appVM.activeWorkspace == nil
+
         return VStack(alignment: .leading, spacing: 12) {
             uppercaseLabel("Agent")
 
             Picker("Agent Profile", selection: $appVM.selectedAgentProfileID) {
                 ForEach(appVM.agentProfileStore.profiles) { profile in
-                    Text("\(profile.name) - \(profile.role.displayName)").tag(profile.id)
+                    Text("\(profile.name) — \(profile.role.displayName)").tag(profile.id)
                 }
             }
             .labelsHidden()
 
-            HStack(spacing: 8) {
+            if !runnableProfiles.isEmpty {
+                Menu {
+                    ForEach(runnableProfiles) { runnableProfile in
+                        Button {
+                            appVM.launchAgent(for: issue, profile: runnableProfile)
+                        } label: {
+                            Text(runnableProfile.name)
+                        }
+                    }
+                } label: {
+                    Label("Run Agent", systemImage: "play.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .menuStyle(.borderlessButton)
+                .buttonStyle(WorkstationPrimaryButtonStyle())
+                .disabled(workspaceMissing)
+                .help(workspaceMissing ? "Open a workspace first" : "Launch agent in terminal")
+            }
+
+            FlowHStack(spacing: 8, runSpacing: 8) {
                 Button {
                     appVM.copyPrompt(for: issue)
                 } label: {
@@ -391,7 +425,7 @@ struct IssueDetailView: View {
                 }
                 .buttonStyle(WorkstationGhostButtonStyle(compact: true))
 
-                if profile.canExecuteCode {
+                if canExecute {
                     Button {
                         appVM.copyAgentCommand(for: issue)
                     } label: {
@@ -405,34 +439,7 @@ struct IssueDetailView: View {
                         Label("Run in Worktree", systemImage: "folder.badge.gearshape")
                     }
                     .buttonStyle(WorkstationGhostButtonStyle(compact: true))
-                    .disabled(appVM.activeWorkspace == nil)
-                }
-
-                if appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id) != nil {
-                    Button {
-                        appVM.presentLatestAgentRunConsole(forIssueID: issue.id)
-                    } label: {
-                        Label("Run Console", systemImage: "rectangle.on.rectangle.angled")
-                    }
-                    .buttonStyle(WorkstationGhostButtonStyle(compact: true))
-                    .help("Open the local Agent Run Console for the latest run of this issue")
-                }
-
-                if !runnableProfiles.isEmpty {
-                    Menu {
-                        ForEach(runnableProfiles) { runnableProfile in
-                            Button {
-                                appVM.launchAgent(for: issue, profile: runnableProfile)
-                            } label: {
-                                Text(runnableProfile.name)
-                            }
-                        }
-                    } label: {
-                        Label("Run Agent", systemImage: "play.fill")
-                    }
-                    .menuStyle(.borderlessButton)
-                    .buttonStyle(WorkstationGhostButtonStyle(compact: true))
-                    .disabled(appVM.activeWorkspace == nil)
+                    .disabled(workspaceMissing)
                 }
             }
         }

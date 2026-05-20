@@ -135,7 +135,7 @@ struct PromptGeneratorTests {
     func generateCommandClaudeExecutor() {
         let claude = AgentProfile.builtInProfiles.first { $0.id == AgentProfile.codingExecutorID }!
         let cmd = generator.generateCommand(for: claude, issue: issue, projectPath: projectPath)
-        #expect(cmd.hasPrefix("claude \""))
+        #expect(cmd.hasPrefix("claude --dangerously-skip-permissions \""))
         #expect(cmd.contains("bd-42"))
         #expect(cmd.hasSuffix("\""))
     }
@@ -144,7 +144,7 @@ struct PromptGeneratorTests {
     func generateCommandCodexExecutor() {
         let codex = AgentProfile.builtInProfiles.first { $0.id == AgentProfile.codexExecutorID }!
         let cmd = generator.generateCommand(for: codex, issue: issue, projectPath: projectPath)
-        #expect(cmd.hasPrefix("codex \""))
+        #expect(cmd.hasPrefix("codex --dangerously-bypass-approvals-and-sandbox \""))
         #expect(!cmd.hasPrefix("codex exec"))
         #expect(cmd.contains("bd-42"))
     }

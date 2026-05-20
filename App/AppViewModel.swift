@@ -15,6 +15,11 @@ enum BoardViewMode: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+enum DetailPaneMode: String, Hashable {
+    case issue
+    case console
+}
+
 @MainActor
 @Observable
 final class AppViewModel {
@@ -46,6 +51,7 @@ final class AppViewModel {
     var terminalErrorMessage: String?
     var worktreeMessage: String?
     var activeConsoleRunID: UUID?
+    var detailPaneMode: DetailPaneMode = .issue
     private(set) var activeWorkspace: ProjectWorkspace?
     private var activeWorkspaceStorageKey: String?
 
@@ -261,16 +267,34 @@ final class AppViewModel {
 
     func presentAgentRunConsole(runID: UUID) {
         activeConsoleRunID = runID
+        detailPaneMode = .console
     }
 
     func presentLatestAgentRunConsole(forIssueID issueID: String) {
         if let record = agentRunHistoryStore.latestRecord(forIssueID: issueID) {
             activeConsoleRunID = record.id
+            detailPaneMode = .console
         }
     }
 
     func dismissAgentRunConsole() {
         activeConsoleRunID = nil
+        detailPaneMode = .issue
+    }
+
+    func showIssuePane() {
+        detailPaneMode = .issue
+    }
+
+    func showConsolePane(forIssueID issueID: String) {
+        if let record = agentRunHistoryStore.latestRecord(forIssueID: issueID) {
+            activeConsoleRunID = record.id
+            detailPaneMode = .console
+        }
+    }
+
+    func resetDetailPaneToIssue() {
+        detailPaneMode = .issue
     }
 
     func activeConsoleRecord() -> AgentRunRecord? {
@@ -376,6 +400,7 @@ final class AppViewModel {
 
             worktreeMessage = "Worktree created at \(worktree.worktreeURL.path)"
             activeConsoleRunID = session.id
+            detailPaneMode = .console
             Clipboard.copy(session.payload.prompt)
             do {
                 try agentLaunchFlowCoordinator.openTerminal(
@@ -407,6 +432,7 @@ final class AppViewModel {
         }
 
         activeConsoleRunID = session.id
+        detailPaneMode = .console
         Clipboard.copy(session.payload.prompt)
         do {
             try agentLaunchFlowCoordinator.openTerminal(

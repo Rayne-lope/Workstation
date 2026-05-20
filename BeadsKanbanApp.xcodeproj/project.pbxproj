@@ -10,9 +10,9 @@
 		08F5B619F89B824DD89E920A /* AgentRunLaunchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63F79EFFE2C205E9B51022F /* AgentRunLaunchCoordinator.swift */; };
 		10FAB7BF207ECFDE08A65B22 /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A8C4D84422BBCE4A84BF81 /* IssueDetailView.swift */; };
 		12620EE9783B65D6DF288038 /* WorkspaceValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB94DC4755E753E7F8820198 /* WorkspaceValidator.swift */; };
+		12E241B27B6C9B8EC7B9395C /* IssueFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02995F2D4DFE3B31D00526EF /* IssueFilterState.swift */; };
 		163DAED0C9C9869C303DBB53 /* GitStatusService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94704DDD945A08C695E33E60 /* GitStatusService.swift */; };
 		169C26B9DCB38E05D5620699 /* ProjectWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE9802E54167B017B03C02D2 /* ProjectWorkspace.swift */; };
-		C3B7C8D9E0F1122334455669 /* IssueFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7C8D9E0F1122334455667 /* IssueFilterState.swift */; };
 		176DC74B9B60C7C605517AA2 /* AgentRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1674780797FD810F8D7DE8C2 /* AgentRole.swift */; };
 		231E101278DA73D074F6AF17 /* AgentLaunchFlowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ADC615F3F521A912A29CEC2 /* AgentLaunchFlowCoordinator.swift */; };
 		29BDC07D19B4784D59E4A2E8 /* CommandRunning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A116AD006CF35CA34ECE27 /* CommandRunning.swift */; };
@@ -39,8 +39,9 @@
 		7F68A6A93303A564FF10187E /* CommandResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B4A8FF92250BAF4DF9470D /* CommandResult.swift */; };
 		82EA060B85C885EB5A4BE443 /* Clipboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DBB91774FEBEFDB2A92E3F2 /* Clipboard.swift */; };
 		82EAFB7DA66596E591788604 /* GitWorktreeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E60B6DE5CFDB845F26634AC /* GitWorktreeService.swift */; };
+		8D876C481BE334B026F95B56 /* IssueRightPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B1886C7BBD88E21A4DD8AB /* IssueRightPane.swift */; };
 		91C9ED92CFB1DE5579896BA1 /* KanbanBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113640E4F9E12CC9A7123EA8 /* KanbanBoardView.swift */; };
-		D3B7C8D9E0F112233445566A /* IssueFilterBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B7C8D9E0F1122334455668 /* IssueFilterBarView.swift */; };
+		945841B0F7949A518B9F25F8 /* IssueFilterBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0026F50ED8AB2040E4970377 /* IssueFilterBarView.swift */; };
 		97729736ECA883201A6E4A47 /* BeadsError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 084DC3DCA7251D75F1C0667C /* BeadsError.swift */; };
 		98640917B3101FA06281042D /* GitDirtyLaunchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F386C411A419795703FCE5B1 /* GitDirtyLaunchSheet.swift */; };
 		99BCF2D4A6194A44476C8C87 /* KanbanColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D04E4460CB63C26D737DD8 /* KanbanColumn.swift */; };
@@ -78,6 +79,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0026F50ED8AB2040E4970377 /* IssueFilterBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFilterBarView.swift; sourceTree = "<group>"; };
+		02995F2D4DFE3B31D00526EF /* IssueFilterState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFilterState.swift; sourceTree = "<group>"; };
 		04A116AD006CF35CA34ECE27 /* CommandRunning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRunning.swift; sourceTree = "<group>"; };
 		072902C8C2829A57F8879515 /* MarkdownTextRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTextRenderer.swift; sourceTree = "<group>"; };
 		07E1F6766E018B9D3FB3EEFD /* TerminalLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalLauncher.swift; sourceTree = "<group>"; };
@@ -90,6 +93,7 @@
 		1A0248E5275A4DD2579FF53E /* BeadsKanbanApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BeadsKanbanApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C4B4490AA9915E56BD4244B /* BeadIssue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadIssue.swift; sourceTree = "<group>"; };
 		234B53B7F03FBE6A459A8149 /* GitStatusSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusSummary.swift; sourceTree = "<group>"; };
+		25B1886C7BBD88E21A4DD8AB /* IssueRightPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueRightPane.swift; sourceTree = "<group>"; };
 		27B4A8FF92250BAF4DF9470D /* CommandResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandResult.swift; sourceTree = "<group>"; };
 		2860AA2285EFC86D3DB1C3FA /* AgentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProfile.swift; sourceTree = "<group>"; };
 		38B47C6056A4A2EF59F26B31 /* BeadsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadsService.swift; sourceTree = "<group>"; };
@@ -99,7 +103,6 @@
 		52316928B361CD02CB516C38 /* CommandSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandSnapshot.swift; sourceTree = "<group>"; };
 		524C06B260590235A286E85A /* AgentRunStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunStatus.swift; sourceTree = "<group>"; };
 		5715AB43753AA20C2F5B0276 /* IssueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueStore.swift; sourceTree = "<group>"; };
-		A3B7C8D9E0F1122334455667 /* IssueFilterState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFilterState.swift; sourceTree = "<group>"; };
 		58A8C4D84422BBCE4A84BF81 /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
 		5B8EC6BEF8A451F9C6414377 /* ProcessCommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessCommandRunner.swift; sourceTree = "<group>"; };
 		5E60B6DE5CFDB845F26634AC /* GitWorktreeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitWorktreeService.swift; sourceTree = "<group>"; };
@@ -109,7 +112,6 @@
 		785B8EE3200E9AC7F2E588BC /* IssueFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFileWatcher.swift; sourceTree = "<group>"; };
 		7BC5310103C0E2BBA70DFA3E /* IssueCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueCardView.swift; sourceTree = "<group>"; };
 		7D09B05737B06390C186B8F7 /* IssueListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueListView.swift; sourceTree = "<group>"; };
-		B3B7C8D9E0F1122334455668 /* IssueFilterBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFilterBarView.swift; sourceTree = "<group>"; };
 		7DBB91774FEBEFDB2A92E3F2 /* Clipboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.swift; sourceTree = "<group>"; };
 		7DF68C52F8AE3853FD37F28B /* DebugPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPanelView.swift; sourceTree = "<group>"; };
 		80A1EBFA411DA5DE40B48674 /* AgentRunHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunHistoryStore.swift; sourceTree = "<group>"; };
@@ -205,8 +207,8 @@
 				94704DDD945A08C695E33E60 /* GitStatusService.swift */,
 				234B53B7F03FBE6A459A8149 /* GitStatusSummary.swift */,
 				5E60B6DE5CFDB845F26634AC /* GitWorktreeService.swift */,
-				A3B7C8D9E0F1122334455667 /* IssueFilterState.swift */,
 				785B8EE3200E9AC7F2E588BC /* IssueFileWatcher.swift */,
+				02995F2D4DFE3B31D00526EF /* IssueFilterState.swift */,
 				5715AB43753AA20C2F5B0276 /* IssueStore.swift */,
 				072902C8C2829A57F8879515 /* MarkdownTextRenderer.swift */,
 				ADCD2C13EB7D25B27F0DB9E6 /* PreferencesStore.swift */,
@@ -247,8 +249,9 @@
 				F386C411A419795703FCE5B1 /* GitDirtyLaunchSheet.swift */,
 				7BC5310103C0E2BBA70DFA3E /* IssueCardView.swift */,
 				58A8C4D84422BBCE4A84BF81 /* IssueDetailView.swift */,
-				B3B7C8D9E0F1122334455668 /* IssueFilterBarView.swift */,
+				0026F50ED8AB2040E4970377 /* IssueFilterBarView.swift */,
 				7D09B05737B06390C186B8F7 /* IssueListView.swift */,
+				25B1886C7BBD88E21A4DD8AB /* IssueRightPane.swift */,
 				113640E4F9E12CC9A7123EA8 /* KanbanBoardView.swift */,
 				881EE42BCE3D5B25154128D6 /* ReviewFollowupSheet.swift */,
 				DD89521B884B2A4A3A596807 /* StatusBarView.swift */,
@@ -354,9 +357,11 @@
 				82EAFB7DA66596E591788604 /* GitWorktreeService.swift in Sources */,
 				B7961430EF778C0628061A97 /* IssueCardView.swift in Sources */,
 				10FAB7BF207ECFDE08A65B22 /* IssueDetailView.swift in Sources */,
-				D3B7C8D9E0F112233445566A /* IssueFilterBarView.swift in Sources */,
 				B2039CB88B675C43CEC59B4F /* IssueFileWatcher.swift in Sources */,
+				945841B0F7949A518B9F25F8 /* IssueFilterBarView.swift in Sources */,
+				12E241B27B6C9B8EC7B9395C /* IssueFilterState.swift in Sources */,
 				5A67B9D838C3A53ABCFC6FEE /* IssueListView.swift in Sources */,
+				8D876C481BE334B026F95B56 /* IssueRightPane.swift in Sources */,
 				C9056551A54E94A43A59996B /* IssueStore.swift in Sources */,
 				91C9ED92CFB1DE5579896BA1 /* KanbanBoardView.swift in Sources */,
 				99BCF2D4A6194A44476C8C87 /* KanbanColumn.swift in Sources */,
@@ -368,7 +373,6 @@
 				A0A96F481BF73110F71C1AD7 /* ProcessCommandRunner.swift in Sources */,
 				5F74A17DED4EA257CD3FB527 /* ProjectRootDiscovery.swift in Sources */,
 				169C26B9DCB38E05D5620699 /* ProjectWorkspace.swift in Sources */,
-				C3B7C8D9E0F1122334455669 /* IssueFilterState.swift in Sources */,
 				6A22080603C0D4BEA29DC9F6 /* PromptGenerator.swift in Sources */,
 				5FE2FB5416DE9F39D33AEB6D /* RecentProject.swift in Sources */,
 				E02EE3470B9C43544BA7A927 /* RecentProjectsStore.swift in Sources */,

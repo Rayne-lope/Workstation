@@ -1,144 +1,70 @@
 import SwiftUI
 
-struct AgentRunConsoleView: View {
+struct AgentRunConsolePane: View {
     @Bindable var appVM: AppViewModel
-    let record: AgentRunRecord
-    let onDismiss: () -> Void
-
-    @State private var notesDraft: String = ""
-    @State private var copyConfirmation: String?
+    let issue: BeadIssue
 
     var body: some View {
         VStack(spacing: 0) {
-            AgentRunHeaderView(record: record, onDismiss: onDismiss)
+            AgentRunPaneHeader(
+                issue: issue,
+                record: appVM.activeConsoleRecord(),
+                onBack: { appVM.showIssuePane() }
+            )
 
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 22) {
-                    AgentRunPromptPreviewView(
-                        record: record,
-                        onCopyPrompt: { copy(record.prompt, label: "Prompt copied") },
-                        onCopyCommand: { copy(record.command, label: "Command copied") },
-                        onOpenTerminal: { openTerminal() }
-                    )
-
-                    AgentRunActionsView(
-                        record: record,
-                        onUpdateStatus: { status in
-                            appVM.updateAgentRunStatus(id: record.id, status: status)
-                        }
-                    )
-
-                    AgentRunNotesView(
-                        notes: $notesDraft,
-                        isDirty: notesDraftIsDirty,
-                        onSave: { saveNotes() },
-                        onRevert: { notesDraft = record.notes ?? "" }
-                    )
-
-                    if let copyConfirmation {
-                        Text(copyConfirmation)
-                            .font(WorkstationTheme.Fonts.body(11, weight: .medium))
-                            .foregroundStyle(WorkstationTheme.green)
-                            .transition(.opacity)
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-                .padding(.bottom, 28)
+            if let record = appVM.activeConsoleRecord() {
+                AgentRunConsoleContent(appVM: appVM, record: record, compact: true)
+            } else {
+                EmptyConsolePlaceholder(onBack: { appVM.showIssuePane() })
             }
         }
-        .frame(minWidth: 560, minHeight: 540)
         .background(WorkstationTheme.surface)
-        .onAppear {
-            notesDraft = record.notes ?? ""
-        }
-        .onChange(of: record.id) { _, _ in
-            notesDraft = record.notes ?? ""
-        }
-    }
-
-    private var notesDraftIsDirty: Bool {
-        notesDraft != (record.notes ?? "")
-    }
-
-    private func copy(_ value: String, label: String) {
-        Clipboard.copy(value)
-        copyConfirmation = label
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_400_000_000)
-            copyConfirmation = nil
-        }
-    }
-
-    private func openTerminal() {
-        appVM.openTerminalForAgentRun(record)
-    }
-
-    private func saveNotes() {
-        appVM.updateAgentRunNotes(id: record.id, notes: notesDraft)
-        copyConfirmation = "Notes saved"
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_400_000_000)
-            copyConfirmation = nil
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(WorkstationTheme.border)
+                .frame(width: 1)
         }
     }
 }
 
-struct AgentRunHeaderView: View {
-    let record: AgentRunRecord
-    let onDismiss: () -> Void
+private struct AgentRunPaneHeader: View {
+    let issue: BeadIssue
+    let record: AgentRunRecord?
+    let onBack: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("Agent Run Console")
-                    .font(WorkstationTheme.Fonts.label)
-                    .foregroundStyle(WorkstationTheme.textDisabled)
-                    .textCase(.uppercase)
-                    .tracking(0.8)
-
-                Spacer()
-
-                statusBadge
-
-                Button {
-                    onDismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .frame(width: 26, height: 26)
+        HStack(spacing: 6) {
+            Button {
+                onBack()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("Issue")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(WorkstationTheme.textMuted)
-                .keyboardShortcut(.cancelAction)
-                .help("Close console")
+                .padding(.horizontal, 8)
+                .frame(height: 30)
             }
+            .buttonStyle(InlinePaneButtonStyle())
+            .keyboardShortcut(.cancelAction)
+            .help("Back to issue detail")
 
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(record.issueID)
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(WorkstationTheme.textMuted)
-                    .textSelection(.enabled)
-                Text(record.issueTitle)
-                    .font(WorkstationTheme.Fonts.display(18, weight: .bold))
-                    .foregroundStyle(WorkstationTheme.textPrimary)
-                    .lineLimit(2)
-                    .truncationMode(.tail)
-                    .textSelection(.enabled)
+            Text("Run Console")
+                .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.textSubtle)
+                .textCase(.uppercase)
+                .tracking(0.8)
+                .padding(.leading, 4)
+
+            Spacer()
+
+            if let record {
+                statusBadge(for: record.status)
             }
-
-            HStack(spacing: 14) {
-                metaItem(label: "Agent", value: record.agentName)
-                metaItem(label: "Started", value: record.startedAt.formatted(date: .abbreviated, time: .shortened))
-                if let completed = record.completedAt {
-                    metaItem(label: "Completed", value: completed.formatted(date: .abbreviated, time: .shortened))
-                }
-            }
-
-            pathRow
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
-        .background(WorkstationTheme.background)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(WorkstationTheme.borderSoft)
@@ -146,21 +72,157 @@ struct AgentRunHeaderView: View {
         }
     }
 
-    private var pathRow: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "folder")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(WorkstationTheme.textMuted)
-            Text(record.projectPath.isEmpty ? "No project path recorded" : record.projectPath)
-                .font(.system(size: 11, weight: .regular, design: .monospaced))
+    private func statusBadge(for status: AgentRunStatus) -> some View {
+        let color: Color
+        switch status {
+        case .prepared, .terminalOpened: color = WorkstationTheme.accent
+        case .needsReview: color = WorkstationTheme.blue
+        case .accepted: color = WorkstationTheme.green
+        case .failed: color = WorkstationTheme.red
+        case .abandoned: color = WorkstationTheme.textMuted
+        }
+        return HStack(spacing: 5) {
+            Circle().fill(color).frame(width: 6, height: 6)
+            Text(status.displayName)
+                .font(WorkstationTheme.Fonts.body(10.5, weight: .semibold))
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
+                .stroke(color.opacity(0.4), lineWidth: 1)
+        )
+    }
+}
+
+private struct InlinePaneButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(configuration.isPressed ? WorkstationTheme.textPrimary : WorkstationTheme.textMuted)
+            .background(configuration.isPressed ? WorkstationTheme.borderSoft : Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+}
+
+private struct EmptyConsolePlaceholder: View {
+    let onBack: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "play.slash")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.textDisabled)
+            Text("No agent run recorded yet")
+                .font(WorkstationTheme.Fonts.display(14, weight: .semibold))
                 .foregroundStyle(WorkstationTheme.textSecondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .textSelection(.enabled)
+            Text("Run an agent for this issue to populate the console.")
+                .font(WorkstationTheme.Fonts.body(12))
+                .foregroundStyle(WorkstationTheme.textMuted)
+                .multilineTextAlignment(.center)
+            Button("Back to Issue") { onBack() }
+                .buttonStyle(WorkstationGhostButtonStyle(compact: true))
+                .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(24)
+    }
+}
+
+private struct AgentRunConsoleContent: View {
+    @Bindable var appVM: AppViewModel
+    let record: AgentRunRecord
+    let compact: Bool
+
+    @State private var notesDraft: String = ""
+    @State private var copyConfirmation: String?
+
+    var body: some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: compact ? 18 : 22) {
+                runMetaSection
+                AgentRunPromptPreviewView(
+                    record: record,
+                    compact: compact,
+                    onCopyPrompt: { copy(record.prompt, label: "Prompt copied") },
+                    onCopyCommand: { copy(record.command, label: "Command copied") },
+                    onOpenTerminal: { appVM.openTerminalForAgentRun(record) }
+                )
+
+                AgentRunActionsView(
+                    record: record,
+                    onUpdateStatus: { status in
+                        appVM.updateAgentRunStatus(id: record.id, status: status)
+                    }
+                )
+
+                AgentRunNotesView(
+                    notes: $notesDraft,
+                    isDirty: notesDraft != (record.notes ?? ""),
+                    onSave: { saveNotes() },
+                    onRevert: { notesDraft = record.notes ?? "" }
+                )
+
+                if let copyConfirmation {
+                    Label(copyConfirmation, systemImage: "checkmark.circle.fill")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.green)
+                        .transition(.opacity)
+                }
+            }
+            .padding(.horizontal, compact ? 18 : 24)
+            .padding(.top, 18)
+            .padding(.bottom, 28)
+        }
+        .onAppear { notesDraft = record.notes ?? "" }
+        .onChange(of: record.id) { _, _ in
+            notesDraft = record.notes ?? ""
         }
     }
 
-    private func metaItem(label: String, value: String) -> some View {
+    private var runMetaSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(record.issueID)
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+                    .textSelection(.enabled)
+                Text(record.issueTitle)
+                    .font(WorkstationTheme.Fonts.display(15, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+                    .lineLimit(2)
+            }
+
+            HStack(spacing: 12) {
+                metaItem("Agent", record.agentName)
+                metaItem("Started", record.startedAt.formatted(date: .abbreviated, time: .shortened))
+            }
+
+            if let completed = record.completedAt {
+                metaItem("Completed", completed.formatted(date: .abbreviated, time: .shortened))
+            }
+
+            if !record.projectPath.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "folder")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                    Text(record.projectPath)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(WorkstationTheme.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+                }
+            }
+        }
+    }
+
+    private func metaItem(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
                 .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
@@ -168,47 +230,34 @@ struct AgentRunHeaderView: View {
                 .textCase(.uppercase)
                 .tracking(0.5)
             Text(value)
-                .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                 .foregroundStyle(WorkstationTheme.textSecondary)
                 .lineLimit(1)
         }
     }
 
-    private var statusBadge: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(statusColor)
-                .frame(width: 6, height: 6)
-            Text(record.status.displayName)
-                .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
-                .foregroundStyle(statusColor)
+    private func copy(_ value: String, label: String) {
+        Clipboard.copy(value)
+        withAnimation(.easeOut(duration: 0.15)) { copyConfirmation = label }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            withAnimation(.easeOut(duration: 0.15)) { copyConfirmation = nil }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                .stroke(statusColor.opacity(0.4), lineWidth: 1)
-        )
     }
 
-    private var statusColor: Color {
-        switch record.status {
-        case .prepared, .terminalOpened:
-            return WorkstationTheme.accent
-        case .needsReview:
-            return WorkstationTheme.blue
-        case .accepted:
-            return WorkstationTheme.green
-        case .failed:
-            return WorkstationTheme.red
-        case .abandoned:
-            return WorkstationTheme.textMuted
+    private func saveNotes() {
+        appVM.updateAgentRunNotes(id: record.id, notes: notesDraft)
+        withAnimation(.easeOut(duration: 0.15)) { copyConfirmation = "Notes saved" }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            withAnimation(.easeOut(duration: 0.15)) { copyConfirmation = nil }
         }
     }
 }
 
 struct AgentRunPromptPreviewView: View {
     let record: AgentRunRecord
+    var compact: Bool = false
     let onCopyPrompt: () -> Void
     let onCopyCommand: () -> Void
     let onOpenTerminal: () -> Void
@@ -226,13 +275,13 @@ struct AgentRunPromptPreviewView: View {
 
             ScrollView(.vertical) {
                 Text(record.prompt)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.system(size: 11.5, design: .monospaced))
                     .foregroundStyle(WorkstationTheme.textSecondary)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
             }
-            .frame(maxHeight: 220)
+            .frame(maxHeight: compact ? 160 : 220)
             .background(WorkstationTheme.card)
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
