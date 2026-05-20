@@ -15,6 +15,8 @@ public final class IssueStore {
     public private(set) var blockersMap: [String: [String]] = [:]
     public private(set) var selectedIssue: BeadIssue?
     public private(set) var selectedIssueDetail: BeadIssue?
+    public private(set) var selectedIssueIDs: Set<String> = []
+    public private(set) var rangeAnchorID: String?
     public private(set) var isLoading: Bool = false
     public private(set) var errorMessage: String?
     public private(set) var lastReloadedAt: Date?
@@ -54,7 +56,13 @@ public final class IssueStore {
         selectedIssue = issues.first { $0.id == id }
         selectedIssueDetail = nil
         detailTask?.cancel()
-        guard let selectedID = selectedIssue?.id else { return }
+        guard let selectedID = selectedIssue?.id else {
+            selectedIssueIDs = []
+            rangeAnchorID = nil
+            return
+        }
+        selectedIssueIDs = [selectedID]
+        rangeAnchorID = selectedID
         let task: Task<Void, Never> = Task { [weak self] in
             guard let self else { return }
             await self.refreshSelectedDetail(expectedID: selectedID)
@@ -65,8 +73,88 @@ public final class IssueStore {
     public func clearSelection() {
         selectedIssue = nil
         selectedIssueDetail = nil
+        selectedIssueIDs = []
+        rangeAnchorID = nil
         detailTask?.cancel()
         detailTask = nil
+    }
+
+    public func toggleSelection(id: String) {
+        if selectedIssueIDs.contains(id) {
+            selectedIssueIDs.remove(id)
+            if selectedIssue?.id == id {
+                if let nextID = selectedIssueIDs.first,
+                   let next = issues.first(where: { $0.id == nextID }) {
+                    selectedIssue = next
+                    selectedIssueDetail = nil
+                    detailTask?.cancel()
+                    let task: Task<Void, Never> = Task { [weak self] in
+                        guard let self else { return }
+                        await self.refreshSelectedDetail(expectedID: nextID)
+                    }
+                    detailTask = task
+                } else {
+                    selectedIssue = nil
+                    selectedIssueDetail = nil
+                    detailTask?.cancel()
+                    detailTask = nil
+                }
+            }
+            if rangeAnchorID == id {
+                rangeAnchorID = selectedIssueIDs.first
+            }
+        } else {
+            selectedIssueIDs.insert(id)
+            rangeAnchorID = id
+            if let issue = issues.first(where: { $0.id == id }) {
+                selectedIssue = issue
+                selectedIssueDetail = nil
+                detailTask?.cancel()
+                let task: Task<Void, Never> = Task { [weak self] in
+                    guard let self else { return }
+                    await self.refreshSelectedDetail(expectedID: id)
+                }
+                detailTask = task
+            }
+        }
+    }
+
+    /// Extend selection to include all items between `rangeAnchorID` and `id`
+    /// within the given ordered list (typically a single column's visible cards).
+    /// If no anchor or anchor not in list, behaves like `toggleSelection`.
+    public func selectRange(to id: String, within orderedIDs: [String]) {
+        guard let anchor = rangeAnchorID ?? selectedIssue?.id,
+              let anchorIdx = orderedIDs.firstIndex(of: anchor),
+              let targetIdx = orderedIDs.firstIndex(of: id)
+        else {
+            toggleSelection(id: id)
+            return
+        }
+        let range = anchorIdx <= targetIdx
+            ? orderedIDs[anchorIdx...targetIdx]
+            : orderedIDs[targetIdx...anchorIdx]
+        for rangeID in range {
+            selectedIssueIDs.insert(rangeID)
+        }
+        if let issue = issues.first(where: { $0.id == id }) {
+            selectedIssue = issue
+            selectedIssueDetail = nil
+            detailTask?.cancel()
+            let task: Task<Void, Never> = Task { [weak self] in
+                guard let self else { return }
+                await self.refreshSelectedDetail(expectedID: id)
+            }
+            detailTask = task
+        }
+    }
+
+    public var hasMultiSelection: Bool {
+        selectedIssueIDs.count >= 2
+    }
+
+    public func selectedIssues() -> [BeadIssue] {
+        let ids = selectedIssueIDs
+        return issues.filter { ids.contains($0.id) }
     }
 
     private func refreshSelectedDetail(expectedID: String) async {
@@ -117,6 +205,11 @@ public final class IssueStore {
             lastReloadedAt = nowProvider()
             if let selected = selectedIssue {
                 selectedIssue = issues.first { $0.id == selected.id }
+            }
+            let presentIDs = Set(issues.map(\.id))
+            selectedIssueIDs.formIntersection(presentIDs)
+            if let anchor = rangeAnchorID, !presentIDs.contains(anchor) {
+                rangeAnchorID = selectedIssueIDs.first
             }
         } catch is CancellationError {
             return
