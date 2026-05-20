@@ -1,0 +1,45 @@
+[
+  {
+    "id": "bd-1",
+    "title": "Set up Beads workspace",
+    "status": "open",
+    "priority": 1,
+    "issue_type": "task",
+    "description": "Create the initial workspace and project metadata.",
+    "acceptance_criteria": "Workspace exists and bd list returns issues.",
+    "created_at": "2026-05-18T10:00:00Z",
+    "updated_at": "2026-05-18T10:05:00Z",
+    "labels": ["setup", "beads"],
+    "assignee": "codex"
+  },
+  {
+    "id": "bd-2",
+    "title": "Draft Kanban mapping",
+    "status": "ready",
+    "priority": 2,
+    "issue_type": "task",
+    "labels": ["backend"]
+  },
+  {
+    "id": "bd-3",
+    "title": "Implement shell runner",
+    "status": "in_progress",
+    "priority": 2,
+    "issue_type": "task",
+    "assignee": "claude"
+  },
+  {
+    "id": "bd-4",
+    "title": "Close completed spike",
+    "status": "closed",
+    "priority": 3,
+    "issue_type": "task"
+  },
+  {
+    "id": "bd-5",
+    "title": "Reopen contract bug",
+    "status": "reopened",
+    "priority": 1,
+    "issue_type": "bug"
+  }
+]

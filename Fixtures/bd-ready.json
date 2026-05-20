@@ -1,0 +1,10 @@
+[
+  {
+    "id": "bd-2",
+    "title": "Draft Kanban mapping",
+    "status": "ready",
+    "priority": 2,
+    "issue_type": "task",
+    "labels": ["backend"]
+  }
+]

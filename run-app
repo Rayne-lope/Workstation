@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DERIVED_DATA_PATH="$ROOT_DIR/.derivedData"
+APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug/BeadsKanbanApp.app"
+PROJECT_PATH="$ROOT_DIR/BeadsKanbanApp.xcodeproj"
+SCHEME="BeadsKanbanApp"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  ./run-app           Build and open the app
+  ./run-app build     Build only
+  ./run-app run       Build and open the app
+EOF
+}
+
+build_app() {
+  xcodebuild \
+    -project "$PROJECT_PATH" \
+    -scheme "$SCHEME" \
+    -configuration Debug \
+    -derivedDataPath "$DERIVED_DATA_PATH" \
+    build
+}
+
+mode="${1:-run}"
+case "$mode" in
+  build)
+    build_app
+    ;;
+  run)
+    build_app
+    open "$APP_PATH"
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    echo "Unknown mode: $mode" >&2
+    usage >&2
+    exit 1
+    ;;
+esac

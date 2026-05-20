@@ -1,0 +1,13 @@
+{
+  "id": "bd-2",
+  "title": "Draft Kanban mapping",
+  "status": "ready",
+  "priority": 2,
+  "issue_type": "task",
+  "description": "Define how Beads states map to Kanban columns.",
+  "acceptance_criteria": "A deterministic mapping exists for backlog, ready, in progress, blocked, and done.",
+  "created_at": "2026-05-18T10:10:00Z",
+  "updated_at": "2026-05-18T10:12:00Z",
+  "labels": ["backend"],
+  "assignee": null
+}

@@ -1,0 +1,29 @@
+name: BeadsKanbanApp
+
+options:
+  bundleIdPrefix: local
+
+settings:
+  base:
+    MACOSX_DEPLOYMENT_TARGET: 15.0
+    SWIFT_VERSION: 6.0
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+
+targets:
+  BeadsKanbanApp:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+      - path: Sources/BeadsContract
+      - path: Sources/BeadsWorkspace
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.beads.kanban
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Beads Kanban
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1

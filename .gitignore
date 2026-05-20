@@ -3,3 +3,10 @@
 .dolt/
 *.db
 .beads-credential-key
+
+# Local workspace and build outputs
+.agents/
+.build/
+.cache/
+.derivedData/
+.swiftpm/
