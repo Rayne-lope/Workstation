@@ -34,13 +34,16 @@
 		52189CCA98783DD1C0508C0C /* AgentRunPromptPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B116855E56F12C32083FDA6 /* AgentRunPromptPreviewView.swift */; };
 		558DD8247DAFBFAA255060CF /* WorkspaceCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A7FBE5ABA23F5A6E5B0738 /* WorkspaceCheck.swift */; };
 		57B1A1E222247DEA55F52900 /* AgentRunRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB66BEA09BA735011CC7D05F /* AgentRunRecord.swift */; };
+		59ACBA9621B311DF53B6665F /* IssueDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6E31EF0FDDA2D6306DDE06 /* IssueDraft.swift */; };
 		5A67B9D838C3A53ABCFC6FEE /* IssueListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D09B05737B06390C186B8F7 /* IssueListView.swift */; };
 		5F4712CAD8F60981A70D9D85 /* BulkActionPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF001829FA357931ABB2DDA /* BulkActionPanel.swift */; };
 		5F74A17DED4EA257CD3FB527 /* ProjectRootDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1116E4B9B437EE620E37E3FA /* ProjectRootDiscovery.swift */; };
 		5FE2FB5416DE9F39D33AEB6D /* RecentProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD05BDF21A6D250F74257C0F /* RecentProject.swift */; };
 		65FEEE36A483AAFEA3E98740 /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCD2C13EB7D25B27F0DB9E6 /* PreferencesStore.swift */; };
+		685BB5DFD29A6C82AFE6996B /* robot_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 1D419F756A6C344ECA87B397 /* robot_logo.png */; };
 		6964E3357E8F7DAA8B5ED12D /* WorkspaceSelectionError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0A892727F9B56F5B93219BD /* WorkspaceSelectionError.swift */; };
 		6A22080603C0D4BEA29DC9F6 /* PromptGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE0506503A2928BD3788E8A /* PromptGenerator.swift */; };
+		6AF76D6A5CD4BF0B35753C3A /* codex_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 26EDA557EADD1D58F0BAC681 /* codex_logo.png */; };
 		730CED51B44D179E4A195041 /* CreateIssueInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C3CCAA1F4E35E7D33DCD790 /* CreateIssueInput.swift */; };
 		74D5844D97FC4DCD00896193 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2F7302355AB39819D5636E /* WelcomeView.swift */; };
 		777D6067634F4E4433D4DE29 /* DebugPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF68C52F8AE3853FD37F28B /* DebugPanelView.swift */; };
@@ -50,6 +53,7 @@
 		7F68A6A93303A564FF10187E /* CommandResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B4A8FF92250BAF4DF9470D /* CommandResult.swift */; };
 		82EA060B85C885EB5A4BE443 /* Clipboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DBB91774FEBEFDB2A92E3F2 /* Clipboard.swift */; };
 		82EAFB7DA66596E591788604 /* GitWorktreeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E60B6DE5CFDB845F26634AC /* GitWorktreeService.swift */; };
+		88C1745FBCFFABAD31B97FEA /* claude-logo.png in Resources */ = {isa = PBXBuildFile; fileRef = F97AD21FB19B76C5A429C8BA /* claude-logo.png */; };
 		8ABE78E39BAC7D37A42AEC55 /* OllamaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2B54CBD27007DA7F6B1BAE /* OllamaService.swift */; };
 		8D876C481BE334B026F95B56 /* IssueRightPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B1886C7BBD88E21A4DD8AB /* IssueRightPane.swift */; };
 		91C9ED92CFB1DE5579896BA1 /* KanbanBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113640E4F9E12CC9A7123EA8 /* KanbanBoardView.swift */; };
@@ -71,6 +75,7 @@
 		C2FBEA4833D1CE73B6B10C72 /* AssigneeAvatarResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69572911E9CE07BDC6E47FE7 /* AssigneeAvatarResolver.swift */; };
 		C3915798DDD0FD3189272818 /* BoardSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF95CD8DD680AB39CA3760EE /* BoardSidebarView.swift */; };
 		C4EC847AD43417A5A87E6742 /* BeadsJSONDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E223881FD347BDEEB02CFF3D /* BeadsJSONDecoder.swift */; };
+		C53C4B6364D356196BA36B11 /* workstation_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 9166D8A40165FD2EACC61F0B /* workstation_logo.png */; };
 		C9056551A54E94A43A59996B /* IssueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5715AB43753AA20C2F5B0276 /* IssueStore.swift */; };
 		CE3FC461CD0CA13F86209E81 /* LocalAIAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361AA2E1B943CB2F98DAD37E /* LocalAIAction.swift */; };
 		D1E282B1388DA98C1C479C90 /* AgentRunHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A1EBFA411DA5DE40B48674 /* AgentRunHistoryStore.swift */; };
@@ -113,9 +118,11 @@
 		1674780797FD810F8D7DE8C2 /* AgentRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRole.swift; sourceTree = "<group>"; };
 		1A0248E5275A4DD2579FF53E /* BeadsKanbanApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BeadsKanbanApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C4B4490AA9915E56BD4244B /* BeadIssue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadIssue.swift; sourceTree = "<group>"; };
+		1D419F756A6C344ECA87B397 /* robot_logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = robot_logo.png; sourceTree = "<group>"; };
 		234B53B7F03FBE6A459A8149 /* GitStatusSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusSummary.swift; sourceTree = "<group>"; };
 		246405742CABDD6FDCD92C4A /* AgentRunTranscriptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunTranscriptStore.swift; sourceTree = "<group>"; };
 		25B1886C7BBD88E21A4DD8AB /* IssueRightPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueRightPane.swift; sourceTree = "<group>"; };
+		26EDA557EADD1D58F0BAC681 /* codex_logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = codex_logo.png; sourceTree = "<group>"; };
 		27B4A8FF92250BAF4DF9470D /* CommandResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandResult.swift; sourceTree = "<group>"; };
 		2860AA2285EFC86D3DB1C3FA /* AgentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProfile.swift; sourceTree = "<group>"; };
 		2E2B54CBD27007DA7F6B1BAE /* OllamaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaService.swift; sourceTree = "<group>"; };
@@ -153,7 +160,9 @@
 		892AFBAFFBB5AC7ADBFEF382 /* WorkspaceValidationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceValidationState.swift; sourceTree = "<group>"; };
 		8A32DD08C1FDA109CD53BC41 /* CreateIssueSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateIssueSheet.swift; sourceTree = "<group>"; };
 		8ADC615F3F521A912A29CEC2 /* AgentLaunchFlowCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLaunchFlowCoordinator.swift; sourceTree = "<group>"; };
+		8C6E31EF0FDDA2D6306DDE06 /* IssueDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDraft.swift; sourceTree = "<group>"; };
 		90C658EC3EC671B9DC4F1520 /* BlockerPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockerPickerSheet.swift; sourceTree = "<group>"; };
+		9166D8A40165FD2EACC61F0B /* workstation_logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = workstation_logo.png; sourceTree = "<group>"; };
 		917F583AF9D4B02E53F16FD1 /* PriorityDifficulty.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriorityDifficulty.swift; sourceTree = "<group>"; };
 		92BA9B72D0D30041D33306AC /* LocalAISettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISettings.swift; sourceTree = "<group>"; };
 		94704DDD945A08C695E33E60 /* GitStatusService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusService.swift; sourceTree = "<group>"; };
@@ -188,6 +197,7 @@
 		EF6F1541C70BFBBE25CA6DE8 /* KanbanStateMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanStateMapper.swift; sourceTree = "<group>"; };
 		F386C411A419795703FCE5B1 /* GitDirtyLaunchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitDirtyLaunchSheet.swift; sourceTree = "<group>"; };
 		F4F866B85B2A56E15F62680F /* KanbanDropResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanDropResolver.swift; sourceTree = "<group>"; };
+		F97AD21FB19B76C5A429C8BA /* claude-logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claude-logo.png"; sourceTree = "<group>"; };
 		FF95CD8DD680AB39CA3760EE /* BoardSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardSidebarView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -196,10 +206,22 @@
 			isa = PBXGroup;
 			children = (
 				FBD16E616A814B8C57D4C950 /* App */,
+				1B72F7D5DB30BFB7622F723F /* assets */,
 				3C9CBFAA0DED38CF2549138D /* BeadsContract */,
 				D8AC629B90F85127382EF6F2 /* BeadsWorkspace */,
 				482B42CAAB62783BCDB256A5 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		1B72F7D5DB30BFB7622F723F /* assets */ = {
+			isa = PBXGroup;
+			children = (
+				F97AD21FB19B76C5A429C8BA /* claude-logo.png */,
+				26EDA557EADD1D58F0BAC681 /* codex_logo.png */,
+				1D419F756A6C344ECA87B397 /* robot_logo.png */,
+				9166D8A40165FD2EACC61F0B /* workstation_logo.png */,
+			);
+			path = assets;
 			sourceTree = "<group>";
 		};
 		3C9CBFAA0DED38CF2549138D /* BeadsContract */ = {
@@ -250,6 +272,7 @@
 				94704DDD945A08C695E33E60 /* GitStatusService.swift */,
 				234B53B7F03FBE6A459A8149 /* GitStatusSummary.swift */,
 				5E60B6DE5CFDB845F26634AC /* GitWorktreeService.swift */,
+				8C6E31EF0FDDA2D6306DDE06 /* IssueDraft.swift */,
 				785B8EE3200E9AC7F2E588BC /* IssueFileWatcher.swift */,
 				02995F2D4DFE3B31D00526EF /* IssueFilterState.swift */,
 				5715AB43753AA20C2F5B0276 /* IssueStore.swift */,
@@ -330,6 +353,7 @@
 			buildConfigurationList = D23C8D17E2F27903DBC62722 /* Build configuration list for PBXNativeTarget "BeadsKanbanApp" */;
 			buildPhases = (
 				A4BAD83E483173722609B7F9 /* Sources */,
+				32C7EC947F17A4AD7CEC881F /* Resources */,
 			);
 			buildRules = (
 			);
@@ -374,6 +398,20 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		32C7EC947F17A4AD7CEC881F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				88C1745FBCFFABAD31B97FEA /* claude-logo.png in Resources */,
+				6AF76D6A5CD4BF0B35753C3A /* codex_logo.png in Resources */,
+				685BB5DFD29A6C82AFE6996B /* robot_logo.png in Resources */,
+				C53C4B6364D356196BA36B11 /* workstation_logo.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A4BAD83E483173722609B7F9 /* Sources */ = {
@@ -427,6 +465,7 @@
 				B7961430EF778C0628061A97 /* IssueCardView.swift in Sources */,
 				28CA2B5B5D8B44D2475D019E /* IssueDetailRecurringSection.swift in Sources */,
 				10FAB7BF207ECFDE08A65B22 /* IssueDetailView.swift in Sources */,
+				59ACBA9621B311DF53B6665F /* IssueDraft.swift in Sources */,
 				B2039CB88B675C43CEC59B4F /* IssueFileWatcher.swift in Sources */,
 				945841B0F7949A518B9F25F8 /* IssueFilterBarView.swift in Sources */,
 				12E241B27B6C9B8EC7B9395C /* IssueFilterState.swift in Sources */,

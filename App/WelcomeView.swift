@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct WelcomeView: View {
@@ -665,19 +666,53 @@ struct WelcomeView: View {
             .frame(height: 1)
     }
 
+    @ViewBuilder
     private var brandMark: some View {
-        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-            .fill(Color(hex: "1A1608"))
-            .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .stroke(Color(hex: "2A2508"), lineWidth: 1)
-            )
-            .frame(width: 44, height: 44)
-            .overlay(
-                Text("B")
-                    .font(WorkstationTheme.Fonts.display(17, weight: .heavy))
-                    .foregroundStyle(WorkstationTheme.accent)
-            )
+        if let image = bundledImage(named: "workstation_logo", fitting: CGSize(width: 44, height: 44)) {
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                        .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                )
+        } else {
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                .fill(Color(hex: "1A1608"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                        .stroke(Color(hex: "2A2508"), lineWidth: 1)
+                )
+                .frame(width: 44, height: 44)
+                .overlay(
+                    Text("B")
+                        .font(WorkstationTheme.Fonts.display(17, weight: .heavy))
+                        .foregroundStyle(WorkstationTheme.accent)
+                )
+        }
+    }
+
+    private func bundledImage(named name: String, fitting size: CGSize) -> NSImage? {
+        guard let sourceImage = Bundle.main
+            .url(forResource: name, withExtension: "png")
+            .flatMap(NSImage.init(contentsOf:))
+        else {
+            return nil
+        }
+
+        let targetRect = NSRect(origin: .zero, size: size)
+        let resizedImage = NSImage(size: size)
+        resizedImage.lockFocus()
+        sourceImage.draw(
+            in: targetRect,
+            from: NSRect(origin: .zero, size: sourceImage.size),
+            operation: .sourceOver,
+            fraction: 1
+        )
+        resizedImage.unlockFocus()
+        return resizedImage
     }
 
     private var loadingBadge: some View {

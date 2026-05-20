@@ -107,3 +107,5 @@
 {"id":"int-61a62af8","kind":"field_change","created_at":"2026-05-20T14:26:41.729427Z","actor":"Rayne-lope","issue_id":"Workstation-14r","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"canceled"}}
 {"id":"int-b6b51787","kind":"field_change","created_at":"2026-05-20T14:26:44.020757Z","actor":"Rayne-lope","issue_id":"Workstation-x8k","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"canceled"}}
 {"id":"int-31d9275e","kind":"field_change","created_at":"2026-05-20T14:43:06.711768Z","actor":"Rayne-lope","issue_id":"Workstation-40d","extra":{"field":"assignee","new_value":"codex","old_value":"Rayne-lope"}}
+{"id":"int-047a9cae","kind":"field_change","created_at":"2026-05-20T14:50:16.065586Z","actor":"Rayne-lope","issue_id":"Workstation-6rc","extra":{"field":"assignee","new_value":"codex","old_value":""}}
+{"id":"int-aaf66853","kind":"field_change","created_at":"2026-05-20T15:12:25.515Z","actor":"Rayne-lope","issue_id":"Workstation-d1m","extra":{"field":"assignee","new_value":"gemini","old_value":""}}
