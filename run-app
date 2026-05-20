@@ -3,9 +3,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DERIVED_DATA_PATH="$ROOT_DIR/.derivedData"
-APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug/BeadsKanbanApp.app"
-PROJECT_PATH="$ROOT_DIR/BeadsKanbanApp.xcodeproj"
-SCHEME="BeadsKanbanApp"
+APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug/Workstation.app"
+PROJECT_PATH="$ROOT_DIR/Workstation.xcodeproj"
+SCHEME="Workstation"
 
 usage() {
   cat <<'EOF'

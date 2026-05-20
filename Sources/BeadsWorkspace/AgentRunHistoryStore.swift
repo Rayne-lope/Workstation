@@ -149,7 +149,7 @@ public final class AgentRunHistoryStore {
         let baseDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.homeDirectoryForCurrentUser
         return baseDirectory
-            .appendingPathComponent("BeadsKanbanApp", isDirectory: true)
+            .appendingPathComponent("Workstation", isDirectory: true)
             .appendingPathComponent("agent-run-history.json", isDirectory: false)
     }
 }

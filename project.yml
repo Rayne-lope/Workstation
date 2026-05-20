@@ -1,4 +1,4 @@
-name: BeadsKanbanApp
+name: Workstation
 
 options:
   bundleIdPrefix: local
@@ -12,18 +12,20 @@ settings:
     CODE_SIGNING_REQUIRED: NO
 
 targets:
-  BeadsKanbanApp:
+  Workstation:
     type: application
     platform: macOS
     sources:
       - path: App
       - path: Sources/BeadsContract
       - path: Sources/BeadsWorkspace
+      - path: assets
+        buildPhase: resources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: local.beads.kanban
+        PRODUCT_BUNDLE_IDENTIFIER: local.beads.workstation
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Beads Kanban
+        INFOPLIST_KEY_CFBundleDisplayName: Workstation
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1

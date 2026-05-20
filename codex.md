@@ -35,8 +35,8 @@ Kontrak pemisahan ketat:
 ```bash
 swift test                    # SPM unit tests — paling cepat, gunakan ini dulu
 swift build                   # Verifikasi compile contract+workspace
-xcodegen generate             # Refresh BeadsKanbanApp.xcodeproj setelah edit project.yml
-xcodebuild -scheme BeadsKanban -destination 'platform=macOS' build
+xcodegen generate             # Refresh Workstation.xcodeproj setelah edit project.yml
+xcodebuild -scheme Workstation -destination 'platform=macOS' build
 ```
 
 `swift test` adalah authority untuk koreksi kode. Jangan terdistraksi oleh

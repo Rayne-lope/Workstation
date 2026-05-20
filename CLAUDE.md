@@ -88,7 +88,7 @@ swift test                                          # CLI/logic tests (246+ haru
 - `Sources/BeadsWorkspace/` — `@MainActor @Observable` stores (`IssueStore`, `RecurringStore`, `AgentRunTranscriptStore`). Wrap shell calls ke `bd` CLI + file I/O.
 - `Tests/` — Swift Testing framework (`@Test`, `@Suite`, `#expect`).
 - `.beads/recurring/` — sidecar JSON per recurring issue.
-- `project.yml` → `xcodegen generate` → `BeadsKanbanApp.xcodeproj`. Tambah file di `App/` perlu regenerasi pbxproj.
+- `project.yml` → `xcodegen generate` → `Workstation.xcodeproj`. Tambah file di `App/` perlu regenerasi pbxproj.
 
 ## Conventions & Patterns
 

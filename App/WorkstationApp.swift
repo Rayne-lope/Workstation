@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct BeadsKanbanApp: App {
+struct WorkstationApp: App {
     @StateObject private var viewModel: WorkspaceViewModel
     @State private var appVM: AppViewModel
     @Environment(\.scenePhase) private var scenePhase

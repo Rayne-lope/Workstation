@@ -20,9 +20,9 @@ The current shape is:
 
 ```bash
 swift test
-xcodebuild -project BeadsKanbanApp.xcodeproj -scheme BeadsKanbanApp -configuration Debug build
-xcodebuild -project BeadsKanbanApp.xcodeproj -scheme BeadsKanbanApp -configuration Debug -derivedDataPath .derivedData build
-open .derivedData/Build/Products/Debug/BeadsKanbanApp.app
+xcodebuild -project Workstation.xcodeproj -scheme Workstation -configuration Debug build
+xcodebuild -project Workstation.xcodeproj -scheme Workstation -configuration Debug -derivedDataPath .derivedData build
+open .derivedData/Build/Products/Debug/Workstation.app
 ```
 
 ## Notes For Agents
@@ -40,7 +40,7 @@ open .derivedData/Build/Products/Debug/BeadsKanbanApp.app
 - Use the same validation commands in every worktree:
   ```bash
   swift test
-  xcodebuild -project BeadsKanbanApp.xcodeproj -scheme BeadsKanbanApp -configuration Debug build
+  xcodebuild -project Workstation.xcodeproj -scheme Workstation -configuration Debug build
   ```
 - If you are unsure which checkout you are in, run `pwd` or `git worktree list` before testing.
 
