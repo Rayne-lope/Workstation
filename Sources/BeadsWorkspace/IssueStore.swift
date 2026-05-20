@@ -8,6 +8,7 @@ import Observation
 @Observable
 public final class IssueStore {
     public private(set) var issues: [BeadIssue] = []
+    public var filterState: FilterState
     public private(set) var readyIssueIDs: Set<String> = []
     public private(set) var blockedByDependencyIDs: Set<String> = []
     public private(set) var blockersMap: [String: [String]] = [:]
@@ -36,11 +37,13 @@ public final class IssueStore {
         service: BeadsService,
         workingDirectory: URL,
         doneVisibilityWindow: TimeInterval = AppPreferences.defaultDoneVisibilityWindowSeconds,
+        filterState: FilterState = .init(),
         now: @escaping @MainActor () -> Date = { Date() }
     ) {
         self.service = service
         self.workingDirectory = workingDirectory
         self.doneVisibilityWindow = doneVisibilityWindow
+        self.filterState = filterState
         self.nowProvider = now
     }
 
@@ -268,7 +271,7 @@ public final class IssueStore {
     // MARK: - Kanban-mapped computed columns
 
     public func issues(in column: KanbanColumn) -> [BeadIssue] {
-        sorted(issues.filter {
+        sorted(filteredIssues.filter {
             KanbanStateMapper.column(
                 for: $0,
                 readyIDs: readyIssueIDs,
@@ -283,6 +286,58 @@ public final class IssueStore {
     public var reviewIssues: [BeadIssue] { issues(in: .review) }
     public var blockedIssues: [BeadIssue] { issues(in: .blocked) }
     public var doneIssues: [BeadIssue] { issues(in: .done) }
+
+    public var filteredIssues: [BeadIssue] {
+        sorted(issues.filter { matchesFilters($0) })
+    }
+
+    public var hasActiveFilters: Bool {
+        !filterState.isEmpty
+    }
+
+    public var availablePriorities: [Int] {
+        Array(0...4)
+    }
+
+    public var availableIssueTypes: [String] {
+        ["task", "bug", "feature", "epic", "chore"]
+    }
+
+    public var availableAssigneeKinds: [IssueFilterAssignee] {
+        IssueFilterAssignee.allCases
+    }
+
+    public var availableLabels: [String] {
+        let labels = Set(
+            issues
+                .flatMap { $0.labels ?? [] }
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+        )
+        return labels.sorted { lhs, rhs in
+            lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+        }
+    }
+
+    public func togglePriority(_ priority: Int) {
+        filterState.togglePriority(priority)
+    }
+
+    public func toggleIssueType(_ issueType: String) {
+        filterState.toggleIssueType(issueType)
+    }
+
+    public func toggleAssignee(_ assignee: IssueFilterAssignee) {
+        filterState.toggleAssignee(assignee)
+    }
+
+    public func toggleLabel(_ label: String) {
+        filterState.toggleLabel(label)
+    }
+
+    public func clearFilters() {
+        filterState.clear()
+    }
 
     public var unknownStatusIssueIDs: Set<String> {
         Set(issues.filter { !KanbanStateMapper.isKnownStatus($0.status) }.map(\.id))
@@ -302,5 +357,71 @@ public final class IssueStore {
             if lu != ru { return lu > ru }
             return lhs.id < rhs.id
         }
+    }
+
+    private func matchesFilters(_ issue: BeadIssue) -> Bool {
+        if !filterState.priorities.isEmpty {
+            guard let priority = issue.priority, filterState.priorities.contains(priority) else {
+                return false
+            }
+        }
+
+        if !filterState.issueTypes.isEmpty {
+            guard let issueType = normalized(issue.issueType),
+                  filterState.issueTypes.contains(issueType)
+            else {
+                return false
+            }
+        }
+
+        if !filterState.assignees.isEmpty {
+            guard matchesAssignee(issue.assignee) else {
+                return false
+            }
+        }
+
+        if !filterState.labels.isEmpty {
+            let issueLabels = Set((issue.labels ?? []).compactMap { normalized($0) })
+            guard !issueLabels.isDisjoint(with: filterState.labels) else {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private func matchesAssignee(_ assignee: String?) -> Bool {
+        guard let normalizedAssignee = normalized(assignee) else { return false }
+
+        for assigneeFilter in filterState.assignees {
+            switch assigneeFilter {
+            case .claude:
+                if normalizedAssignee == "claude" || normalizedAssignee.contains("claude") {
+                    return true
+                }
+            case .codex:
+                if normalizedAssignee == "codex" || normalizedAssignee.contains("codex") {
+                    return true
+                }
+            case .other:
+                if normalizedAssignee != "claude",
+                   normalizedAssignee != "codex",
+                   normalizedAssignee != "me" {
+                    return true
+                }
+            case .me:
+                if normalizedAssignee == "me" {
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
+    private func normalized(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

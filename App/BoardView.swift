@@ -130,6 +130,11 @@ struct BoardView: View {
                 .keyboardShortcut("n", modifiers: [.command])
             }
 
+            IssueFilterBarView(
+                store: store,
+                onClearAll: { store.clearFilters() }
+            )
+
             HStack(spacing: 26) {
                 viewModeTab(.kanban, systemName: "rectangle.grid.1x2")
                 viewModeTab(.list, systemName: "list.bullet")
@@ -152,6 +157,9 @@ struct BoardView: View {
             Rectangle()
                 .fill(WorkstationTheme.borderSoft)
                 .frame(height: 1)
+        }
+        .onChange(of: store.filterState) { _, newValue in
+            appVM.persistFilterState(newValue)
         }
     }
 

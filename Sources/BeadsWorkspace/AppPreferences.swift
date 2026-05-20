@@ -10,6 +10,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
     public var defaultIssuePriority: Int
     public var defaultCloseReasonTemplate: String
     public var doneVisibilityWindowSeconds: TimeInterval
+    public var filterState: [String: FilterState]
 
     public init(
         lastSelectedPath: String? = nil,
@@ -18,7 +19,8 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         defaultIssueType: String = "task",
         defaultIssuePriority: Int = 2,
         defaultCloseReasonTemplate: String = "",
-        doneVisibilityWindowSeconds: TimeInterval = AppPreferences.defaultDoneVisibilityWindowSeconds
+        doneVisibilityWindowSeconds: TimeInterval = AppPreferences.defaultDoneVisibilityWindowSeconds,
+        filterState: [String: FilterState] = [:]
     ) {
         self.lastSelectedPath = lastSelectedPath
         self.autoRestoreOnLaunch = autoRestoreOnLaunch
@@ -27,6 +29,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         self.defaultIssuePriority = defaultIssuePriority
         self.defaultCloseReasonTemplate = defaultCloseReasonTemplate
         self.doneVisibilityWindowSeconds = doneVisibilityWindowSeconds
+        self.filterState = filterState
     }
 
     enum CodingKeys: String, CodingKey {
@@ -37,6 +40,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         case defaultIssuePriority
         case defaultCloseReasonTemplate
         case doneVisibilityWindowSeconds
+        case filterState
     }
 
     public init(from decoder: Decoder) throws {
@@ -49,5 +53,6 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         defaultCloseReasonTemplate = try c.decodeIfPresent(String.self, forKey: .defaultCloseReasonTemplate) ?? ""
         doneVisibilityWindowSeconds = try c.decodeIfPresent(TimeInterval.self, forKey: .doneVisibilityWindowSeconds)
             ?? AppPreferences.defaultDoneVisibilityWindowSeconds
+        filterState = try c.decodeIfPresent([String: FilterState].self, forKey: .filterState) ?? [:]
     }
 }

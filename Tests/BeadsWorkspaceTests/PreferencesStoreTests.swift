@@ -78,4 +78,27 @@ struct PreferencesStoreTests {
         #expect(store.preferences.defaultIssuePriority == 2)
         #expect(store.preferences.autoRestoreOnLaunch == true)
     }
+
+    @Test("filterState persists per workspace key")
+    func filterStatePersists() {
+        let (defaults, _) = makeDefaults()
+        let store = PreferencesStore(userDefaults: defaults)
+
+        store.update {
+            $0.filterState["/tmp/workspace"] = FilterState(
+                priorities: [0, 1],
+                issueTypes: ["bug"],
+                assignees: [.claude, .me],
+                labels: ["human"]
+            )
+        }
+
+        let reloaded = PreferencesStore(userDefaults: defaults)
+        let restored = reloaded.preferences.filterState["/tmp/workspace"]
+
+        #expect(restored?.priorities == [0, 1])
+        #expect(restored?.issueTypes == ["bug"])
+        #expect(restored?.assignees == [.claude, .me])
+        #expect(restored?.labels == ["human"])
+    }
 }

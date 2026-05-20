@@ -280,6 +280,35 @@ struct IssueStoreTests {
         #expect(store.backlogIssues.map(\.id) == ["b", "c", "a"])
     }
 
+    @Test("filteredIssues combines dimensions with OR within a dimension and AND across dimensions")
+    func filteredIssuesCombinesDimensions() async throws {
+        let list = """
+        [
+          {"id":"bd-1","title":"A","status":"open","priority":0,"issue_type":"bug","assignee":"claude","labels":["human"]},
+          {"id":"bd-2","title":"B","status":"open","priority":1,"issue_type":"task","assignee":"codex","labels":["docs"]},
+          {"id":"bd-3","title":"C","status":"open","priority":2,"issue_type":"feature","assignee":"me","labels":["human","urgent"]},
+          {"id":"bd-4","title":"D","status":"open","priority":3,"issue_type":"chore","assignee":"other"}
+        ]
+        """
+        let runner = StubCommandRunner()
+        enqueueReload(runner, list: list, ready: "[]")
+        let store = makeStore(stubbing: runner)
+
+        await store.reload()
+
+        store.filterState = FilterState(priorities: [0, 1])
+        #expect(store.filteredIssues.map(\.id) == ["bd-1", "bd-2"])
+
+        store.filterState = FilterState(priorities: [0], issueTypes: ["bug"])
+        #expect(store.filteredIssues.map(\.id) == ["bd-1"])
+
+        store.filterState = FilterState(priorities: [0], issueTypes: ["bug"], assignees: [.claude])
+        #expect(store.filteredIssues.map(\.id) == ["bd-1"])
+
+        store.filterState = FilterState(labels: ["human"])
+        #expect(store.filteredIssues.map(\.id) == ["bd-1", "bd-3"])
+    }
+
     // MARK: - Dependency-based blocking
 
     @Test("reload populates blockedByDependencyIDs and blockersMap from bd blocked --json")

@@ -57,6 +57,10 @@ public struct WorkspaceSetupHint: Identifiable, Hashable, Sendable {
 }
 
 public extension ProjectWorkspace {
+    var storageKey: String {
+        rootPath ?? selectedPath
+    }
+
     var setupHints: [WorkspaceSetupHint] {
         var hints: [WorkspaceSetupHint] = []
 

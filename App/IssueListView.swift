@@ -46,36 +46,8 @@ struct IssueListView: View {
 
     private var listInfoBar: some View {
         HStack(spacing: 12) {
-            let total = store.issues.count
+            let total = store.filteredIssues.count
             let completed = store.issues(in: .done).count
-
-            HStack(spacing: 6) {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                    .font(.system(size: 12, weight: .semibold))
-                Text("Filter")
-                    .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
-            }
-            .foregroundStyle(WorkstationTheme.textSecondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
-            )
-
-            HStack(spacing: 6) {
-                Image(systemName: "arrow.up.arrow.down")
-                    .font(.system(size: 11, weight: .semibold))
-                Text("Sort")
-                    .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
-            }
-            .foregroundStyle(WorkstationTheme.textSecondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
-            )
 
             Text("\(total) tasks")
                 .font(WorkstationTheme.Fonts.body(12, weight: .medium))

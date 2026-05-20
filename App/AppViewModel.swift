@@ -47,6 +47,7 @@ final class AppViewModel {
     var worktreeMessage: String?
     var activeConsoleRunID: UUID?
     private(set) var activeWorkspace: ProjectWorkspace?
+    private var activeWorkspaceStorageKey: String?
 
     @ObservationIgnored private var workspaceCancellable: AnyCancellable?
     @ObservationIgnored private var fileWatcher: IssueFileWatcher?
@@ -92,19 +93,24 @@ final class AppViewModel {
                 fileWatcher = nil
                 issueStore = nil
                 activeWorkspace = nil
+                activeWorkspaceStorageKey = nil
                 worktreeMessage = nil
             }
             return
         }
-        if activeWorkspace?.id == workspace.id { return }
+        let workspaceKey = workspace.storageKey
+        if activeWorkspaceStorageKey == workspaceKey { return }
         activeWorkspace = workspace
+        activeWorkspaceStorageKey = workspaceKey
         worktreeMessage = nil
         recentProjectsStore.record(workspace)
         preferencesStore.update { $0.lastSelectedPath = workspace.selectedURL.path }
+        let persistedFilterState = preferencesStore.preferences.filterState[workspaceKey] ?? FilterState()
         let store = IssueStore(
             service: BeadsService(commandRunner: shellRunner),
             workingDirectory: workspace.inspectionURL,
-            doneVisibilityWindow: preferencesStore.preferences.doneVisibilityWindowSeconds
+            doneVisibilityWindow: preferencesStore.preferences.doneVisibilityWindowSeconds,
+            filterState: persistedFilterState
         )
         issueStore = store
         Task { await store.reload() }
@@ -240,6 +246,17 @@ final class AppViewModel {
 
     func clearWorktreeMessage() {
         worktreeMessage = nil
+    }
+
+    func persistFilterState(_ filterState: FilterState) {
+        guard let workspaceKey = activeWorkspaceStorageKey else { return }
+        preferencesStore.update { preferences in
+            if filterState.isEmpty {
+                preferences.filterState.removeValue(forKey: workspaceKey)
+            } else {
+                preferences.filterState[workspaceKey] = filterState.normalizedCopy()
+            }
+        }
     }
 
     func presentAgentRunConsole(runID: UUID) {
