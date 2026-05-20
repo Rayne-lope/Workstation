@@ -33,6 +33,7 @@ public final class AgentRunHistoryStore {
         command: String,
         prompt: String,
         projectPath: String,
+        worktree: AgentRunWorktreeMetadata? = nil,
         status: AgentRunStatus = .prepared,
         notes: String? = nil
     ) -> AgentRunRecord {
@@ -44,6 +45,7 @@ public final class AgentRunHistoryStore {
             command: command,
             prompt: prompt,
             projectPath: projectPath,
+            worktree: worktree,
             startedAt: clock(),
             completedAt: status.isFinalized ? clock() : nil,
             status: status,

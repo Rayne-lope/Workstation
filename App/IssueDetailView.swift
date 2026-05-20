@@ -317,7 +317,86 @@ struct IssueDetailView: View {
                 if alreadyInReview {
                     sendBackButton
                 }
+
+                if let latestRun = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id) {
+                    latestRunSummary(for: latestRun)
+                }
             }
+        }
+    }
+
+    private func latestRunSummary(for record: AgentRunRecord) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            uppercaseLabel("Latest Run")
+
+            HStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(statusColor(for: record.status))
+                        .frame(width: 7, height: 7)
+                    Text(record.status.displayName)
+                        .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                        .foregroundStyle(statusColor(for: record.status))
+                }
+
+                if record.hasWorktreeMetadata {
+                    BadgeView(style: .info) {
+                        Text("Worktree")
+                            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                } else {
+                    BadgeView(style: .surface) {
+                        Text("Main tree")
+                            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                }
+            }
+
+            if let worktree = record.worktree {
+                VStack(alignment: .leading, spacing: 6) {
+                    labelValueRow(label: "Path", value: worktree.path)
+                    labelValueRow(label: "Branch", value: worktree.branchName)
+                    if let sourceRunID = worktree.sourceRunID {
+                        labelValueRow(label: "Source", value: String(sourceRunID.uuidString.prefix(8)))
+                    }
+                }
+            } else if !record.projectPath.isEmpty {
+                labelValueRow(label: "Path", value: record.projectPath)
+            }
+        }
+    }
+
+    private func labelValueRow(label: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(label)
+                .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.textSubtle)
+                .textCase(.uppercase)
+                .tracking(0.5)
+                .frame(width: 56, alignment: .leading)
+            Text(value)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(WorkstationTheme.textSecondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .textSelection(.enabled)
+        }
+    }
+
+    private func statusColor(for status: AgentRunStatus) -> Color {
+        switch status {
+        case .prepared, .terminalOpened:
+            return WorkstationTheme.accent
+        case .needsReview:
+            return WorkstationTheme.blue
+        case .accepted:
+            return WorkstationTheme.green
+        case .failed:
+            return WorkstationTheme.red
+        case .abandoned:
+            return WorkstationTheme.textMuted
         }
     }
 

@@ -50,7 +50,7 @@ struct AgentRunPromptPreviewView: View {
                         Label("Open Terminal", systemImage: "macwindow")
                     }
                     .buttonStyle(WorkstationGhostButtonStyle(compact: true))
-                    .disabled(record.projectPath.isEmpty)
+                    .disabled(record.launchProjectPath.isEmpty)
                 }
             }
 

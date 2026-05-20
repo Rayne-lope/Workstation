@@ -239,6 +239,37 @@ struct AgentLaunchFlowCoordinatorTests {
         #expect(historyStore.records.first?.status == .terminalOpened)
     }
 
+    @Test("worktree launches persist worktree metadata and source linkage")
+    func worktreeLaunchPersistsMetadata() async throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("agent-worktree-metadata \(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let clock = MutableClock()
+        clock.now = Date(timeIntervalSince1970: 350)
+        let (coordinator, historyStore, _, _, _) = makeCoordinator(clock: clock)
+        let sourceRunID = UUID(uuidString: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+        let worktree = AgentRunWorktreeMetadata(
+            path: folder.appendingPathComponent("project-worktree").path,
+            branchName: "agent/bd-123",
+            sourceRunID: sourceRunID
+        )
+
+        let session = await coordinator.prepareLaunchSession(
+            for: sampleIssue(),
+            profile: nonClaimingProfile(),
+            projectPath: worktree.path,
+            worktree: worktree,
+            issueStore: nil
+        )
+
+        #expect(session != nil)
+        #expect(historyStore.records.count == 1)
+        #expect(historyStore.records.first?.worktree == worktree)
+        #expect(historyStore.records.first?.launchProjectPath == worktree.path)
+    }
+
     @Test("terminal launch failure still marks the run failed for an explicit profile")
     func explicitProfileTerminalFailureMarksFailed() async throws {
         let folder = FileManager.default.temporaryDirectory

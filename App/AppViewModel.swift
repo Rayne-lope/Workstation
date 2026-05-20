@@ -569,11 +569,12 @@ final class AppViewModel {
     }
 
     func openTerminalForAgentRun(_ record: AgentRunRecord) {
-        guard !record.projectPath.isEmpty else {
+        let projectPath = record.launchProjectPath
+        guard !projectPath.isEmpty else {
             terminalErrorMessage = "No project path recorded for this run."
             return
         }
-        let url = URL(fileURLWithPath: record.projectPath, isDirectory: true)
+        let url = URL(fileURLWithPath: projectPath, isDirectory: true)
         let command = record.command.isEmpty ? nil : record.command
         openTerminal(at: url, command: command)
     }
@@ -670,11 +671,17 @@ final class AppViewModel {
         workspace: ProjectWorkspace
     ) async {
         do {
+            let sourceRunID = activeConsoleRunID
             let worktree = try await gitWorktreeService.createWorktree(for: issue, in: workspace)
             let session = await agentLaunchFlowCoordinator.prepareLaunchSession(
                 for: issue,
                 profile: profile,
                 projectPath: worktree.worktreeURL.path,
+                worktree: AgentRunWorktreeMetadata(
+                    path: worktree.worktreeURL.path,
+                    branchName: worktree.branchName,
+                    sourceRunID: sourceRunID
+                ),
                 issueStore: issueStore
             )
 

@@ -51,7 +51,8 @@ public final class AgentRunLaunchCoordinator {
     public func prepareLaunch(
         for issue: BeadIssue,
         profile: AgentProfile,
-        projectPath: String?
+        projectPath: String?,
+        worktree: AgentRunWorktreeMetadata? = nil
     ) -> AgentRunLaunchSession {
         let payload = buildPayload(for: issue, profile: profile, projectPath: projectPath)
         let record = historyStore.recordLaunchAttempt(
@@ -62,6 +63,7 @@ public final class AgentRunLaunchCoordinator {
             command: payload.command,
             prompt: payload.prompt,
             projectPath: projectPath ?? "",
+            worktree: worktree,
             status: .prepared
         )
         return AgentRunLaunchSession(id: record.id, payload: payload)

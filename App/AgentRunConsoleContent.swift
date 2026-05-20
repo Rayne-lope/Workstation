@@ -83,6 +83,7 @@ struct AgentRunConsoleContent: View {
 
             HStack(spacing: 12) {
                 metaItem("Agent", record.agentName)
+                metaItem("Launch", record.hasWorktreeMetadata ? "Worktree" : "Main tree")
                 metaItem("Started", record.startedAt.formatted(date: .abbreviated, time: .shortened))
             }
 
@@ -90,7 +91,16 @@ struct AgentRunConsoleContent: View {
                 metaItem("Completed", completed.formatted(date: .abbreviated, time: .shortened))
             }
 
-            if !record.projectPath.isEmpty {
+            if let worktree = record.worktree {
+                HStack(spacing: 12) {
+                    metaItem("Worktree", worktree.path)
+                    metaItem("Branch", worktree.branchName)
+                }
+
+                if let sourceRunID = worktree.sourceRunID {
+                    metaItem("Source Run", shortUUID(sourceRunID))
+                }
+            } else if !record.projectPath.isEmpty {
                 HStack(spacing: 6) {
                     Image(systemName: "folder")
                         .font(.system(size: 10, weight: .semibold))
@@ -106,6 +116,10 @@ struct AgentRunConsoleContent: View {
         }
     }
 
+    private func shortUUID(_ uuid: UUID) -> String {
+        String(uuid.uuidString.prefix(8))
+    }
+
     private func metaItem(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
@@ -117,6 +131,8 @@ struct AgentRunConsoleContent: View {
                 .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                 .foregroundStyle(WorkstationTheme.textSecondary)
                 .lineLimit(1)
+                .truncationMode(.middle)
+                .textSelection(.enabled)
         }
     }
 

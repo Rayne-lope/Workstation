@@ -54,6 +54,41 @@ struct AgentRunHistoryStoreTests {
         #expect(reloaded.records.first?.issueID == "bd-1")
         #expect(reloaded.records.first?.command == "claude \"prompt\"")
         #expect(reloaded.records.first?.projectPath == "/tmp/workspace")
+        #expect(reloaded.records.first?.worktree == nil)
+    }
+
+    @Test("recordLaunchAttempt persists worktree metadata and reloads")
+    func recordLaunchAttemptPersistsWorktreeMetadata() {
+        let clock = MutableClock()
+        clock.now = Date(timeIntervalSince1970: 120)
+        let (store, fileURL, _) = makeStore(clock: clock)
+        let sourceRunID = UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")!
+        let worktree = AgentRunWorktreeMetadata(
+            path: "/tmp/project-worktree",
+            branchName: "agent/bd-2",
+            sourceRunID: sourceRunID
+        )
+
+        _ = store.recordLaunchAttempt(
+            issueID: "bd-2",
+            issueTitle: "Worktree metadata",
+            agentProfileID: nil,
+            agentName: "Codex",
+            command: "codex",
+            prompt: "prompt",
+            projectPath: "/tmp/project-worktree",
+            worktree: worktree
+        )
+
+        #expect(store.records.first?.worktree == worktree)
+
+        let reloaded = AgentRunHistoryStore(
+            fileURL: fileURL,
+            clock: { clock.now }
+        )
+
+        #expect(reloaded.records.first?.worktree == worktree)
+        #expect(reloaded.records.first?.launchProjectPath == "/tmp/project-worktree")
     }
 
     @Test("records sort newest first")

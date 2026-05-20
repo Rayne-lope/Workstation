@@ -44,12 +44,14 @@ public final class AgentLaunchFlowCoordinator {
     public func prepareLaunch(
         for issue: BeadIssue,
         profile: AgentProfile,
-        projectPath: String?
+        projectPath: String?,
+        worktree: AgentRunWorktreeMetadata? = nil
     ) -> AgentRunLaunchSession {
         launchCoordinator.prepareLaunch(
             for: issue,
             profile: profile,
-            projectPath: projectPath
+            projectPath: projectPath,
+            worktree: worktree
         )
     }
 
@@ -57,6 +59,7 @@ public final class AgentLaunchFlowCoordinator {
         for issue: BeadIssue,
         profile: AgentProfile,
         projectPath: String?,
+        worktree: AgentRunWorktreeMetadata? = nil,
         issueStore: IssueStore?
     ) async -> AgentRunLaunchSession? {
         guard profile.canExecuteCode else { return nil }
@@ -71,7 +74,8 @@ public final class AgentLaunchFlowCoordinator {
         return prepareLaunch(
             for: issue,
             profile: profile,
-            projectPath: projectPath
+            projectPath: projectPath,
+            worktree: worktree
         )
     }
 
