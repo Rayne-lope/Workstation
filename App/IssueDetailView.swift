@@ -445,7 +445,7 @@ struct IssueDetailView: View {
     private var closeButton: some View {
         let alreadyInReview = issue.labels?.contains(KanbanStateMapper.humanReviewLabel) == true
         return Button {
-            appVM.presentCloseSheet(for: issue.id)
+            appVM.presentCloseSheet(for: issue)
         } label: {
             Label(alreadyInReview ? "Approve & Close" : "Close", systemImage: "checkmark.circle")
                 .frame(maxWidth: .infinity)

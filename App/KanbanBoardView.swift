@@ -1,10 +1,11 @@
+import AppKit
 import SwiftUI
 
 struct KanbanBoardView: View {
     let appVM: AppViewModel
     let store: IssueStore
     let profiles: [AgentProfile]
-    var onRequestClose: (String) -> Void = { _ in }
+    var onRequestClose: (BeadIssue) -> Void = { _ in }
 
     @State private var hoverTargetColumn: KanbanColumn?
 
@@ -36,13 +37,13 @@ struct KanbanBoardView: View {
                     }
                     ForEach(items) { issue in
                         Button {
-                            store.selectIssue(id: issue.id)
+                            handleCardClick(issue: issue, column: column, items: items)
                         } label: {
                             IssueCardView(
                                 issue: issue,
                                 appVM: appVM,
                                 profiles: profiles,
-                                isSelected: store.selectedIssue?.id == issue.id,
+                                isSelected: store.selectedIssueIDs.contains(issue.id),
                                 hasUnknownStatus: store.hasUnknownStatus(issue),
                                 isBlockedByDependency: store.blockedByDependencyIDs.contains(issue.id)
                             )
@@ -87,6 +88,24 @@ struct KanbanBoardView: View {
         }
     }
 
+    private func handleCardClick(issue: BeadIssue, column: KanbanColumn, items: [BeadIssue]) {
+        let flags = NSApp.currentEvent?.modifierFlags ?? []
+        let cmd = flags.contains(.command)
+        let shift = flags.contains(.shift)
+        if cmd {
+            store.toggleSelection(id: issue.id)
+        } else if shift {
+            store.selectRange(to: issue.id, within: items.map(\.id))
+        } else {
+            store.selectIssue(id: issue.id)
+        }
+        if store.hasMultiSelection {
+            appVM.showBulkActionPane()
+        } else if appVM.detailPaneMode == .bulkAction {
+            appVM.resetDetailPaneToIssue()
+        }
+    }
+
     private func handleDrop(issueID: String, into target: KanbanColumn) -> Bool {
         guard let issue = store.issues.first(where: { $0.id == issueID }) else {
             return false
@@ -106,7 +125,7 @@ struct KanbanBoardView: View {
             Task { await store.requestHumanReview(id: issueID) }
             return true
         case .close:
-            onRequestClose(issueID)
+            onRequestClose(issue)
             return true
         }
     }

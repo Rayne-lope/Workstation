@@ -43,7 +43,7 @@ final class AppViewModel {
 
     var isCreatePresented = false
     var isClosePresented = false
-    var closeIssueID: String?
+    var closeIssue: BeadIssue?
     var isBulkClosePresented = false
     var isReviewFollowupPresented = false
     var reviewFollowupIssueID: String?
@@ -52,6 +52,7 @@ final class AppViewModel {
     var blockerPickerExistingBlockerIDs: Set<String> = []
     var isDebugPresented = false
     var isLocalAISettingsPresented = false
+    var localAISuggestionPreview: LocalAISuggestionPreviewState?
 
     var pendingAgentLaunch: PendingAgentLaunch?
     var pendingWorktreeLaunch: PendingWorktreeLaunch?
@@ -249,8 +250,8 @@ final class AppViewModel {
         isCreatePresented = true
     }
 
-    func presentCloseSheet(for id: String) {
-        closeIssueID = id
+    func presentCloseSheet(for issue: BeadIssue) {
+        closeIssue = issue
         isClosePresented = true
     }
 
@@ -341,7 +342,7 @@ final class AppViewModel {
 
     func dismissCloseSheet() {
         isClosePresented = false
-        closeIssueID = nil
+        closeIssue = nil
     }
 
     func dismissBlockerPicker() {
@@ -426,6 +427,28 @@ final class AppViewModel {
 
     func requestLocalAIResponse(for action: LocalAIAction) async throws -> String {
         try await localAIService.generate(for: action, settings: preferencesStore.preferences.localAI)
+    }
+
+    func presentLocalAISuggestionPreview(
+        title: String,
+        subtitle: String,
+        sourceLabel: String,
+        generatedText: String,
+        regenerate: @escaping @MainActor () async throws -> String,
+        onApply: @escaping @MainActor (String) -> Void
+    ) {
+        localAISuggestionPreview = LocalAISuggestionPreviewState(
+            title: title,
+            subtitle: subtitle,
+            sourceLabel: sourceLabel,
+            generatedText: generatedText,
+            regenerate: regenerate,
+            onApply: onApply
+        )
+    }
+
+    func dismissLocalAISuggestionPreview() {
+        localAISuggestionPreview = nil
     }
 
     private func clearLocalAIConnectionStatus() {

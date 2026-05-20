@@ -283,7 +283,7 @@ private struct IssueActionsContextMenu: View {
 
         if canEditLifecycle {
             Button("Close...") {
-                appVM.presentCloseSheet(for: issue.id)
+                appVM.presentCloseSheet(for: issue)
             }
         }
 

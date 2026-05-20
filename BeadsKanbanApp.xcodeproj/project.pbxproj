@@ -11,6 +11,7 @@
 		08F5B619F89B824DD89E920A /* AgentRunLaunchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63F79EFFE2C205E9B51022F /* AgentRunLaunchCoordinator.swift */; };
 		0B132AD8EC55302F736DAA2C /* RecurringMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805340EA9FBA3874DFEAD319 /* RecurringMetadata.swift */; };
 		10FAB7BF207ECFDE08A65B22 /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A8C4D84422BBCE4A84BF81 /* IssueDetailView.swift */; };
+		1F6C8B2A6D7B4F0B9A8C3D1E /* LocalAISuggestionPreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4F7D9C8E6B4C1D9F0A2B3C /* LocalAISuggestionPreviewSheet.swift */; };
 		12620EE9783B65D6DF288038 /* WorkspaceValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB94DC4755E753E7F8820198 /* WorkspaceValidator.swift */; };
 		12E241B27B6C9B8EC7B9395C /* IssueFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02995F2D4DFE3B31D00526EF /* IssueFilterState.swift */; };
 		163DAED0C9C9869C303DBB53 /* GitStatusService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94704DDD945A08C695E33E60 /* GitStatusService.swift */; };
@@ -21,6 +22,7 @@
 		28CA2B5B5D8B44D2475D019E /* IssueDetailRecurringSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDEA644D1B78193D279B227 /* IssueDetailRecurringSection.swift */; };
 		29BDC07D19B4784D59E4A2E8 /* CommandRunning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A116AD006CF35CA34ECE27 /* CommandRunning.swift */; };
 		2E0F554D8887BBF850410321 /* ShellCommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A267113D5EBBAFBD1F438D57 /* ShellCommandRunner.swift */; };
+		31B4E3A5D9C7F1A2B8C6D4E5 /* LocalAISuggestionPreviewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E7A6B1C2D3F4A5B8C9D0E1F /* LocalAISuggestionPreviewState.swift */; };
 		322D00C931CD361D7E7EA1DA /* AgentRunConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 626365BA4FBFF70061F5A8F6 /* AgentRunConsoleView.swift */; };
 		3D59BD01A9AD861FE5A1BC7A /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9CA4D850D4A89F102D5866F /* AppViewModel.swift */; };
 		3E56B7F5F7A1A8289666DEF1 /* LocalAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672D1B8B9F4B655DF4C42172 /* LocalAIService.swift */; };
@@ -107,6 +109,7 @@
 		0FF001829FA357931ABB2DDA /* BulkActionPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkActionPanel.swift; sourceTree = "<group>"; };
 		1116E4B9B437EE620E37E3FA /* ProjectRootDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRootDiscovery.swift; sourceTree = "<group>"; };
 		113640E4F9E12CC9A7123EA8 /* KanbanBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanBoardView.swift; sourceTree = "<group>"; };
+		2A4F7D9C8E6B4C1D9F0A2B3C /* LocalAISuggestionPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISuggestionPreviewSheet.swift; sourceTree = "<group>"; };
 		15A7FBE5ABA23F5A6E5B0738 /* WorkspaceCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCheck.swift; sourceTree = "<group>"; };
 		1674780797FD810F8D7DE8C2 /* AgentRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRole.swift; sourceTree = "<group>"; };
 		1A0248E5275A4DD2579FF53E /* BeadsKanbanApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BeadsKanbanApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -118,6 +121,7 @@
 		2860AA2285EFC86D3DB1C3FA /* AgentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProfile.swift; sourceTree = "<group>"; };
 		2E2B54CBD27007DA7F6B1BAE /* OllamaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaService.swift; sourceTree = "<group>"; };
 		361AA2E1B943CB2F98DAD37E /* LocalAIAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIAction.swift; sourceTree = "<group>"; };
+		4E7A6B1C2D3F4A5B8C9D0E1F /* LocalAISuggestionPreviewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISuggestionPreviewState.swift; sourceTree = "<group>"; };
 		3707B9AF5BD969DDF262068A /* AgentRunNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunNotesView.swift; sourceTree = "<group>"; };
 		38B47C6056A4A2EF59F26B31 /* BeadsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadsService.swift; sourceTree = "<group>"; };
 		3CBEF3789371A63BE07F8C61 /* WorkspaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewModel.swift; sourceTree = "<group>"; };
@@ -306,6 +310,8 @@
 				7D09B05737B06390C186B8F7 /* IssueListView.swift */,
 				25B1886C7BBD88E21A4DD8AB /* IssueRightPane.swift */,
 				113640E4F9E12CC9A7123EA8 /* KanbanBoardView.swift */,
+				2A4F7D9C8E6B4C1D9F0A2B3C /* LocalAISuggestionPreviewSheet.swift */,
+				4E7A6B1C2D3F4A5B8C9D0E1F /* LocalAISuggestionPreviewState.swift */,
 				B207C4BB4C0E6226DC2E93F9 /* LocalAISettingsPanelView.swift */,
 				881EE42BCE3D5B25154128D6 /* ReviewFollowupSheet.swift */,
 				DD89521B884B2A4A3A596807 /* StatusBarView.swift */,
@@ -435,6 +441,8 @@
 				4F6923767F35140F635EFA8D /* LocalAIConnectionTester.swift in Sources */,
 				3E56B7F5F7A1A8289666DEF1 /* LocalAIService.swift in Sources */,
 				20CDB95173344E44C7043198 /* LocalAISettings.swift in Sources */,
+				1F6C8B2A6D7B4F0B9A8C3D1E /* LocalAISuggestionPreviewSheet.swift in Sources */,
+				31B4E3A5D9C7F1A2B8C6D4E5 /* LocalAISuggestionPreviewState.swift in Sources */,
 				A0C09CE5F605AF6F95FE6D4A /* LocalAISettingsPanelView.swift in Sources */,
 				480365CF848360DF4CC1ABEE /* MarkdownTextRenderer.swift in Sources */,
 				8ABE78E39BAC7D37A42AEC55 /* OllamaService.swift in Sources */,

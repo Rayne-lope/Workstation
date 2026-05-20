@@ -28,12 +28,13 @@ struct BoardView: View {
         }
         .background(WorkstationTheme.background)
         .frame(minWidth: 1180, minHeight: 640)
-        .sheet(isPresented: $appVM.isClosePresented, onDismiss: { appVM.closeIssueID = nil }) {
-            if let id = appVM.closeIssueID {
+        .sheet(isPresented: $appVM.isClosePresented, onDismiss: { appVM.closeIssue = nil }) {
+            if let issue = appVM.closeIssue {
                 CloseIssueSheet(
-                    issueID: id,
+                    issue: issue,
                     store: store,
                     defaultReason: appVM.preferencesStore.preferences.defaultCloseReasonTemplate,
+                    appVM: appVM,
                     onDismiss: { appVM.dismissCloseSheet() }
                 )
             }

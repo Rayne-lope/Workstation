@@ -1,44 +1,10 @@
 import SwiftUI
 
-struct CloseIssueSheet: View {
-    let issue: BeadIssue
-    let store: IssueStore
-    let appVM: AppViewModel
+struct LocalAISuggestionPreviewSheet: View {
+    @Bindable var preview: LocalAISuggestionPreviewState
     let onDismiss: () -> Void
 
-    @State private var reason: String
-    @State private var isGeneratingAISuggestion = false
-    @State private var localAIErrorMessage: String?
-    @FocusState private var reasonFocused: Bool
-
-    init(
-        issue: BeadIssue,
-        store: IssueStore,
-        defaultReason: String = "",
-        appVM: AppViewModel,
-        onDismiss: @escaping () -> Void
-    ) {
-        self.issue = issue
-        self.store = store
-        self.appVM = appVM
-        self.onDismiss = onDismiss
-        _reason = State(initialValue: defaultReason)
-    }
-
-    private var trimmedReason: String {
-        reason.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var aiSummarySeed: String {
-        let trimmed = trimmedReason
-        if !trimmed.isEmpty {
-            return trimmed
-        }
-        if let description = issue.description?.trimmingCharacters(in: .whitespacesAndNewlines), !description.isEmpty {
-            return description
-        }
-        return issue.title
-    }
+    @State private var copiedFlash = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -51,7 +17,7 @@ struct CloseIssueSheet: View {
 
             VStack(alignment: .leading, spacing: 18) {
                 HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "checkmark.seal")
+                    Image(systemName: "sparkles")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(WorkstationTheme.accent)
                         .frame(width: 28, height: 28)
@@ -61,20 +27,36 @@ struct CloseIssueSheet: View {
                                 .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small))
+
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Closing logs to history.")
+                        Text(preview.subtitle)
                             .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
                             .foregroundStyle(WorkstationTheme.textPrimary)
-                        Text("A short reason helps future-you and the team understand the outcome.")
+                            .lineLimit(2)
+                        Text("Edit the suggestion before applying it anywhere else.")
                             .font(WorkstationTheme.Fonts.body(12))
                             .foregroundStyle(WorkstationTheme.textMuted)
                             .lineSpacing(2)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    VStack(alignment: .trailing, spacing: 6) {
+                        Text(preview.sourceLabel.uppercased())
+                            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                            .tracking(0.8)
+                            .foregroundStyle(WorkstationTheme.textSubtle)
+                        if preview.isRegenerating {
+                            ProgressView()
+                                .controlSize(.small)
+                                .tint(WorkstationTheme.accent)
+                        }
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
-                        Text("REASON")
+                        Text("OUTPUT")
                             .font(WorkstationTheme.Fonts.body(10.5, weight: .semibold))
                             .tracking(0.8)
                             .foregroundStyle(WorkstationTheme.textSubtle)
@@ -82,25 +64,33 @@ struct CloseIssueSheet: View {
                             .fill(WorkstationTheme.accent)
                             .frame(width: 4, height: 4)
                     }
-                    StyledTextEditor(
-                        placeholder: "e.g. Shipped to main. Verified via swift test (170/170).",
-                        text: $reason,
-                        minHeight: 120,
-                        isFocused: reasonFocused
-                    )
-                    .focused($reasonFocused)
+
+                    TextEditor(text: $preview.draftText)
+                        .font(.system(size: 12.5, design: .monospaced))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                        .scrollContentBackground(.hidden)
+                        .padding(10)
+                        .frame(minHeight: 280)
+                        .background(WorkstationTheme.cardAlt)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                                .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                        .textSelection(.enabled)
                 }
 
-                if let localAIErrorMessage {
+                if let errorMessage = preview.errorMessage {
                     HStack(alignment: .top, spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(WorkstationTheme.orange)
                             .padding(.top, 2)
-                        Text(localAIErrorMessage)
+                        Text(errorMessage)
                             .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                             .foregroundStyle(WorkstationTheme.orange)
                             .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                     }
                     .padding(.horizontal, 12)
@@ -120,19 +110,12 @@ struct CloseIssueSheet: View {
             Divider().overlay(WorkstationTheme.borderSoft)
 
             HStack(spacing: 10) {
-                if isGeneratingAISuggestion {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(WorkstationTheme.accent)
+                if copiedFlash {
+                    Label("Copied to clipboard", systemImage: "checkmark.circle.fill")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.green)
+                        .transition(.opacity)
                 }
-
-                Button {
-                    requestAISuggestion()
-                } label: {
-                    Label(isGeneratingAISuggestion ? "Generating..." : "Draft with Local AI", systemImage: "cpu")
-                }
-                .buttonStyle(WorkstationGhostButtonStyle())
-                .disabled(isGeneratingAISuggestion)
 
                 Spacer()
 
@@ -141,46 +124,73 @@ struct CloseIssueSheet: View {
                     .keyboardShortcut(.cancelAction)
 
                 Button {
-                    Task { await store.close(id: issue.id, reason: reason) }
+                    Clipboard.copy(preview.draftText)
+                    flashCopyConfirmation()
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(WorkstationGhostButtonStyle())
+
+                Button {
+                    Task { await preview.regenerate() }
+                } label: {
+                    HStack(spacing: 6) {
+                        if preview.isRegenerating {
+                            ProgressView()
+                                .controlSize(.mini)
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        Text(preview.isRegenerating ? "Regenerating" : "Regenerate")
+                    }
+                }
+                .buttonStyle(WorkstationGhostButtonStyle())
+                .disabled(preview.isRegenerating)
+
+                Button {
+                    preview.apply()
                     onDismiss()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 11, weight: .bold))
-                        Text("Close Issue")
+                        Text("Apply")
                     }
                 }
                 .buttonStyle(WorkstationPrimaryButtonStyle())
                 .keyboardShortcut(.defaultAction)
-                .disabled(trimmedReason.isEmpty)
-                .opacity(trimmedReason.isEmpty ? 0.45 : 1)
+                .disabled(preview.trimmedDraftText.isEmpty || preview.isRegenerating)
+                .opacity(preview.trimmedDraftText.isEmpty || preview.isRegenerating ? 0.45 : 1)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 14)
         }
-        .frame(width: 560)
+        .frame(width: 760, height: 640)
         .background(WorkstationTheme.surface)
         .preferredColorScheme(.dark)
-        .onAppear { reasonFocused = true }
     }
 
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text("CRAFTBOARD /")
+                    Text("LOCAL AI /")
                         .foregroundStyle(WorkstationTheme.textSubtle)
-                    Text(issue.id)
+                    Text(preview.sourceLabel)
                         .foregroundStyle(WorkstationTheme.accent)
                 }
                 .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
                 .tracking(0.9)
 
-                Text("Close Issue")
+                Text(preview.title)
                     .font(WorkstationTheme.Fonts.display(22, weight: .heavy))
                     .foregroundStyle(WorkstationTheme.textPrimary)
+                    .lineLimit(2)
             }
+
             Spacer()
+
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .bold))
@@ -195,38 +205,14 @@ struct CloseIssueSheet: View {
         }
     }
 
-    private func requestAISuggestion() {
-        guard !isGeneratingAISuggestion else { return }
-        isGeneratingAISuggestion = true
-        localAIErrorMessage = nil
-
-        let action = LocalAIAction.closeReason(issue: issue, summary: aiSummarySeed)
-        let currentAppVM = appVM
-        Task {
-            do {
-                let suggestion = try await currentAppVM.requestLocalAIResponse(for: action)
-                await MainActor.run {
-                    let reasonBinding = $reason
-                    currentAppVM.presentLocalAISuggestionPreview(
-                        title: "Review AI Close Reason",
-                        subtitle: "\(issue.id) · \(issue.title)",
-                        sourceLabel: "Close Reason",
-                        generatedText: suggestion,
-                        regenerate: {
-                            try await currentAppVM.requestLocalAIResponse(for: action)
-                        },
-                        onApply: { text in
-                            reasonBinding.wrappedValue = text
-                            currentAppVM.dismissLocalAISuggestionPreview()
-                        }
-                    )
-                    self.isGeneratingAISuggestion = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.localAIErrorMessage = error.localizedDescription
-                    self.isGeneratingAISuggestion = false
-                }
+    private func flashCopyConfirmation() {
+        withAnimation(.easeOut(duration: 0.15)) {
+            copiedFlash = true
+        }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            withAnimation(.easeOut(duration: 0.15)) {
+                copiedFlash = false
             }
         }
     }

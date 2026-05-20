@@ -16,5 +16,13 @@ struct ContentView: View {
                 )
             }
         }
+        .sheet(item: $appVM.localAISuggestionPreview, onDismiss: {
+            appVM.dismissLocalAISuggestionPreview()
+        }) { preview in
+            LocalAISuggestionPreviewSheet(
+                preview: preview,
+                onDismiss: { appVM.dismissLocalAISuggestionPreview() }
+            )
+        }
     }
 }
