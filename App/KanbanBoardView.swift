@@ -135,28 +135,35 @@ struct KanbanBoardView: View {
     }
 
     private func columnHeader(column: KanbanColumn, count: Int) -> some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(WorkstationTheme.accent(for: column))
-                .frame(width: 8, height: 8)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(WorkstationTheme.accent(for: column))
+                    .frame(width: 8, height: 8)
 
-            Text(column.rawValue)
-                .font(WorkstationTheme.Fonts.display(13, weight: .semibold))
-                .foregroundStyle(WorkstationTheme.textPrimary)
+                Text(column.rawValue.uppercased())
+                    .font(WorkstationTheme.Fonts.display(12, weight: .bold))
+                    .tracking(1.1)
+                    .foregroundStyle(WorkstationTheme.textPrimary)
 
-            Text("\(count)")
-                .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-                .foregroundStyle(WorkstationTheme.textMuted)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 2)
-                .background(WorkstationTheme.borderSoft)
-                .overlay(
-                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                        .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                Text("\(count)")
+                    .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(WorkstationTheme.borderSoft)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
 
-            Spacer()
+                Spacer()
+            }
+
+            Rectangle()
+                .fill(WorkstationTheme.borderSoft)
+                .frame(height: 1)
         }
         .padding(.horizontal, 2)
         .accessibilityElement(children: .ignore)

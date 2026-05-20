@@ -64,6 +64,7 @@ struct IssueCardView: View {
             x: 0,
             y: 8
         )
+        .offset(y: isHovering ? -2 : 0)
         .contentShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Issue \(issue.id), \(issue.title)")
