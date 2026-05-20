@@ -77,15 +77,12 @@ struct IssueCardView: View {
 
     private var tagRow: some View {
         HStack(spacing: 6) {
-            Text(issue.id)
-                .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-                .foregroundStyle(WorkstationTheme.textMuted)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(WorkstationTheme.borderSoft)
-                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+            BadgeView(style: .id) {
+                Text(issue.id)
+                    .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
 
             if let priority = issue.priority,
                let difficulty = PriorityDifficulty.from(priority: priority) {
@@ -111,32 +108,21 @@ struct IssueCardView: View {
     private func recurringBadge(for metadata: RecurringMetadata) -> some View {
         let overdue = metadata.overdueDays(now: Date())
         let isOverdue = overdue > 0
-        let color = isOverdue ? WorkstationTheme.orange : WorkstationTheme.purple
-        let bg = isOverdue ? Color(hex: "1F1108") : Color(hex: "1A0F1F")
-        let stroke = isOverdue ? Color(hex: "3A2310") : Color(hex: "2E1A40")
-
-        return HStack(spacing: 4) {
-            Image(systemName: "arrow.triangle.2.circlepath")
-                .font(.system(size: 9, weight: .bold))
-            if isOverdue {
-                Text("Overdue \(overdue)d")
-            } else if metadata.completionCount > 0 {
-                Text("#\(metadata.completionCount)")
-            } else {
-                Text("New")
+        return BadgeView(style: .recurring(isOverdue: isOverdue)) {
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 9, weight: .bold))
+                if isOverdue {
+                    Text("Overdue \(overdue)d")
+                } else if metadata.completionCount > 0 {
+                    Text("#\(metadata.completionCount)")
+                } else {
+                    Text("New")
+                }
             }
+            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+            .lineLimit(1)
         }
-        .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-        .foregroundStyle(color)
-        .lineLimit(1)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 2)
-        .background(bg)
-        .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                .stroke(stroke, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
         .help(recurringHelp(for: metadata, overdue: overdue))
     }
 
@@ -155,24 +141,28 @@ struct IssueCardView: View {
     }
 
     private var blockerBadge: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 9, weight: .bold))
-            Text("Blocked")
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
+        ViewThatFits(in: .horizontal) {
+            blockedBadgeLabel(text: "Blocked", iconSize: 9, spacing: 4)
+            blockedBadgeLabel(text: "Block", iconSize: 8.5, spacing: 3)
+            BadgeView(style: .blocked, horizontalPadding: 5, verticalPadding: 2) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 8.5, weight: .bold))
+            }
         }
-        .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-        .foregroundStyle(WorkstationTheme.red)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 2)
-        .background(Color(hex: "1F0F0F"))
-        .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                .stroke(Color(hex: "3A1414"), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
         .help("This issue has open blockers")
+    }
+
+    private func blockedBadgeLabel(text: String, iconSize: CGFloat, spacing: CGFloat) -> some View {
+        BadgeView(style: .blocked, horizontalPadding: 6, verticalPadding: 2) {
+            HStack(spacing: spacing) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: iconSize, weight: .bold))
+                Text(text)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+        }
     }
 
     private var footer: some View {
@@ -200,60 +190,39 @@ struct IssueCardView: View {
 
     private func difficultyBadge(_ label: String, priority: Int) -> some View {
         let color = WorkstationTheme.difficultyColor(priority)
-        return HStack(spacing: 4) {
-            if priority <= 1 {
-                Circle()
-                    .fill(color)
-                    .frame(width: 5, height: 5)
+        return BadgeView(style: .priority(priority)) {
+            HStack(spacing: 4) {
+                if priority <= 1 {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 5, height: 5)
+                }
+                Text(label)
             }
-            Text(label)
+            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+            .lineLimit(1)
         }
-        .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-        .foregroundStyle(color)
-        .lineLimit(1)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 2)
-        .background(priority <= 1 ? Color(hex: "1A1608") : WorkstationTheme.cardAlt)
-        .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                .stroke(priority <= 1 ? Color(hex: "3A2F0A") : WorkstationTheme.borderStrong, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
     }
 
     private func typeBadge(_ label: String) -> some View {
-        Text(label)
-            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
-            .foregroundStyle(WorkstationTheme.blue)
-            .lineLimit(1)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(Color(hex: "0F1A1F"))
-            .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                    .stroke(Color(hex: "0F2535"), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+        BadgeView(style: .info) {
+            Text(label)
+                .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                .lineLimit(1)
+        }
     }
 
     private func unknownStatusBadge(_ status: String) -> some View {
-        HStack(spacing: 5) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 10, weight: .semibold))
-            Text("status: \(status)")
-                .lineLimit(1)
-                .truncationMode(.tail)
+        BadgeView(style: .warning, verticalPadding: 4) {
+            HStack(spacing: 5) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 10, weight: .semibold))
+                Text("status: \(status)")
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
         }
-        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
-        .foregroundStyle(WorkstationTheme.orange)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color(hex: "1A1008"))
-        .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                .stroke(Color(hex: "3A220A"), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
     }
 
     private func shortDate(_ raw: String) -> String {
