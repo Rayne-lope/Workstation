@@ -30,3 +30,17 @@ public struct GitStatusSummary: Codable, Hashable, Sendable {
         self.lastCommitSummary = lastCommitSummary
     }
 }
+
+public extension GitStatusSummary {
+    func filtered(ignoringPaths ignoredPaths: Set<String>) -> GitStatusSummary {
+        guard !ignoredPaths.isEmpty else { return self }
+
+        let filteredChangedFiles = changedFiles.filter { !ignoredPaths.contains($0.path) }
+        return GitStatusSummary(
+            branchName: branchName,
+            isDirty: !filteredChangedFiles.isEmpty,
+            changedFiles: filteredChangedFiles,
+            lastCommitSummary: lastCommitSummary
+        )
+    }
+}

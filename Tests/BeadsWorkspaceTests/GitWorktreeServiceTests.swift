@@ -122,6 +122,34 @@ struct GitWorktreeServiceTests {
         #expect(branchResult.stdout.trimmingCharacters(in: .whitespacesAndNewlines) == location.branchName)
     }
 
+    @Test("createWorktree ignores passive Beads export noise in the current tree")
+    func createWorktreeIgnoresBeadsExportNoise() async throws {
+        let (workspace, baseURL) = try makeGitRepo(name: "Beads Noise")
+        defer { try? FileManager.default.removeItem(at: baseURL) }
+
+        let trackedExportURL = workspace.inspectionURL.appendingPathComponent(".beads/issues.jsonl")
+        try "[]\n".write(to: trackedExportURL, atomically: true, encoding: .utf8)
+        try runGit(arguments: ["add", ".beads/issues.jsonl"], in: workspace.inspectionURL)
+        try runGit(arguments: ["commit", "-m", "track beads export"], in: workspace.inspectionURL)
+        try "{\"id\":\"Workstation-noise\"}\n".write(to: trackedExportURL, atomically: true, encoding: .utf8)
+
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
+        let issue = BeadIssue(
+            id: "Workstation-noise",
+            title: "Ignore Beads export noise",
+            status: "open",
+            priority: 2,
+            issueType: "feature"
+        )
+
+        let location = service.worktreeLocation(for: workspace, issueID: issue.id)
+        let created = try await service.createWorktree(for: issue, in: workspace)
+
+        #expect(created == location)
+        #expect(FileManager.default.fileExists(atPath: location.worktreeURL.path))
+        #expect(FileManager.default.fileExists(atPath: location.worktreeURL.appendingPathComponent(".beads").path))
+    }
+
     @Test("createWorktree refuses when the current tree is dirty")
     func createWorktreeRefusesWhenDirty() async throws {
         let (workspace, baseURL) = try makeWorkspace(rootName: "Dirty Tree")

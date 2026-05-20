@@ -42,3 +42,5 @@
 {"id":"int-953db315","kind":"field_change","created_at":"2026-05-20T02:56:54.526706Z","actor":"Rayne-lope","issue_id":"Workstation-69f","extra":{"field":"assignee","new_value":"claude","old_value":""}}
 {"id":"int-fea74c41","kind":"field_change","created_at":"2026-05-20T02:58:32.55816Z","actor":"Rayne-lope","issue_id":"Workstation-6zt","extra":{"field":"assignee","new_value":"claude","old_value":""}}
 {"id":"int-3e5a3677","kind":"field_change","created_at":"2026-05-20T03:06:59.248669Z","actor":"Rayne-lope","issue_id":"Workstation-xn2","extra":{"field":"assignee","new_value":"codex","old_value":"Rayne-lope"}}
+{"id":"int-e27f4797","kind":"field_change","created_at":"2026-05-20T03:24:49.247421Z","actor":"Rayne-lope","issue_id":"Workstation-lyu","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"Implemented worktree preflight filtering for passive Beads export noise while keeping real dirty files blocking; tests pass."}}
+{"id":"int-c05357ab","kind":"field_change","created_at":"2026-05-20T03:25:04.797081Z","actor":"Rayne-lope","issue_id":"Workstation-ulq","extra":{"field":"assignee","new_value":"claude","old_value":""}}
