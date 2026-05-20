@@ -49,6 +49,15 @@ struct LocalAIServiceTests {
         #expect(summaryRequest.model == "strong-model")
         #expect(summaryRequest.prompt.contains("Summarize the following agent run"))
         #expect(summaryRequest.prompt.contains("worktree focus"))
+
+        let simplifyRequest = try service.buildRequest(
+            for: .simplifyIssueIndonesian(issue: issue),
+            settings: settings
+        )
+        #expect(simplifyRequest.model == "strong-model")
+        #expect(simplifyRequest.prompt.contains("Bahasa Indonesia"))
+        #expect(simplifyRequest.prompt.contains(issue.title))
+        #expect(simplifyRequest.prompt.contains("read-only"))
     }
 
     @Test("generate sends a non-streaming Ollama request and returns the text response")

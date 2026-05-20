@@ -6,6 +6,9 @@ struct IssueDetailView: View {
     let store: IssueStore
     let issue: BeadIssue
 
+    @State private var isGeneratingIndonesianSummary = false
+    @State private var indonesianSummaryError: String?
+
     var body: some View {
         VStack(spacing: 0) {
             panelHeader
@@ -318,8 +321,96 @@ struct IssueDetailView: View {
                     sendBackButton
                 }
 
+                if appVM.localAISettings.isEnabled {
+                    simplifyIndonesianButton
+                    if let indonesianSummaryError {
+                        localAIErrorBanner(message: indonesianSummaryError)
+                    }
+                }
+
                 if let latestRun = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id) {
                     latestRunSummary(for: latestRun)
+                }
+            }
+        }
+    }
+
+    private var simplifyIndonesianButton: some View {
+        Button {
+            requestIndonesianSummary()
+        } label: {
+            HStack(spacing: 6) {
+                if isGeneratingIndonesianSummary {
+                    ProgressView()
+                        .controlSize(.mini)
+                } else {
+                    Image(systemName: "text.bubble")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                Text(isGeneratingIndonesianSummary ? "Menyederhanakan..." : "Sederhanakan (Bahasa Indonesia)")
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(WorkstationGhostButtonStyle())
+        .disabled(isGeneratingIndonesianSummary)
+        .help("Buat penjelasan sederhana dalam Bahasa Indonesia (pratinjau read-only)")
+    }
+
+    private func localAIErrorBanner(message: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.orange)
+                .padding(.top, 2)
+            Text(message)
+                .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                .foregroundStyle(WorkstationTheme.orange)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(WorkstationTheme.borderSoft)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+    }
+
+    private func requestIndonesianSummary() {
+        guard !isGeneratingIndonesianSummary else { return }
+        isGeneratingIndonesianSummary = true
+        indonesianSummaryError = nil
+
+        let action = LocalAIAction.simplifyIssueIndonesian(issue: issue)
+        let currentAppVM = appVM
+        let issueID = issue.id
+        let issueTitle = issue.title
+
+        Task {
+            do {
+                let suggestion = try await currentAppVM.requestLocalAIResponse(for: action)
+                await MainActor.run {
+                    currentAppVM.presentLocalAISuggestionPreview(
+                        title: "Ringkasan Bahasa Indonesia",
+                        subtitle: "\(issueID) · \(issueTitle)",
+                        sourceLabel: "Simplify",
+                        generatedText: suggestion,
+                        regenerate: {
+                            try await currentAppVM.requestLocalAIResponse(for: action)
+                        },
+                        onApply: { _ in
+                            currentAppVM.dismissLocalAISuggestionPreview()
+                        }
+                    )
+                    self.isGeneratingIndonesianSummary = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.indonesianSummaryError = error.localizedDescription
+                    self.isGeneratingIndonesianSummary = false
                 }
             }
         }

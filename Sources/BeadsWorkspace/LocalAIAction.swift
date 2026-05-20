@@ -16,10 +16,11 @@ public enum LocalAIAction: Equatable, Sendable {
     case promptOptimization(prompt: String)
     case closeReason(issue: BeadIssue, summary: String)
     case runSummary(record: AgentRunRecord)
+    case simplifyIssueIndonesian(issue: BeadIssue)
 
     public var modelTier: LocalAIModelTier {
         switch self {
-        case .issueDrafting, .backlogAnalysis, .runSummary:
+        case .issueDrafting, .backlogAnalysis, .runSummary, .simplifyIssueIndonesian:
             return .strong
         case .promptOptimization, .closeReason:
             return .fast
@@ -89,6 +90,22 @@ public enum LocalAIAction: Equatable, Sendable {
             - State what was completed and why the issue can be closed.
             - Keep the result short and factual.
             - Do not mention implementation details that are not in the summary.
+            """
+        case let .simplifyIssueIndonesian(issue):
+            return """
+            Jelaskan ulang isu Beads berikut dalam Bahasa Indonesia yang sederhana dan ramah.
+
+            Issue:
+            \(Self.renderIssue(issue))
+
+            Output requirements:
+            - Tulis dalam Bahasa Indonesia, hindari jargon teknis Beads jika bisa.
+            - Mulai dengan ringkasan judul satu kalimat agar mudah dipahami.
+            - Jelaskan deskripsi inti dengan kalimat pendek dan mudah dimengerti.
+            - Jika ada acceptance criteria, ubah jadi daftar singkat dengan kata kerja konkret.
+            - Jika ada blocker atau dependency, sebutkan secara singkat dan jelaskan dampaknya.
+            - Jangan menambahkan informasi baru yang tidak ada di issue asli.
+            - Output hanya teks biasa, siap dibaca pengguna sebagai pratinjau read-only.
             """
         case let .runSummary(record):
             return """
