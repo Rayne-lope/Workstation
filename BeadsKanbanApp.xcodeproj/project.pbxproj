@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		08F5B619F89B824DD89E920A /* AgentRunLaunchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63F79EFFE2C205E9B51022F /* AgentRunLaunchCoordinator.swift */; };
 		0B132AD8EC55302F736DAA2C /* RecurringMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805340EA9FBA3874DFEAD319 /* RecurringMetadata.swift */; };
+		0AA11C0D1EAA4A3B8C1D1001 /* claude-logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AA11C0D1EAA4A3B8C1D2001 /* claude-logo.png */; };
+		0AA11C0D1EAA4A3B8C1D1002 /* codex_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AA11C0D1EAA4A3B8C1D2002 /* codex_logo.png */; };
+		0AA11C0D1EAA4A3B8C1D1003 /* robot_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AA11C0D1EAA4A3B8C1D2003 /* robot_logo.png */; };
 		10FAB7BF207ECFDE08A65B22 /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A8C4D84422BBCE4A84BF81 /* IssueDetailView.swift */; };
 		12620EE9783B65D6DF288038 /* WorkspaceValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB94DC4755E753E7F8820198 /* WorkspaceValidator.swift */; };
 		12E241B27B6C9B8EC7B9395C /* IssueFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02995F2D4DFE3B31D00526EF /* IssueFilterState.swift */; };
@@ -94,6 +97,9 @@
 		1116E4B9B437EE620E37E3FA /* ProjectRootDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRootDiscovery.swift; sourceTree = "<group>"; };
 		113640E4F9E12CC9A7123EA8 /* KanbanBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanBoardView.swift; sourceTree = "<group>"; };
 		15A7FBE5ABA23F5A6E5B0738 /* WorkspaceCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCheck.swift; sourceTree = "<group>"; };
+		0AA11C0D1EAA4A3B8C1D2001 /* claude-logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = claude-logo.png; sourceTree = "<group>"; };
+		0AA11C0D1EAA4A3B8C1D2002 /* codex_logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = codex_logo.png; sourceTree = "<group>"; };
+		0AA11C0D1EAA4A3B8C1D2003 /* robot_logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = robot_logo.png; sourceTree = "<group>"; };
 		1674780797FD810F8D7DE8C2 /* AgentRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRole.swift; sourceTree = "<group>"; };
 		1A0248E5275A4DD2579FF53E /* BeadsKanbanApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BeadsKanbanApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C4B4490AA9915E56BD4244B /* BeadIssue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadIssue.swift; sourceTree = "<group>"; };
@@ -165,11 +171,22 @@
 		0AFAD5B8DDFBE591FC11F310 = {
 			isa = PBXGroup;
 			children = (
+				0AA11C0D1EAA4A3B8C1D3001 /* Assets */,
 				FBD16E616A814B8C57D4C950 /* App */,
 				3C9CBFAA0DED38CF2549138D /* BeadsContract */,
 				D8AC629B90F85127382EF6F2 /* BeadsWorkspace */,
 				482B42CAAB62783BCDB256A5 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		0AA11C0D1EAA4A3B8C1D3001 /* Assets */ = {
+			isa = PBXGroup;
+			children = (
+				0AA11C0D1EAA4A3B8C1D2001 /* claude-logo.png */,
+				0AA11C0D1EAA4A3B8C1D2002 /* codex_logo.png */,
+				0AA11C0D1EAA4A3B8C1D2003 /* robot_logo.png */,
+			);
+			path = assets;
 			sourceTree = "<group>";
 		};
 		3C9CBFAA0DED38CF2549138D /* BeadsContract */ = {
@@ -284,6 +301,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D23C8D17E2F27903DBC62722 /* Build configuration list for PBXNativeTarget "BeadsKanbanApp" */;
 			buildPhases = (
+				0AA11C0D1EAA4A3B8C1D4001 /* Resources */,
 				A4BAD83E483173722609B7F9 /* Sources */,
 			);
 			buildRules = (
@@ -413,6 +431,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0AA11C0D1EAA4A3B8C1D4001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0AA11C0D1EAA4A3B8C1D1001 /* claude-logo.png in Resources */,
+				0AA11C0D1EAA4A3B8C1D1002 /* codex_logo.png in Resources */,
+				0AA11C0D1EAA4A3B8C1D1003 /* robot_logo.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		0264735317A8FAD1708D8C48 /* Debug */ = {

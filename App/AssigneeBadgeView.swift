@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct AssigneeBadgeView: View {
@@ -43,9 +44,7 @@ struct AssigneeBadgeView: View {
                 .fill(backgroundColor(for: descriptor.kind))
                 .frame(width: size, height: size)
                 .overlay(
-                    Image(systemName: "chevron.left.forwardslash.chevron.right")
-                        .font(.system(size: iconSize, weight: .bold))
-                        .foregroundStyle(foregroundColor(for: descriptor.kind))
+                    avatarImage(name: "codex_logo", fallbackSystemImage: "chevron.left.forwardslash.chevron.right", kind: descriptor.kind, iconSize: iconSize)
                 )
                 .accessibilityLabel("Codex")
         case .claude:
@@ -53,9 +52,7 @@ struct AssigneeBadgeView: View {
                 .fill(backgroundColor(for: descriptor.kind))
                 .frame(width: size + 2, height: size)
                 .overlay(
-                    Image(systemName: "sparkles")
-                        .font(.system(size: iconSize + 1, weight: .semibold))
-                        .foregroundStyle(foregroundColor(for: descriptor.kind))
+                    avatarImage(name: "claude-logo", fallbackSystemImage: "sparkles", kind: descriptor.kind, iconSize: iconSize + 1)
                 )
                 .accessibilityLabel("Claude")
         case .other:
@@ -63,9 +60,7 @@ struct AssigneeBadgeView: View {
                 .fill(backgroundColor(for: descriptor.kind))
                 .frame(width: size, height: size)
                 .overlay(
-                    Image(systemName: "cpu.fill")
-                        .font(.system(size: iconSize, weight: .semibold))
-                        .foregroundStyle(foregroundColor(for: descriptor.kind))
+                    avatarImage(name: "robot_logo", fallbackSystemImage: "cpu.fill", kind: descriptor.kind, iconSize: iconSize)
                 )
                 .accessibilityLabel("Other AI")
         case .initials:
@@ -78,6 +73,33 @@ struct AssigneeBadgeView: View {
                         .foregroundStyle(foregroundColor(for: descriptor.kind))
                 )
         }
+    }
+
+    @ViewBuilder
+    private func avatarImage(
+        name: String,
+        fallbackSystemImage: String,
+        kind: AgentAvatarKind,
+        iconSize: CGFloat
+    ) -> some View {
+        if let image = bundledImage(named: name) {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
+                .padding(compact ? 2 : 3)
+                .accessibilityHidden(true)
+        } else {
+            Image(systemName: fallbackSystemImage)
+                .font(.system(size: iconSize, weight: .semibold))
+                .foregroundStyle(foregroundColor(for: kind))
+                .accessibilityHidden(true)
+        }
+    }
+
+    private func bundledImage(named name: String) -> NSImage? {
+        Bundle.main
+            .url(forResource: name, withExtension: "png")
+            .flatMap(NSImage.init(contentsOf:))
     }
 
     private func backgroundColor(for kind: AgentAvatarKind) -> Color {
