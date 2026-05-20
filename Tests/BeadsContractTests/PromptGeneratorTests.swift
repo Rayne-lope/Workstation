@@ -25,6 +25,8 @@ struct PromptGeneratorTests {
         #expect(prompt.contains("Write acceptance criteria as concise bullet points"))
         #expect(prompt.contains("bd-42"))
         #expect(prompt.contains("Implement feature X"))
+        #expect(prompt.contains("Assignee convention"))
+        #expect(prompt.contains("Use `claude` for Claude Code Executor"))
     }
 
     @Test("Built-in executor prompt requests human review instead of self-closing")
@@ -40,6 +42,9 @@ struct PromptGeneratorTests {
         #expect(prompt.contains("bd update bd-42 --claim"))
         #expect(prompt.contains("bd update bd-42 --add-label human"))
         #expect(!prompt.contains("bd close bd-42"))
+        #expect(prompt.contains("Assignee convention"))
+        #expect(prompt.contains("Use `codex` for Codex Code Executor"))
+        #expect(prompt.contains("Use `other` for any other AI executor"))
         let lowered = prompt.lowercased()
         #expect(lowered.contains("run relevant tests"))
     }

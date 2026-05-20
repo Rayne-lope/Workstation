@@ -110,6 +110,12 @@ public struct PromptGenerator: Sendable {
         - Do not modify application source code.
         - Focus on producing an unambiguous spec the Coding Executor can act on.
         - Capture assumptions explicitly; flag unknowns with `bd human \(issue.id)` if a decision is required.
+
+        Assignee convention:
+        - Use `claude` for Claude Code Executor.
+        - Use `codex` for Codex Code Executor.
+        - Use `other` for any other AI executor so the robot badge appears in the UI.
+        - Human assignees should keep their actual name or initials; do not relabel them as `other`.
         """
     }
 
@@ -141,6 +147,12 @@ public struct PromptGenerator: Sendable {
         Constraints:
         - Follow project conventions; do not introduce unrelated refactors.
         - If a blocker appears, leave a note via `bd update \(issue.id) --notes=...` and stop instead of guessing.
+
+        Assignee convention:
+        - Use `claude` for Claude Code Executor.
+        - Use `codex` for Codex Code Executor.
+        - Use `other` for any other AI executor so the robot badge appears in the UI.
+        - Human assignees should keep their actual name or initials; do not relabel them as `other`.
         """
     }
 
@@ -161,6 +173,12 @@ public struct PromptGenerator: Sendable {
         Constraints:
         - Do not modify source code; only review and report.
         - Cite specific files and lines when calling out issues.
+
+        Assignee convention:
+        - Use `claude` for Claude Code Executor.
+        - Use `codex` for Codex Code Executor.
+        - Use `other` for any other AI executor so the robot badge appears in the UI.
+        - Human assignees should keep their actual name or initials; do not relabel them as `other`.
         """
     }
 
@@ -181,6 +199,12 @@ public struct PromptGenerator: Sendable {
         Constraints:
         - Write tests only. Implementation changes are out of scope for this role.
         - Prefer deterministic tests; avoid flaky timing assumptions.
+
+        Assignee convention:
+        - Use `claude` for Claude Code Executor.
+        - Use `codex` for Codex Code Executor.
+        - Use `other` for any other AI executor so the robot badge appears in the UI.
+        - Human assignees should keep their actual name or initials; do not relabel them as `other`.
         """
     }
 
@@ -194,5 +218,11 @@ public struct PromptGenerator: Sendable {
     1. Run `bd prime` to load project context.
     2. Run `bd show {{issue_id}} --json` to read the issue.
     3. Perform the work described by your role and record progress via `bd update {{issue_id}} --notes=...`.
+
+    Assignee convention:
+    - Use `claude` for Claude Code Executor.
+    - Use `codex` for Codex Code Executor.
+    - Use `other` for any other AI executor so the robot badge appears in the UI.
+    - Human assignees should keep their actual name or initials; do not relabel them as `other`.
     """
 }
