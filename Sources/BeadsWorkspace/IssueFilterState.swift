@@ -27,21 +27,24 @@ public struct FilterState: Codable, Equatable, Sendable {
     public var issueTypes: Set<String>
     public var assignees: Set<IssueFilterAssignee>
     public var labels: Set<String>
+    public var recurringOnly: Bool
 
     public init(
         priorities: Set<Int> = [],
         issueTypes: Set<String> = [],
         assignees: Set<IssueFilterAssignee> = [],
-        labels: Set<String> = []
+        labels: Set<String> = [],
+        recurringOnly: Bool = false
     ) {
         self.priorities = priorities
         self.issueTypes = Self.normalize(issueTypes)
         self.assignees = assignees
         self.labels = Self.normalize(labels)
+        self.recurringOnly = recurringOnly
     }
 
     public var isEmpty: Bool {
-        priorities.isEmpty && issueTypes.isEmpty && assignees.isEmpty && labels.isEmpty
+        priorities.isEmpty && issueTypes.isEmpty && assignees.isEmpty && labels.isEmpty && !recurringOnly
     }
 
     public mutating func clear() {
@@ -49,6 +52,11 @@ public struct FilterState: Codable, Equatable, Sendable {
         issueTypes.removeAll()
         assignees.removeAll()
         labels.removeAll()
+        recurringOnly = false
+    }
+
+    public mutating func toggleRecurringOnly() {
+        recurringOnly.toggle()
     }
 
     public mutating func togglePriority(_ priority: Int) {
@@ -90,7 +98,32 @@ public struct FilterState: Codable, Equatable, Sendable {
             priorities: priorities,
             issueTypes: issueTypes,
             assignees: assignees,
-            labels: labels
+            labels: labels,
+            recurringOnly: recurringOnly
+        )
+    }
+
+    public enum CodingKeys: String, CodingKey {
+        case priorities
+        case issueTypes
+        case assignees
+        case labels
+        case recurringOnly
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let priorities = try container.decodeIfPresent(Set<Int>.self, forKey: .priorities) ?? []
+        let issueTypes = try container.decodeIfPresent(Set<String>.self, forKey: .issueTypes) ?? []
+        let assignees = try container.decodeIfPresent(Set<IssueFilterAssignee>.self, forKey: .assignees) ?? []
+        let labels = try container.decodeIfPresent(Set<String>.self, forKey: .labels) ?? []
+        let recurringOnly = try container.decodeIfPresent(Bool.self, forKey: .recurringOnly) ?? false
+        self.init(
+            priorities: priorities,
+            issueTypes: issueTypes,
+            assignees: assignees,
+            labels: labels,
+            recurringOnly: recurringOnly
         )
     }
 

@@ -9,6 +9,7 @@ import Observation
 public final class IssueStore {
     public private(set) var issues: [BeadIssue] = []
     public var filterState: FilterState
+    public var recurringIDs: Set<String> = []
     public private(set) var readyIssueIDs: Set<String> = []
     public private(set) var blockedByDependencyIDs: Set<String> = []
     public private(set) var blockersMap: [String: [String]] = [:]
@@ -300,6 +301,7 @@ public final class IssueStore {
             + filterState.issueTypes.count
             + filterState.assignees.count
             + filterState.labels.count
+            + (filterState.recurringOnly ? 1 : 0)
     }
 
     public var availablePriorities: [Int] {
@@ -340,6 +342,10 @@ public final class IssueStore {
 
     public func toggleLabel(_ label: String) {
         filterState.toggleLabel(label)
+    }
+
+    public func toggleRecurringOnly() {
+        filterState.toggleRecurringOnly()
     }
 
     public func clearFilters() {
@@ -392,6 +398,10 @@ public final class IssueStore {
             guard !issueLabels.isDisjoint(with: filterState.labels) else {
                 return false
             }
+        }
+
+        if filterState.recurringOnly, !recurringIDs.contains(issue.id) {
+            return false
         }
 
         return true

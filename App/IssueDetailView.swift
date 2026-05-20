@@ -17,6 +17,7 @@ struct IssueDetailView: View {
                     dependenciesSection
                     textSections
                     actionsSection
+                    recurringSection
                     agentSection
                 }
                 .padding(.horizontal, 24)
@@ -380,6 +381,230 @@ struct IssueDetailView: View {
         }
         .buttonStyle(WorkstationGhostButtonStyle())
         .disabled(issue.status != "closed" || store.isLoading)
+    }
+
+    @State private var recurringNotesDraft: String = ""
+    @State private var recurringActionFlash: String?
+
+    @ViewBuilder
+    private var recurringSection: some View {
+        let metadata = appVM.recurringMetadata(for: issue.id)
+        let isRecurring = metadata?.isRecurring == true
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                uppercaseLabel("Recurring")
+                Spacer()
+                if isRecurring {
+                    recurringCounterPill(metadata!)
+                }
+            }
+
+            HStack(spacing: 8) {
+                Toggle(isOn: Binding(
+                    get: { isRecurring },
+                    set: { _ in appVM.toggleRecurring(for: issue.id) }
+                )) {
+                    Label(isRecurring ? "Recurring enabled" : "Mark as recurring", systemImage: "arrow.triangle.2.circlepath")
+                        .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                        .foregroundStyle(isRecurring ? WorkstationTheme.textPrimary : WorkstationTheme.textSecondary)
+                }
+                .toggleStyle(.switch)
+                .tint(WorkstationTheme.accent)
+                .help("When on, completing a run resets the issue to Ready instead of closing it")
+                Spacer()
+            }
+
+            if isRecurring, let metadata {
+                cadencePickerView(currentDays: metadata.cadenceDays)
+                runCompletionInput()
+                if !metadata.history.isEmpty {
+                    runHistoryView(metadata: metadata)
+                }
+            }
+
+            if let flash = recurringActionFlash {
+                Label(flash, systemImage: "checkmark.circle.fill")
+                    .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.green)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    private func recurringCounterPill(_ metadata: RecurringMetadata) -> some View {
+        let overdue = metadata.overdueDays(now: Date())
+        let label: String
+        if overdue > 0 {
+            label = "Overdue \(overdue)d"
+        } else if metadata.completionCount > 0 {
+            label = "Run #\(metadata.completionCount)"
+        } else {
+            label = "No runs yet"
+        }
+        let color = overdue > 0 ? WorkstationTheme.orange : WorkstationTheme.purple
+        return Text(label)
+            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.10))
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                    .stroke(color.opacity(0.35), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func cadencePickerView(currentDays: Int?) -> some View {
+        let current = CadenceTarget.from(days: currentDays)
+        HStack(spacing: 6) {
+            Text("Cadence")
+                .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.textSubtle)
+                .textCase(.uppercase)
+                .tracking(0.6)
+            ForEach(CadenceTarget.allCases, id: \.self) { option in
+                cadenceChip(option: option, isSelected: option == current)
+            }
+            Spacer()
+        }
+    }
+
+    private func cadenceChip(option: CadenceTarget, isSelected: Bool) -> some View {
+        Button {
+            appVM.setCadence(for: issue.id, days: option.days)
+        } label: {
+            Text(cadenceShortLabel(option))
+                .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                .foregroundStyle(isSelected ? WorkstationTheme.background : WorkstationTheme.textSecondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(isSelected ? WorkstationTheme.accent : WorkstationTheme.cardAlt)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                        .stroke(isSelected ? WorkstationTheme.accent : WorkstationTheme.borderStrong, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func cadenceShortLabel(_ option: CadenceTarget) -> String {
+        switch option {
+        case .none: return "None"
+        case .weekly: return "7d"
+        case .monthly: return "30d"
+        case .quarterly: return "90d"
+        }
+    }
+
+    private func runCompletionInput() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("Optional notes for this run (what was done, what to remember next time)", text: $recurringNotesDraft, axis: .vertical)
+                .textFieldStyle(.plain)
+                .font(WorkstationTheme.Fonts.body(12))
+                .foregroundStyle(WorkstationTheme.textPrimary)
+                .lineLimit(2...4)
+                .padding(10)
+                .background(WorkstationTheme.cardAlt)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                        .stroke(WorkstationTheme.border, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+
+            Button {
+                let notes = recurringNotesDraft
+                Task { @MainActor in
+                    let ok = await appVM.completeRecurringRun(for: issue.id, notes: notes)
+                    if ok {
+                        recurringNotesDraft = ""
+                        flashRecurringAction("Run logged — issue reset to Ready")
+                    }
+                }
+            } label: {
+                Label("Mark Run Complete", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(WorkstationPrimaryButtonStyle())
+            .disabled(issue.status == "closed" || store.isLoading)
+            .help("Append a history entry and reset this issue back to Ready (does not close)")
+        }
+    }
+
+    private func flashRecurringAction(_ message: String) {
+        withAnimation(.easeOut(duration: 0.15)) { recurringActionFlash = message }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_800_000_000)
+            withAnimation(.easeOut(duration: 0.15)) { recurringActionFlash = nil }
+        }
+    }
+
+    @ViewBuilder
+    private func runHistoryView(metadata: RecurringMetadata) -> some View {
+        let entries = metadata.history.sorted(by: { $0.completedAt > $1.completedAt })
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Run history")
+                .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.textSubtle)
+                .textCase(.uppercase)
+                .tracking(0.6)
+            VStack(spacing: 0) {
+                ForEach(Array(entries.prefix(5).enumerated()), id: \.element.id) { index, entry in
+                    runHistoryRow(entry: entry, isFirst: index == 0)
+                }
+                if entries.count > 5 {
+                    Text("+ \(entries.count - 5) older runs")
+                        .font(WorkstationTheme.Fonts.body(11))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                }
+            }
+            .background(WorkstationTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(WorkstationTheme.border, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+        }
+    }
+
+    private func runHistoryRow(entry: RecurringHistoryEntry, isFirst: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.green)
+                Text(entry.completedAt.formatted(date: .abbreviated, time: .shortened))
+                    .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+                if let by = entry.completedBy, !by.isEmpty {
+                    Text("· \(by)")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                }
+                Spacer()
+            }
+            if let notes = entry.notes, !notes.isEmpty {
+                Text(notes)
+                    .font(WorkstationTheme.Fonts.body(12))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 19)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .overlay(alignment: .top) {
+            if !isFirst {
+                Rectangle()
+                    .fill(WorkstationTheme.borderSoft)
+                    .frame(height: 1)
+            }
+        }
     }
 
     private var agentSection: some View {

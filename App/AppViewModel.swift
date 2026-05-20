@@ -24,12 +24,14 @@ enum DetailPaneMode: String, Hashable {
 @Observable
 final class AppViewModel {
     var issueStore: IssueStore?
+    var recurringStore: RecurringStore?
     let agentProfileStore: AgentProfileStore
     let recentProjectsStore: RecentProjectsStore
     let preferencesStore: PreferencesStore
     let shellRunner: ShellCommandRunner
     let gitWorktreeService: GitWorktreeService
     let agentRunHistoryStore: AgentRunHistoryStore
+    let agentRunTranscriptStore: AgentRunTranscriptStore
     private let terminalLauncher: any TerminalLaunching
     private let agentLaunchFlowCoordinator: AgentLaunchFlowCoordinator
 
@@ -63,6 +65,7 @@ final class AppViewModel {
         recentProjectsStore: RecentProjectsStore = RecentProjectsStore(),
         preferencesStore: PreferencesStore = PreferencesStore(),
         agentRunHistoryStore: AgentRunHistoryStore = AgentRunHistoryStore(),
+        agentRunTranscriptStore: AgentRunTranscriptStore = AgentRunTranscriptStore(),
         gitWorktreeService: GitWorktreeService = GitWorktreeService(),
         terminalLauncher: any TerminalLaunching = TerminalLauncherAdapter()
     ) {
@@ -72,6 +75,7 @@ final class AppViewModel {
         self.recentProjectsStore = recentProjectsStore
         self.preferencesStore = preferencesStore
         self.agentRunHistoryStore = agentRunHistoryStore
+        self.agentRunTranscriptStore = agentRunTranscriptStore
         self.terminalLauncher = terminalLauncher
         self.agentLaunchFlowCoordinator = AgentLaunchFlowCoordinator(
             historyStore: agentRunHistoryStore,
@@ -98,6 +102,7 @@ final class AppViewModel {
                 fileWatcher?.stop()
                 fileWatcher = nil
                 issueStore = nil
+                recurringStore = nil
                 activeWorkspace = nil
                 activeWorkspaceStorageKey = nil
                 worktreeMessage = nil
@@ -119,6 +124,10 @@ final class AppViewModel {
             filterState: persistedFilterState
         )
         issueStore = store
+        let recurring = RecurringStore(workingDirectory: workspace.inspectionURL)
+        recurring.load()
+        recurringStore = recurring
+        store.recurringIDs = recurring.recurringIDs
         Task { await store.reload() }
         startFileWatcher(for: workspace)
     }
@@ -221,6 +230,60 @@ final class AppViewModel {
         Clipboard.copy(prompt)
     }
 
+    // MARK: - Recurring tasks
+
+    func isRecurring(id: String) -> Bool {
+        recurringStore?.isRecurring(id: id) ?? false
+    }
+
+    func recurringMetadata(for id: String) -> RecurringMetadata? {
+        recurringStore?.metadata(id: id)
+    }
+
+    func toggleRecurring(for id: String) {
+        guard let recurringStore else { return }
+        if recurringStore.isRecurring(id: id) {
+            recurringStore.unmarkRecurring(id: id)
+        } else {
+            recurringStore.markRecurring(id: id)
+        }
+        issueStore?.recurringIDs = recurringStore.recurringIDs
+    }
+
+    func setCadence(for id: String, days: Int?) {
+        recurringStore?.setCadence(id: id, days: days)
+        if let recurringStore {
+            issueStore?.recurringIDs = recurringStore.recurringIDs
+        }
+    }
+
+    /// Mark a recurring issue's run as complete: append history entry then reset the issue
+    /// back to Ready (status=open) so it shows up again on the board. Does NOT call `bd close`.
+    /// Returns true on success.
+    @discardableResult
+    func completeRecurringRun(for issueID: String, notes: String?) async -> Bool {
+        guard let store = issueStore, let recurringStore else { return false }
+        guard let issue = store.issues.first(where: { $0.id == issueID }) else { return false }
+
+        let entry = RecurringHistoryEntry(
+            completedAt: Date(),
+            completedBy: issue.assignee,
+            notes: notes.flatMap { value in
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? nil : trimmed
+            }
+        )
+        recurringStore.appendHistory(id: issueID, entry: entry)
+        store.recurringIDs = recurringStore.recurringIDs
+
+        // Reset status + drop the human-review label so the issue lands back in Ready.
+        if (issue.labels ?? []).contains(KanbanStateMapper.humanReviewLabel) {
+            await store.clearHumanReview(id: issueID)
+        }
+        await store.update(id: issueID, UpdateIssueInput(status: "open"))
+        return store.errorMessage == nil
+    }
+
     func presentBlockerPicker(for issueID: String, existingBlockerIDs: Set<String> = []) {
         blockerPickerIssueID = issueID
         blockerPickerExistingBlockerIDs = existingBlockerIDs
@@ -308,6 +371,31 @@ final class AppViewModel {
 
     func updateAgentRunNotes(id: UUID, notes: String) {
         agentRunHistoryStore.updateNotes(id: id, notes: notes)
+    }
+
+    func transcriptMessages(for runID: UUID) -> [AgentRunMessage] {
+        agentRunTranscriptStore.messages(forRunID: runID)
+    }
+
+    @discardableResult
+    func appendTranscriptMessage(
+        runID: UUID,
+        role: AgentRunMessageRole,
+        content: String
+    ) -> AgentRunMessage? {
+        agentRunTranscriptStore.append(runID: runID, role: role, content: content)
+    }
+
+    func updateTranscriptMessageContent(id: UUID, content: String) {
+        agentRunTranscriptStore.updateContent(id: id, content: content)
+    }
+
+    func updateTranscriptMessageRole(id: UUID, role: AgentRunMessageRole) {
+        agentRunTranscriptStore.updateRole(id: id, role: role)
+    }
+
+    func deleteTranscriptMessage(id: UUID) {
+        agentRunTranscriptStore.delete(id: id)
     }
 
     func openTerminalForAgentRun(_ record: AgentRunRecord) {

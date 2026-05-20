@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		08F5B619F89B824DD89E920A /* AgentRunLaunchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63F79EFFE2C205E9B51022F /* AgentRunLaunchCoordinator.swift */; };
+		0B132AD8EC55302F736DAA2C /* RecurringMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805340EA9FBA3874DFEAD319 /* RecurringMetadata.swift */; };
 		10FAB7BF207ECFDE08A65B22 /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A8C4D84422BBCE4A84BF81 /* IssueDetailView.swift */; };
 		12620EE9783B65D6DF288038 /* WorkspaceValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB94DC4755E753E7F8820198 /* WorkspaceValidator.swift */; };
 		12E241B27B6C9B8EC7B9395C /* IssueFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02995F2D4DFE3B31D00526EF /* IssueFilterState.swift */; };
@@ -19,10 +20,12 @@
 		2E0F554D8887BBF850410321 /* ShellCommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A267113D5EBBAFBD1F438D57 /* ShellCommandRunner.swift */; };
 		322D00C931CD361D7E7EA1DA /* AgentRunConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 626365BA4FBFF70061F5A8F6 /* AgentRunConsoleView.swift */; };
 		3D59BD01A9AD861FE5A1BC7A /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9CA4D850D4A89F102D5866F /* AppViewModel.swift */; };
+		3FE7E6EDF84988304359A942 /* RecurringStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D779A67B8CC5F47EF68083B3 /* RecurringStore.swift */; };
 		41A8CFB9661979481337B872 /* KanbanDropResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F866B85B2A56E15F62680F /* KanbanDropResolver.swift */; };
 		4592B816E0522788375F8CE0 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30371A914B174F942233A4D /* BoardView.swift */; };
 		480365CF848360DF4CC1ABEE /* MarkdownTextRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072902C8C2829A57F8879515 /* MarkdownTextRenderer.swift */; };
 		514EDC774BDF539E62BBD18F /* AgentProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB9A4F6E330781329558DE68 /* AgentProfileStore.swift */; };
+		51AA04F5B2CD468BD2A530F0 /* AgentRunTranscriptStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246405742CABDD6FDCD92C4A /* AgentRunTranscriptStore.swift */; };
 		558DD8247DAFBFAA255060CF /* WorkspaceCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A7FBE5ABA23F5A6E5B0738 /* WorkspaceCheck.swift */; };
 		57B1A1E222247DEA55F52900 /* AgentRunRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB66BEA09BA735011CC7D05F /* AgentRunRecord.swift */; };
 		5A67B9D838C3A53ABCFC6FEE /* IssueListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D09B05737B06390C186B8F7 /* IssueListView.swift */; };
@@ -64,6 +67,7 @@
 		E48DAA3AF46434C2A0F9E16B /* WorkspaceValidationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892AFBAFFBB5AC7ADBFEF382 /* WorkspaceValidationState.swift */; };
 		E7B9A7C71C5F732A5E626E6A /* BeadIssue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4B4490AA9915E56BD4244B /* BeadIssue.swift */; };
 		EA5007A9BB9CB616312B99F1 /* WorkspaceCheckState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E54FCB2438300BC3BEABE3 /* WorkspaceCheckState.swift */; };
+		EB7707B1EC0E3ED5EC5BDAD5 /* AgentRunMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5365E7ADB87026363F26D6F7 /* AgentRunMessage.swift */; };
 		EB9C537BA9B88F29D98F6864 /* BeadsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38B47C6056A4A2EF59F26B31 /* BeadsService.swift */; };
 		EC21EF3BAB971203477766C6 /* UpdateIssueInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DB2BCFBFCEE719CA359921 /* UpdateIssueInput.swift */; };
 		EFF3DBCE0D2A735D133EAEF5 /* AgentProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2860AA2285EFC86D3DB1C3FA /* AgentProfile.swift */; };
@@ -93,6 +97,7 @@
 		1A0248E5275A4DD2579FF53E /* BeadsKanbanApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BeadsKanbanApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C4B4490AA9915E56BD4244B /* BeadIssue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadIssue.swift; sourceTree = "<group>"; };
 		234B53B7F03FBE6A459A8149 /* GitStatusSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusSummary.swift; sourceTree = "<group>"; };
+		246405742CABDD6FDCD92C4A /* AgentRunTranscriptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunTranscriptStore.swift; sourceTree = "<group>"; };
 		25B1886C7BBD88E21A4DD8AB /* IssueRightPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueRightPane.swift; sourceTree = "<group>"; };
 		27B4A8FF92250BAF4DF9470D /* CommandResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandResult.swift; sourceTree = "<group>"; };
 		2860AA2285EFC86D3DB1C3FA /* AgentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProfile.swift; sourceTree = "<group>"; };
@@ -102,6 +107,7 @@
 		47BC8D75D3F915672B7E87A3 /* AssigneeBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssigneeBadgeView.swift; sourceTree = "<group>"; };
 		52316928B361CD02CB516C38 /* CommandSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandSnapshot.swift; sourceTree = "<group>"; };
 		524C06B260590235A286E85A /* AgentRunStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunStatus.swift; sourceTree = "<group>"; };
+		5365E7ADB87026363F26D6F7 /* AgentRunMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunMessage.swift; sourceTree = "<group>"; };
 		5715AB43753AA20C2F5B0276 /* IssueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueStore.swift; sourceTree = "<group>"; };
 		58A8C4D84422BBCE4A84BF81 /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
 		5B8EC6BEF8A451F9C6414377 /* ProcessCommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessCommandRunner.swift; sourceTree = "<group>"; };
@@ -114,6 +120,7 @@
 		7D09B05737B06390C186B8F7 /* IssueListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueListView.swift; sourceTree = "<group>"; };
 		7DBB91774FEBEFDB2A92E3F2 /* Clipboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.swift; sourceTree = "<group>"; };
 		7DF68C52F8AE3853FD37F28B /* DebugPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPanelView.swift; sourceTree = "<group>"; };
+		805340EA9FBA3874DFEAD319 /* RecurringMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringMetadata.swift; sourceTree = "<group>"; };
 		80A1EBFA411DA5DE40B48674 /* AgentRunHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunHistoryStore.swift; sourceTree = "<group>"; };
 		833FF27F3DA76EFFBE825440 /* BeadsKanbanApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadsKanbanApp.swift; sourceTree = "<group>"; };
 		843DAFA24B80CDA5609E80E4 /* AgentLaunchState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLaunchState.swift; sourceTree = "<group>"; };
@@ -138,6 +145,7 @@
 		BE9802E54167B017B03C02D2 /* ProjectWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectWorkspace.swift; sourceTree = "<group>"; };
 		C8E54FCB2438300BC3BEABE3 /* WorkspaceCheckState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCheckState.swift; sourceTree = "<group>"; };
 		CB9A4F6E330781329558DE68 /* AgentProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProfileStore.swift; sourceTree = "<group>"; };
+		D779A67B8CC5F47EF68083B3 /* RecurringStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringStore.swift; sourceTree = "<group>"; };
 		D92B41CC363EFD04B2C2B380 /* RecentProjectsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentProjectsStore.swift; sourceTree = "<group>"; };
 		D9CA4D850D4A89F102D5866F /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		DCAA6024BCA55980AD7BD902 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -175,6 +183,7 @@
 				EF6F1541C70BFBBE25CA6DE8 /* KanbanStateMapper.swift */,
 				917F583AF9D4B02E53F16FD1 /* PriorityDifficulty.swift */,
 				ADE0506503A2928BD3788E8A /* PromptGenerator.swift */,
+				805340EA9FBA3874DFEAD319 /* RecurringMetadata.swift */,
 			);
 			name = BeadsContract;
 			path = Sources/BeadsContract;
@@ -195,8 +204,10 @@
 				CB9A4F6E330781329558DE68 /* AgentProfileStore.swift */,
 				80A1EBFA411DA5DE40B48674 /* AgentRunHistoryStore.swift */,
 				A63F79EFFE2C205E9B51022F /* AgentRunLaunchCoordinator.swift */,
+				5365E7ADB87026363F26D6F7 /* AgentRunMessage.swift */,
 				AB66BEA09BA735011CC7D05F /* AgentRunRecord.swift */,
 				524C06B260590235A286E85A /* AgentRunStatus.swift */,
+				246405742CABDD6FDCD92C4A /* AgentRunTranscriptStore.swift */,
 				BE01F1D4A7FD2A2A8614AF09 /* AppPreferences.swift */,
 				69572911E9CE07BDC6E47FE7 /* AssigneeAvatarResolver.swift */,
 				084DC3DCA7251D75F1C0667C /* BeadsError.swift */,
@@ -217,6 +228,7 @@
 				BE9802E54167B017B03C02D2 /* ProjectWorkspace.swift */,
 				DD05BDF21A6D250F74257C0F /* RecentProject.swift */,
 				D92B41CC363EFD04B2C2B380 /* RecentProjectsStore.swift */,
+				D779A67B8CC5F47EF68083B3 /* RecurringStore.swift */,
 				A267113D5EBBAFBD1F438D57 /* ShellCommandRunner.swift */,
 				448BE4AEBDAFF17B41A357D3 /* TerminalLaunching.swift */,
 				63DB2BCFBFCEE719CA359921 /* UpdateIssueInput.swift */,
@@ -328,8 +340,10 @@
 				322D00C931CD361D7E7EA1DA /* AgentRunConsoleView.swift in Sources */,
 				D1E282B1388DA98C1C479C90 /* AgentRunHistoryStore.swift in Sources */,
 				08F5B619F89B824DD89E920A /* AgentRunLaunchCoordinator.swift in Sources */,
+				EB7707B1EC0E3ED5EC5BDAD5 /* AgentRunMessage.swift in Sources */,
 				57B1A1E222247DEA55F52900 /* AgentRunRecord.swift in Sources */,
 				7E5588374B9CA0670DB653A0 /* AgentRunStatus.swift in Sources */,
+				51AA04F5B2CD468BD2A530F0 /* AgentRunTranscriptStore.swift in Sources */,
 				FCC3622DFB2C0F7172458C62 /* AppPreferences.swift in Sources */,
 				3D59BD01A9AD861FE5A1BC7A /* AppViewModel.swift in Sources */,
 				C2FBEA4833D1CE73B6B10C72 /* AssigneeAvatarResolver.swift in Sources */,
@@ -376,6 +390,8 @@
 				6A22080603C0D4BEA29DC9F6 /* PromptGenerator.swift in Sources */,
 				5FE2FB5416DE9F39D33AEB6D /* RecentProject.swift in Sources */,
 				E02EE3470B9C43544BA7A927 /* RecentProjectsStore.swift in Sources */,
+				0B132AD8EC55302F736DAA2C /* RecurringMetadata.swift in Sources */,
+				3FE7E6EDF84988304359A942 /* RecurringStore.swift in Sources */,
 				F7378A2357AD882B8DBD52DA /* ReviewFollowupSheet.swift in Sources */,
 				2E0F554D8887BBF850410321 /* ShellCommandRunner.swift in Sources */,
 				DE2E555C843DDA7B37027D5E /* StatusBarView.swift in Sources */,

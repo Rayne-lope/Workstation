@@ -75,6 +75,11 @@ struct IssueFilterBarView: View {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 16) {
                     filterSection(
+                        title: "Recurring",
+                        chips: [recurringOnlyChip()]
+                    )
+
+                    filterSection(
                         title: "Priority",
                         chips: store.availablePriorities.map { priorityChip($0) }
                     )
@@ -119,6 +124,22 @@ struct IssueFilterBarView: View {
                 }
             }
         }
+    }
+
+    private func recurringOnlyChip() -> AnyView {
+        let isActive = store.filterState.recurringOnly
+        return AnyView(
+            Button {
+                store.toggleRecurringOnly()
+            } label: {
+                filterChip(
+                    label: "Recurring only",
+                    isActive: isActive,
+                    accent: WorkstationTheme.purple
+                )
+            }
+            .buttonStyle(.plain)
+        )
     }
 
     private func priorityChip(_ priority: Int) -> AnyView {

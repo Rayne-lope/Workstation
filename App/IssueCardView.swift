@@ -100,8 +100,58 @@ struct IssueCardView: View {
                 blockerBadge
             }
 
+            if let recurringMeta = appVM.recurringMetadata(for: issue.id), recurringMeta.isRecurring {
+                recurringBadge(for: recurringMeta)
+            }
+
             Spacer(minLength: 0)
         }
+    }
+
+    private func recurringBadge(for metadata: RecurringMetadata) -> some View {
+        let overdue = metadata.overdueDays(now: Date())
+        let isOverdue = overdue > 0
+        let color = isOverdue ? WorkstationTheme.orange : WorkstationTheme.purple
+        let bg = isOverdue ? Color(hex: "1F1108") : Color(hex: "1A0F1F")
+        let stroke = isOverdue ? Color(hex: "3A2310") : Color(hex: "2E1A40")
+
+        return HStack(spacing: 4) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.system(size: 9, weight: .bold))
+            if isOverdue {
+                Text("Overdue \(overdue)d")
+            } else if metadata.completionCount > 0 {
+                Text("#\(metadata.completionCount)")
+            } else {
+                Text("New")
+            }
+        }
+        .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+        .foregroundStyle(color)
+        .lineLimit(1)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 2)
+        .background(bg)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                .stroke(stroke, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+        .help(recurringHelp(for: metadata, overdue: overdue))
+    }
+
+    private func recurringHelp(for metadata: RecurringMetadata, overdue: Int) -> String {
+        var parts: [String] = ["Recurring task"]
+        if metadata.completionCount > 0 {
+            parts.append("completed \(metadata.completionCount)x")
+        }
+        if let cadence = metadata.cadenceDays {
+            parts.append("cadence \(cadence)d")
+        }
+        if overdue > 0 {
+            parts.append("overdue \(overdue)d")
+        }
+        return parts.joined(separator: " · ")
     }
 
     private var blockerBadge: some View {
