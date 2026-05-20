@@ -3,6 +3,7 @@ import SwiftUI
 struct WelcomeView: View {
     @ObservedObject var viewModel: WorkspaceViewModel
     @Bindable var recentProjectsStore: RecentProjectsStore
+    @Bindable var appVM: AppViewModel
 
     var body: some View {
         ZStack {
@@ -26,6 +27,10 @@ struct WelcomeView: View {
 
                     if let errorMessage = viewModel.errorMessage {
                         errorBanner(errorMessage)
+                    }
+
+                    if let terminalErrorMessage = appVM.terminalErrorMessage {
+                        errorBanner(terminalErrorMessage)
                     }
                 }
                 .padding(24)
@@ -218,7 +223,7 @@ struct WelcomeView: View {
 
                     if !workspace.setupHints.isEmpty {
                         sectionDivider
-                        setupHints(workspace.setupHints)
+                        setupHints(workspace, workspace.setupHints)
                     }
 
                     if let suggestion = workspace.suggestion {
@@ -388,46 +393,51 @@ struct WelcomeView: View {
         }
     }
 
-    private func setupHints(_ hints: [WorkspaceSetupHint]) -> some View {
+    private func setupHints(_ workspace: ProjectWorkspace, _ hints: [WorkspaceSetupHint]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Setup Hints")
                 .font(WorkstationTheme.Fonts.display(13, weight: .semibold))
                 .foregroundStyle(WorkstationTheme.textPrimary)
 
             ForEach(Array(hints.enumerated()), id: \.element.id) { index, hint in
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(hint.title)
-                            .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
-                            .foregroundStyle(WorkstationTheme.textPrimary)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(hint.title)
+                        .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
 
-                        Text(hint.detail)
-                            .font(WorkstationTheme.Fonts.body(11, weight: .medium))
-                            .foregroundStyle(WorkstationTheme.textSecondary)
-                            .lineLimit(2)
+                    Text(hint.detail)
+                        .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                        .foregroundStyle(WorkstationTheme.textSecondary)
+                        .lineLimit(2)
 
-                        Text(hint.command)
-                            .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
-                            .foregroundStyle(WorkstationTheme.accent)
-                            .monospaced()
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(WorkstationTheme.borderSoft)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                                    .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                    Text(hint.command)
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.accent)
+                        .monospaced()
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(WorkstationTheme.borderSoft)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                                .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+
+                    HStack(spacing: 8) {
+                        Button {
+                            appVM.openTerminal(at: workspace.inspectionURL, command: hint.command)
+                        } label: {
+                            Label("Launch Setup", systemImage: "terminal")
+                        }
+                        .buttonStyle(WorkstationPrimaryButtonStyle())
+
+                        Button {
+                            Clipboard.copy(hint.command)
+                        } label: {
+                            Label("Copy", systemImage: "doc.on.doc")
+                        }
+                        .buttonStyle(WorkstationGhostButtonStyle(compact: true))
                     }
-
-                    Spacer(minLength: 12)
-
-                    Button {
-                        Clipboard.copy(hint.command)
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                    }
-                    .buttonStyle(WorkstationGhostButtonStyle(compact: true))
                 }
 
                 if index < hints.count - 1 {
@@ -872,8 +882,8 @@ struct WelcomeView: View {
             return viewModel.selectedFolderPath == nil ? "Choose a folder" : "Finish validation"
         }
 
-        if let firstHint = workspace.setupHints.first {
-            return firstHint.title
+        if !workspace.setupHints.isEmpty {
+            return "Launch Setup"
         }
 
         switch workspace.validationState {

@@ -11,7 +11,8 @@ struct ContentView: View {
             } else {
                 WelcomeView(
                     viewModel: viewModel,
-                    recentProjectsStore: appVM.recentProjectsStore
+                    recentProjectsStore: appVM.recentProjectsStore,
+                    appVM: appVM
                 )
             }
         }
