@@ -51,20 +51,48 @@ bd close <id>         # Complete work
 <!-- END BEADS INTEGRATION -->
 
 
+## Recurring Tasks (PENTING — sering kelewat)
+
+Proyek ini punya **recurring tasks** — issue yang berulang berkala dengan history run, cadence, dan overdue tracking. **Bukan** label biasa: pakai sidecar JSON di `.beads/recurring/<id>.json`.
+
+**Tanda issue itu recurring:** sidecar file ada + `isRecurring: true`.
+
+**Lifecycle berbeda dari one-shot:**
+- One-shot: `open` → `in_progress` → `review` → `closed`.
+- Recurring: `open` → `in_progress` → **"Mark Run Complete"** (append history, reset ke `open`) → ulang. **Jangan `bd close`** recurring task.
+
+**Cara buat recurring task** (kalau user minta task "berulang" / "rutin" / "tiap N hari"):
+1. `bd create ...` issue biasa.
+2. Tulis `.beads/recurring/<issue-id>.json`:
+   ```json
+   { "cadenceDays" : 30, "history" : [], "isRecurring" : true, "issueID" : "Workstation-xxx" }
+   ```
+3. Atau via UI: buka issue di app, scroll panel detail ke section "Recurring Task", toggle on, pilih cadence chip.
+
+**Cadence default:** refactoring/audit = 30-90 hari, housekeeping = 7 hari, quarterly = 90.
+
+Detail lengkap (model, derived fields, badge UI, filter "Recurring only") ada di **`GUIDE.md` section 7.5**.
+
 ## Build & Test
 
-_Add your build and test commands here_
-
 ```bash
-# Example:
-# npm install
-# npm test
+swift test                                          # CLI/logic tests (246+ harus hijau)
+./run-app build                                     # macOS app bundle
+./run-app run                                       # launch app
 ```
 
 ## Architecture Overview
 
-_Add a brief overview of your project architecture_
+- `App/` — SwiftUI views (macOS native, Craftboard dark theme, accent gold).
+- `Sources/BeadsContract/` — pure Swift types (BeadIssue, RecurringMetadata, dst). Tidak depend ke UI/Foundation-only.
+- `Sources/BeadsWorkspace/` — `@MainActor @Observable` stores (`IssueStore`, `RecurringStore`, `AgentRunTranscriptStore`). Wrap shell calls ke `bd` CLI + file I/O.
+- `Tests/` — Swift Testing framework (`@Test`, `@Suite`, `#expect`).
+- `.beads/recurring/` — sidecar JSON per recurring issue.
+- `project.yml` → `xcodegen generate` → `BeadsKanbanApp.xcodeproj`. Tambah file di `App/` perlu regenerasi pbxproj.
 
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
+- Pakai `@Observable` (Swift 6 Observation), bukan `ObservableObject`.
+- Async via Swift Concurrency (`Task`, `async/await`), bukan Combine.
+- Backwards-compat decode: pakai `decodeIfPresent(...) ?? default` untuk field baru di tipe Codable yang sudah ke-persist.
+- File baru di `App/` → jalanin `xcodegen generate` sebelum `./run-app build`.

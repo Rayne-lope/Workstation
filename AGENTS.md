@@ -32,6 +32,17 @@ open .derivedData/Build/Products/Debug/BeadsKanbanApp.app
 - Phase 2 command history is useful for debugging failures, so preserve metadata when adding new commands.
 - Keep any new shell execution code timeout-aware and cancellation-aware.
 
+## Recurring Tasks
+
+This project supports **recurring tasks** — issues that repeat on a cadence with run history. They are **not** plain labels: each recurring issue has a sidecar `.beads/recurring/<issue-id>.json` containing `isRecurring`, `cadenceDays`, and a `history[]` array of run entries.
+
+- **Lifecycle:** recurring issues are **not** closed via `bd close`. Each run ends with "Mark Run Complete" in the app (appends history, resets status to `open`).
+- **Detect:** sidecar file exists + `"isRecurring": true`.
+- **Create:** `bd create ...` normally, then write the sidecar JSON. Cadence defaults: refactor/audit = 30-90 days, housekeeping = 7 days, quarterly = 90.
+- **Full spec:** see `GUIDE.md` section 7.5 (model fields, derived counters, badge UI, filter chip).
+
+If a user describes a task as "recurring", "berulang", "rutin", "tiap N hari" — create it as a recurring task, not a one-shot.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:7510c1e2 -->
 ## Beads Issue Tracker
 

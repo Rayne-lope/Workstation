@@ -252,6 +252,90 @@ Checklist untuk manusia setelah review:
 
 ---
 
+## 7.5. Recurring Tasks
+
+Ada **dua jenis issue** di proyek ini:
+
+1. **One-shot** (default) — dikerjain, di-close, selesai.
+2. **Recurring** — task yang berulang berkala (refactoring, housekeeping,
+   audit, dst). Sisa terbuka selamanya, tapi punya **history run**.
+
+### Apa yang Recurring Task punya
+
+| Field | Asal | Contoh |
+|-------|------|--------|
+| `isRecurring` | sidecar JSON | `true` |
+| `cadenceDays` | sidecar JSON | `7`, `30`, `90`, atau `null` |
+| `history[]` | sidecar JSON | array `{completedAt, completedBy, notes}` |
+| `completionCount` | derived (`history.count`) | `3` |
+| `lastCompletedAt` | derived (max completedAt) | `2026-04-22T...` |
+| `isOverdue` | derived (`now - lastCompletedAt > cadenceDays`) | `true`/`false` |
+
+### Di mana disimpan
+
+Sidecar JSON terpisah dari beads core, **bukan** label / field di issue:
+
+```
+.beads/recurring/<issue-id>.json
+```
+
+Contoh isi:
+
+```json
+{
+  "cadenceDays" : 30,
+  "history" : [
+    { "id": "<uuid>", "completedAt": "2026-04-22T10:00:00Z",
+      "completedBy": "claude", "notes": "Q2 sweep done" }
+  ],
+  "isRecurring" : true,
+  "issueID" : "Workstation-d5v"
+}
+```
+
+> **Kenapa sidecar, bukan label?** Label gak bisa nyimpen history,
+> count, atau cadence. Sidecar JSON clean, di-track git, gampang
+> di-edit manual kalau perlu.
+
+### Cara buat recurring task
+
+**Opsi A — via UI (rekomendasi)**
+
+1. `bd create ...` issue biasa kayak biasa.
+2. Buka app, pilih issue, scroll detail panel ke section
+   **"Recurring Task"**.
+3. Toggle **"Mark as recurring"** → on.
+4. Pilih cadence chip (None / 7d / 30d / 90d) sesuai kebutuhan.
+5. Tiap kali run selesai → tombol **"Mark Run Complete"** (boleh
+   isi notes). Ini akan:
+   - Append `RecurringHistoryEntry` ke history.
+   - Hapus label `human` kalau ada.
+   - Reset status ke `open` → issue balik ke Ready.
+   - **TIDAK** `bd close` (issue tetap idup).
+
+**Opsi B — programatik (untuk seed atau scripting)**
+
+Tulis langsung file `.beads/recurring/<id>.json` dengan format di atas.
+`RecurringStore.load()` (dipanggil saat workspace dibuka) bakal nge-load
+otomatis. Catatan: kalau app lagi jalan, perlu tutup-buka workspace
+biar reload.
+
+### Konvensi untuk AI Agent
+
+- Kalau user nyebut task "berulang" / "tiap N hari" / "recurring" /
+  "rutin" — itu kandidat recurring task.
+- Jangan `bd close` recurring task — di-cycle balik via "Mark Run
+  Complete", bukan ditutup.
+- Kalau bikin recurring task untuk user lewat CLI: `bd create` dulu,
+  baru tulis sidecar JSON. Cadence default rekomendasi:
+  - Refactoring sweep / audit besar → 30 atau 90 hari.
+  - Housekeeping / cleanup → 7 hari.
+  - Quarterly review → 90 hari.
+- Counter di card (`#N`) = berapa kali sudah dijalanin. Badge orange
+  `Overdue Nd` muncul kalau lewat cadence.
+
+---
+
 ## 8. Untuk AI Agent Khusus
 
 Saat dipanggil untuk ngerjain task di proyek ini:
