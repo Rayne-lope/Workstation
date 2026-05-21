@@ -17,10 +17,12 @@ public enum LocalAIAction: Equatable, Sendable {
     case closeReason(issue: BeadIssue, summary: String)
     case runSummary(record: AgentRunRecord)
     case simplifyIssueIndonesian(issue: BeadIssue)
+    case detailIssueFromRoughIdea(roughIdea: String)
+    case copilot(prompt: String, contextIssues: [BeadIssue])
 
     public var modelTier: LocalAIModelTier {
         switch self {
-        case .issueDrafting, .backlogAnalysis, .runSummary, .simplifyIssueIndonesian:
+        case .issueDrafting, .backlogAnalysis, .runSummary, .simplifyIssueIndonesian, .detailIssueFromRoughIdea, .copilot:
             return .strong
         case .promptOptimization, .closeReason:
             return .fast
@@ -106,6 +108,38 @@ public enum LocalAIAction: Equatable, Sendable {
             - Jika ada blocker atau dependency, sebutkan secara singkat dan jelaskan dampaknya.
             - Jangan menambahkan informasi baru yang tidak ada di issue asli.
             - Output hanya teks biasa, siap dibaca pengguna sebagai pratinjau read-only.
+            """
+        case let .detailIssueFromRoughIdea(roughIdea):
+            return """
+            Turn this rough idea into a structured Beads issue draft.
+
+            Rough idea:
+            \(roughIdea)
+
+            Output requirements:
+            - Return a single JSON object only.
+            - Use these keys: title, description, implementation_notes, acceptance_criteria, issue_type, priority, labels, split_suggestions, dependency_suggestions.
+            - `acceptance_criteria`, `labels`, `split_suggestions`, and `dependency_suggestions` should be arrays of strings.
+            - `priority` should be an integer from 0 to 4 when possible.
+            - Keep split and dependency suggestions advisory only.
+            - Do not wrap the JSON in markdown fences or add commentary outside the object.
+            """
+        case let .copilot(prompt, contextIssues):
+            let renderedIssues = contextIssues.isEmpty ? "(no issues provided)" : contextIssues.map(Self.renderIssue).joined(separator: "\n\n")
+            return """
+            Answer this Workflow Copilot request for the Beads Kanban app.
+
+            User request:
+            \(prompt)
+
+            Context issues:
+            \(renderedIssues)
+
+            Output requirements:
+            - Return a helpful plain-text answer.
+            - Use the provided issue context when relevant.
+            - Do not mutate Beads data, execute commands, or claim that a change was applied.
+            - If the request requires a mutation, describe the proposed next step for human approval.
             """
         case let .runSummary(record):
             return """

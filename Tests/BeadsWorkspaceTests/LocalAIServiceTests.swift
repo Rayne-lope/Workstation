@@ -58,6 +58,23 @@ struct LocalAIServiceTests {
         #expect(simplifyRequest.prompt.contains("Bahasa Indonesia"))
         #expect(simplifyRequest.prompt.contains(issue.title))
         #expect(simplifyRequest.prompt.contains("read-only"))
+
+        let roughIdeaRequest = try service.buildRequest(
+            for: .detailIssueFromRoughIdea(roughIdea: "Let users turn a rough idea into a draft"),
+            settings: settings
+        )
+        #expect(roughIdeaRequest.model == "strong-model")
+        #expect(roughIdeaRequest.prompt.contains("Return a single JSON object only"))
+        #expect(roughIdeaRequest.prompt.contains("rough idea"))
+
+        let copilotRequest = try service.buildRequest(
+            for: .copilot(prompt: "What should I do next?", contextIssues: [issue]),
+            settings: settings
+        )
+        #expect(copilotRequest.model == "strong-model")
+        #expect(copilotRequest.prompt.contains("Workflow Copilot request"))
+        #expect(copilotRequest.prompt.contains("What should I do next?"))
+        #expect(copilotRequest.prompt.contains(issue.id))
     }
 
     @Test("generate sends a non-streaming Ollama request and returns the text response")
