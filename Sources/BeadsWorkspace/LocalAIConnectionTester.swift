@@ -2,6 +2,13 @@ import Foundation
 
 public protocol URLSessioning: Sendable {
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
+    func bytes(for request: URLRequest) async throws -> (URLSession.AsyncBytes, URLResponse)
+}
+
+extension URLSessioning {
+    public func bytes(for request: URLRequest) async throws -> (URLSession.AsyncBytes, URLResponse) {
+        throw URLError(.unsupportedURL)
+    }
 }
 
 extension URLSession: URLSessioning {}

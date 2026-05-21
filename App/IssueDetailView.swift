@@ -8,27 +8,21 @@ struct IssueDetailView: View {
 
     @State private var isGeneratingIndonesianSummary = false
     @State private var indonesianSummaryError: String?
+    @State private var selectedDetailTab: IssueDetailTab = .details
 
     var body: some View {
         VStack(spacing: 0) {
             panelHeader
 
             ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 16) {
                     titleSection
-                    propertiesSection
-                    dependenciesSection
-                    textSections
-                    actionsSection
-                    IssueDetailRecurringSection(
-                        appVM: appVM,
-                        issue: issue,
-                        isLoading: store.isLoading
-                    )
-                    agentSection
+                    metadataCard
+                    detailTabBar
+                    selectedTabContent
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
                 .padding(.bottom, 32)
             }
         }
@@ -109,75 +103,43 @@ struct IssueDetailView: View {
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
+
+            FlowHStack(spacing: 6, runSpacing: 6) {
+                if let type = issue.issueType, !type.isEmpty {
+                    detailChip(label: type, systemImage: "tag", style: .info)
+                }
+                if let priority = issue.priority,
+                   let difficulty = PriorityDifficulty.from(priority: priority) {
+                    detailChip(label: difficulty.displayName, systemImage: "speedometer", style: .priority(priority))
+                }
+            }
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Issue \(issue.id), \(issue.title)")
     }
 
-    private var propertiesSection: some View {
-        Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 14) {
-            GridRow {
-                propertyLabel("Status")
-                HStack(spacing: 6) {
+    private var metadataCard: some View {
+        VStack(spacing: 0) {
+            metadataRow(label: "Status") {
+                HStack(spacing: 7) {
                     Circle()
                         .fill(statusColor)
                         .frame(width: 7, height: 7)
                     Text(issue.status ?? "open")
-                        .font(WorkstationTheme.Fonts.body(13, weight: .medium))
+                        .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
                         .foregroundStyle(statusColor)
                 }
             }
 
-            GridRow {
-                propertyLabel("Difficulty")
-                Text(PriorityDifficulty.from(priority: issue.priority)?.displayName ?? "-")
-                    .font(WorkstationTheme.Fonts.body(13, weight: .medium))
-                    .foregroundStyle(WorkstationTheme.textPrimary)
-            }
+            metadataDivider
 
-            GridRow {
-                propertyLabel("Type")
-                Text(issue.issueType ?? "-")
-                    .font(WorkstationTheme.Fonts.body(13, weight: .medium))
-                    .foregroundStyle(WorkstationTheme.textPrimary)
-            }
-
-            GridRow {
-                propertyLabel("Assignee")
-                Menu {
-                    Button("Claude (assign + launch)") {
-                        appVM.assignAndLaunchIfExecutor(for: issue, assignee: "claude")
-                    }
-                    Button("Codex (assign + launch)") {
-                        appVM.assignAndLaunchIfExecutor(for: issue, assignee: "codex")
-                    }
-                    Button("Other AI (assign + launch)") {
-                        appVM.assignAndLaunchIfExecutor(for: issue, assignee: "other")
-                    }
-                    Divider()
-                    Button("Me") {
-                        Task { await store.update(id: issue.id, UpdateIssueInput(assignee: "me")) }
-                    }
-                    Button("Clear") {
-                        Task { await store.update(id: issue.id, UpdateIssueInput(assignee: "")) }
-                    }
-                } label: {
-                    if let assignee = issue.assignee, !assignee.isEmpty {
-                        AssigneeBadgeView(assignee: assignee, profiles: appVM.agentProfileStore.profiles, compact: true)
-                    } else {
-                        Text("Unassigned")
-                            .font(WorkstationTheme.Fonts.body(13, weight: .medium))
-                            .foregroundStyle(WorkstationTheme.textMuted)
-                    }
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
+            metadataRow(label: "Assignee") {
+                assigneeMenuLabel
             }
 
             if let updated = issue.updatedAt, !updated.isEmpty {
-                GridRow {
-                    propertyLabel("Updated")
+                metadataDivider
+                metadataRow(label: "Updated") {
                     Text(updated)
                         .font(WorkstationTheme.Fonts.body(12, weight: .medium))
                         .foregroundStyle(WorkstationTheme.textSecondary)
@@ -186,7 +148,251 @@ struct IssueDetailView: View {
                         .textSelection(.enabled)
                 }
             }
+
+            if let latestRun = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id),
+               let worktree = latestRun.worktree {
+                metadataDivider
+                metadataRow(label: "Worktree") {
+                    worktreeMetadataBadge(branch: worktree.branchName, path: worktree.path)
+                }
+            }
+
+            if let metadata = appVM.recurringMetadata(for: issue.id), metadata.isRecurring {
+                metadataDivider
+                metadataRow(label: "Recurring") {
+                    recurringSummaryBadge(metadata)
+                }
+            }
         }
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+    }
+
+    private var metadataDivider: some View {
+        Rectangle()
+            .fill(WorkstationTheme.borderSoft)
+            .frame(height: 1)
+            .padding(.leading, 104)
+    }
+
+    private func metadataRow<Content: View>(
+        label: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text(label)
+                .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.textSubtle)
+                .textCase(.uppercase)
+                .tracking(0.5)
+                .frame(width: 92, alignment: .leading)
+
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+    }
+
+    private var assigneeMenuLabel: some View {
+        Menu {
+            Button("Claude (assign + launch)") {
+                appVM.assignAndLaunchIfExecutor(for: issue, assignee: "claude")
+            }
+            Button("Codex (assign + launch)") {
+                appVM.assignAndLaunchIfExecutor(for: issue, assignee: "codex")
+            }
+            Button("Other AI (assign + launch)") {
+                appVM.assignAndLaunchIfExecutor(for: issue, assignee: "other")
+            }
+            Divider()
+            Button("Me") {
+                Task { await store.update(id: issue.id, UpdateIssueInput(assignee: "me")) }
+            }
+            Button("Clear") {
+                Task { await store.update(id: issue.id, UpdateIssueInput(assignee: "")) }
+            }
+        } label: {
+            if let assignee = issue.assignee, !assignee.isEmpty {
+                AssigneeBadgeView(assignee: assignee, profiles: appVM.agentProfileStore.profiles, compact: true)
+            } else {
+                Text("Unassigned")
+                    .font(WorkstationTheme.Fonts.body(13, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+            }
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+    }
+
+    private func detailChip(label: String, systemImage: String, style: BadgeStyle) -> some View {
+        BadgeView(style: style, verticalPadding: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 9, weight: .semibold))
+                Text(label)
+                    .font(WorkstationTheme.Fonts.body(10.5, weight: .bold))
+            }
+            .lineLimit(1)
+        }
+    }
+
+    private func worktreeMetadataBadge(branch: String, path: String) -> some View {
+        Label {
+            Text(branch)
+                .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
+                .lineLimit(1)
+                .truncationMode(.middle)
+        } icon: {
+            Image(systemName: "folder.badge.gearshape")
+                .font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundStyle(WorkstationTheme.blue)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color(hex: "0F1A1F"))
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                .stroke(Color(hex: "0F2535"), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+        .help(path)
+    }
+
+    private func recurringSummaryBadge(_ metadata: RecurringMetadata) -> some View {
+        let overdue = metadata.overdueDays(now: Date())
+        let text: String
+        if overdue > 0 {
+            text = "Overdue \(overdue)d"
+        } else if let cadence = metadata.cadenceDays {
+            text = "\(cadence)d cadence"
+        } else {
+            text = "Recurring"
+        }
+
+        return BadgeView(style: .recurring(isOverdue: overdue > 0), verticalPadding: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 9, weight: .bold))
+                Text(text)
+                    .font(WorkstationTheme.Fonts.body(10.5, weight: .bold))
+            }
+            .lineLimit(1)
+        }
+    }
+
+    private var detailTabBar: some View {
+        HStack(spacing: 0) {
+            ForEach(IssueDetailTab.allCases) { tab in
+                detailTabButton(tab)
+            }
+        }
+        .padding(3)
+        .background(WorkstationTheme.cardAlt)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+    }
+
+    private func detailTabButton(_ tab: IssueDetailTab) -> some View {
+        let isSelected = selectedDetailTab == tab
+        return Button {
+            selectedDetailTab = tab
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: tab.systemImage)
+                    .font(.system(size: 10, weight: .semibold))
+                Text(tab.title)
+                    .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+            }
+            .foregroundStyle(isSelected ? WorkstationTheme.textPrimary : WorkstationTheme.textMuted)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 7)
+            .background(isSelected ? WorkstationTheme.card : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var selectedTabContent: some View {
+        switch selectedDetailTab {
+        case .details:
+            detailsTabContent
+        case .activity:
+            activityTabContent
+        case .actions:
+            actionsTabContent
+        }
+    }
+
+    private var detailsTabContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            textSections
+            dependenciesSection
+        }
+    }
+
+    private var activityTabContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if let latestRun = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id) {
+                latestRunSummary(for: latestRun)
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(WorkstationTheme.card)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                            .stroke(WorkstationTheme.border, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+            } else {
+                emptyPanelMessage("No agent runs yet", systemImage: "rectangle.on.rectangle.slash")
+            }
+
+            IssueDetailRecurringSection(
+                appVM: appVM,
+                issue: issue,
+                isLoading: store.isLoading,
+                displayMode: .history
+            )
+        }
+    }
+
+    private var actionsTabContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            actionsSection
+            IssueDetailRecurringSection(
+                appVM: appVM,
+                issue: issue,
+                isLoading: store.isLoading,
+                displayMode: .controls
+            )
+        }
+    }
+
+    private func emptyPanelMessage(_ message: String, systemImage: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .semibold))
+            Text(message)
+                .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+        }
+        .foregroundStyle(WorkstationTheme.textMuted)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
     }
 
     @ViewBuilder
@@ -217,6 +423,14 @@ struct IssueDetailView: View {
                     )
                 }
             }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(WorkstationTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                    .stroke(WorkstationTheme.border, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
         }
     }
 
@@ -331,6 +545,7 @@ struct IssueDetailView: View {
             uppercaseLabel("Actions")
 
             VStack(spacing: 8) {
+                copyPromptButton
                 HStack(spacing: 8) {
                     claimButton
                     reviewButton
@@ -349,12 +564,16 @@ struct IssueDetailView: View {
                         localAIErrorBanner(message: indonesianSummaryError)
                     }
                 }
-
-                if let latestRun = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id) {
-                    latestRunSummary(for: latestRun)
-                }
             }
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
     }
 
     private var simplifyIndonesianButton: some View {
@@ -375,7 +594,7 @@ struct IssueDetailView: View {
         }
         .buttonStyle(WorkstationGhostButtonStyle())
         .disabled(isGeneratingIndonesianSummary)
-        .help("Buat penjelasan sederhana dalam Bahasa Indonesia (pratinjau read-only)")
+        .help("Buat penjelasan sederhana dalam Bahasa Indonesia (pratinjau read-only) · Tersedia juga di Copilot ⌘K")
     }
 
     private func localAIErrorBanner(message: String) -> some View {
@@ -451,20 +670,6 @@ struct IssueDetailView: View {
                         .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                         .foregroundStyle(statusColor(for: record.status))
                 }
-
-                if record.hasWorktreeMetadata {
-                    BadgeView(style: .info) {
-                        Text("Worktree")
-                            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
-                            .lineLimit(1)
-                    }
-                } else {
-                    BadgeView(style: .surface) {
-                        Text("Main tree")
-                            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
-                            .lineLimit(1)
-                    }
-                }
             }
 
             if let worktree = record.worktree {
@@ -538,6 +743,17 @@ struct IssueDetailView: View {
         .help(profile.shouldClaimIssue ? "" : "Selected agent doesn't claim issues")
     }
 
+    private var copyPromptButton: some View {
+        Button {
+            appVM.copyPrompt(for: issue)
+        } label: {
+            Label("Copy Prompt", systemImage: "doc.on.doc")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(WorkstationGhostButtonStyle())
+        .help("Copy Agent Prompt")
+    }
+
     @ViewBuilder
     private var reviewButton: some View {
         let profile = appVM.selectedAgentProfile()
@@ -579,69 +795,6 @@ struct IssueDetailView: View {
         .disabled(issue.status != "closed" || store.isLoading)
     }
 
-    private var agentSection: some View {
-        let profile = appVM.selectedAgentProfile()
-        let runnableProfiles = appVM.agentProfileStore.profiles.filter(\.canExecuteCode)
-        let canExecute = profile.canExecuteCode
-        let workspaceMissing = appVM.activeWorkspace == nil
-
-        return VStack(alignment: .leading, spacing: 12) {
-            uppercaseLabel("Agent")
-
-            Picker("Agent Profile", selection: $appVM.selectedAgentProfileID) {
-                ForEach(appVM.agentProfileStore.profiles) { profile in
-                    Text("\(profile.name) — \(profile.role.displayName)").tag(profile.id)
-                }
-            }
-            .labelsHidden()
-
-            if !runnableProfiles.isEmpty {
-                Menu {
-                    ForEach(runnableProfiles) { runnableProfile in
-                        Button {
-                            appVM.launchAgent(for: issue, profile: runnableProfile)
-                        } label: {
-                            Text(runnableProfile.name)
-                        }
-                    }
-                } label: {
-                    Label("Run Agent", systemImage: "play.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .menuStyle(.borderlessButton)
-                .buttonStyle(WorkstationPrimaryButtonStyle())
-                .disabled(workspaceMissing)
-                .help(workspaceMissing ? "Open a workspace first" : "Launch agent in terminal")
-            }
-
-            FlowHStack(spacing: 8, runSpacing: 8) {
-                Button {
-                    appVM.copyPrompt(for: issue)
-                } label: {
-                    Label("Copy Prompt", systemImage: "doc.on.doc")
-                }
-                .buttonStyle(WorkstationGhostButtonStyle(compact: true))
-
-                if canExecute {
-                    Button {
-                        appVM.copyAgentCommand(for: issue)
-                    } label: {
-                        Label("Copy Command", systemImage: "terminal.fill")
-                    }
-                    .buttonStyle(WorkstationGhostButtonStyle(compact: true))
-
-                    Button {
-                        appVM.launchSelectedAgentInWorktree(for: issue)
-                    } label: {
-                        Label("Run in Worktree", systemImage: "folder.badge.gearshape")
-                    }
-                    .buttonStyle(WorkstationGhostButtonStyle(compact: true))
-                    .disabled(workspaceMissing)
-                }
-            }
-        }
-    }
-
     private func section(title: String, body: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             uppercaseLabel(title)
@@ -669,15 +822,6 @@ struct IssueDetailView: View {
         } else {
             Text(body)
         }
-    }
-
-    private func propertyLabel(_ label: String) -> some View {
-        Text(label)
-            .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
-            .foregroundStyle(WorkstationTheme.textSubtle)
-            .textCase(.uppercase)
-            .tracking(0.5)
-            .frame(width: 90, alignment: .leading)
     }
 
     private func uppercaseLabel(_ label: String) -> some View {
@@ -723,6 +867,36 @@ struct IssueDetailPlaceholder: View {
             Rectangle()
                 .fill(WorkstationTheme.border)
                 .frame(width: 1)
+        }
+    }
+}
+
+private enum IssueDetailTab: String, CaseIterable, Identifiable {
+    case details
+    case activity
+    case actions
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .details:
+            return "Details"
+        case .activity:
+            return "Activity"
+        case .actions:
+            return "Actions"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .details:
+            return "text.alignleft"
+        case .activity:
+            return "waveform.path.ecg"
+        case .actions:
+            return "bolt"
         }
     }
 }

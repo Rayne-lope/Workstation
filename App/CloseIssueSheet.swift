@@ -133,6 +133,7 @@ struct CloseIssueSheet: View {
                 }
                 .buttonStyle(WorkstationGhostButtonStyle())
                 .disabled(isGeneratingAISuggestion)
+                .help("Draft alasan close dengan AI · Tersedia juga di Copilot ⌘K")
 
                 Spacer()
 

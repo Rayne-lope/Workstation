@@ -19,6 +19,7 @@ enum DetailPaneMode: String, Hashable {
     case issue
     case console
     case bulkAction
+    case copilot
 }
 
 @MainActor
@@ -479,6 +480,10 @@ final class AppViewModel {
         try await localAIService.generate(for: action, settings: preferencesStore.preferences.localAI)
     }
 
+    func requestLocalAIResponseStream(for action: LocalAIAction) throws -> AsyncThrowingStream<String, Error> {
+        try localAIService.generateStream(for: action, settings: preferencesStore.preferences.localAI)
+    }
+
     func presentLocalAISuggestionPreview(
         title: String,
         subtitle: String,
@@ -588,6 +593,10 @@ final class AppViewModel {
 
     func resetDetailPaneToIssue() {
         detailPaneMode = .issue
+    }
+
+    func showCopilotPane() {
+        detailPaneMode = .copilot
     }
 
     // MARK: - Multi-select bulk actions

@@ -177,6 +177,7 @@ struct BoardSidebarView: View {
                 Label("Analyze Backlog", systemImage: "sparkles")
             }
             .buttonStyle(SidebarNavButtonStyle())
+            .help("Analisis backlog dengan AI · Tersedia juga di Copilot ⌘K")
         }
     }
 

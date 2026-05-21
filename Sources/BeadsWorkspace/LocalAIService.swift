@@ -30,7 +30,7 @@ public struct LocalAIService: Sendable {
         self.provider = provider
     }
 
-    public func buildRequest(for action: LocalAIAction, settings: LocalAISettings) throws -> LocalAIRequest {
+    public func buildRequest(for action: LocalAIAction, settings: LocalAISettings, stream: Bool = false) throws -> LocalAIRequest {
         guard settings.isEnabled else {
             throw LocalAIServiceError.disabled
         }
@@ -56,13 +56,18 @@ public struct LocalAIService: Sendable {
             model: model,
             prompt: prompt,
             system: action.systemPrompt,
-            stream: false
+            stream: stream
         )
     }
 
     public func generate(for action: LocalAIAction, settings: LocalAISettings) async throws -> String {
         let request = try buildRequest(for: action, settings: settings)
         return try await provider.generate(request: request)
+    }
+
+    public func generateStream(for action: LocalAIAction, settings: LocalAISettings) throws -> AsyncThrowingStream<String, Error> {
+        let request = try buildRequest(for: action, settings: settings, stream: true)
+        return provider.generateStream(request: request)
     }
 
     public func modelName(for action: LocalAIAction, settings: LocalAISettings) -> String {

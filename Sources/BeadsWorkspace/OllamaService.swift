@@ -24,6 +24,23 @@ public struct LocalAIRequest: Sendable, Equatable {
 
 public protocol LocalAIProviding: Sendable {
     func generate(request: LocalAIRequest) async throws -> String
+    func generateStream(request: LocalAIRequest) -> AsyncThrowingStream<String, Error>
+}
+
+extension LocalAIProviding {
+    public func generateStream(request: LocalAIRequest) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    let result = try await generate(request: request)
+                    continuation.yield(result)
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
 }
 
 public enum OllamaServiceError: LocalizedError, Sendable {
@@ -115,6 +132,50 @@ public final class OllamaService: LocalAIProviding, @unchecked Sendable {
         }
     }
 
+    public func generateStream(request: LocalAIRequest) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    let url = request.baseURL.appendingPathComponent("generate")
+                    var urlRequest = URLRequest(url: url)
+                    urlRequest.httpMethod = "POST"
+                    urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    urlRequest.httpBody = try JSONEncoder().encode(GenerateRequestBody(from: request))
+
+                    let (bytes, response) = try await session.bytes(for: urlRequest)
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        throw OllamaServiceError.invalidResponse
+                    }
+                    if !(200..<300).contains(httpResponse.statusCode) {
+                        throw OllamaServiceError.unexpectedStatusCode(httpResponse.statusCode, message: nil)
+                    }
+
+                    for try await line in bytes.lines {
+                        guard !line.isEmpty, let data = line.data(using: .utf8) else { continue }
+                        let chunk = try JSONDecoder().decode(StreamChunk.self, from: data)
+                        if let token = chunk.response, !token.isEmpty {
+                            continuation.yield(token)
+                        }
+                        if chunk.done { break }
+                    }
+                    continuation.finish()
+                } catch let error as OllamaServiceError {
+                    continuation.finish(throwing: error)
+                } catch let error as URLError {
+                    continuation.finish(throwing: OllamaServiceError.unreachable(
+                        baseURL: request.baseURL.absoluteString,
+                        underlying: error.localizedDescription
+                    ))
+                } catch {
+                    continuation.finish(throwing: OllamaServiceError.unreachable(
+                        baseURL: request.baseURL.absoluteString,
+                        underlying: error.localizedDescription
+                    ))
+                }
+            }
+        }
+    }
+
     private static func decodeRemoteError(from data: Data) -> String? {
         guard !data.isEmpty,
               let payload = try? JSONDecoder().decode(RemoteErrorResponse.self, from: data) else {
@@ -141,6 +202,11 @@ public final class OllamaService: LocalAIProviding, @unchecked Sendable {
     private struct GenerateResponse: Decodable {
         let response: String?
         let error: String?
+    }
+
+    private struct StreamChunk: Decodable {
+        let response: String?
+        let done: Bool
     }
 
     private struct RemoteErrorResponse: Decodable {

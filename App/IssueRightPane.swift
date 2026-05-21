@@ -251,11 +251,19 @@ struct WorkflowCopilotPane: View {
         let contextIssues = selected.isEmpty ? Array(store.issues.prefix(50)) : selected
         Task {
             do {
-                let response = try await appVM.requestLocalAIResponse(
+                let stream = try appVM.requestLocalAIResponseStream(
                     for: .copilot(prompt: request, contextIssues: contextIssues)
                 )
+                let streamingIdx = await MainActor.run { () -> Int in
+                    messages.append(.init(role: .assistant, text: ""))
+                    return messages.count - 1
+                }
+                for try await chunk in stream {
+                    await MainActor.run {
+                        messages[streamingIdx].text += chunk
+                    }
+                }
                 await MainActor.run {
-                    messages.append(.init(role: .assistant, text: response))
                     isSending = false
                     promptFocused = true
                 }
@@ -279,7 +287,7 @@ private struct CopilotConversationMessage: Identifiable, Equatable {
 
     let id = UUID()
     let role: Role
-    let text: String
+    var text: String
 
     var foregroundColor: Color {
         switch role {
