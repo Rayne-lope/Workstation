@@ -7,6 +7,8 @@ struct WorkstationApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        AppFontRegistrar.registerBundledFonts()
+
         let runner = ShellCommandRunner()
         let workspaceVM = WorkspaceViewModel(shellRunner: runner)
         let appViewModel = AppViewModel(shellRunner: runner)
@@ -25,6 +27,7 @@ struct WorkstationApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(viewModel: viewModel, appVM: appVM)
+                .font(WorkstationTheme.Fonts.body(13))
         }
         .windowResizability(.contentMinSize)
         .onChange(of: scenePhase) { _, phase in

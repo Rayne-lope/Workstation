@@ -66,6 +66,9 @@
 		967F0DF50F61AAFC113C108C /* AgentProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFA2C08A9675E292DDC3463 /* AgentProfileStore.swift */; };
 		9926BC17F1066C0C699D12A6 /* StatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A426C3CF17A97D5D9A653E94 /* StatusBarView.swift */; };
 		9DE8D944D6B9FFCBC04D65A9 /* CommandResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BCFB88A153DA46E90B604B /* CommandResult.swift */; };
+		AA1000010000000000000001 /* AppFontRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000000001 /* AppFontRegistrar.swift */; };
+		AA1000010000000000000002 /* DMSans-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000000002 /* DMSans-Variable.ttf */; };
+		AA1000010000000000000003 /* Syne-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000000003 /* Syne-Variable.ttf */; };
 		A05FA52B36E9BBD98D2C1BC5 /* OllamaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80C121B91608F53292B12425 /* OllamaService.swift */; };
 		A7D93288EE987302E1DFF8A6 /* AgentRunTranscriptStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB07A4DAE97C487B1BBB698 /* AgentRunTranscriptStore.swift */; };
 		AE2A5C4732C0B1A1CC6200D0 /* ProjectWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B8DC4F74056EA4C65C2E4F8 /* ProjectWorkspace.swift */; };
@@ -166,6 +169,9 @@
 		91AB24534E62FA06AB8B1E0B /* claude-logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claude-logo.png"; sourceTree = "<group>"; };
 		96D973E9BF68711E221A24DA /* LocalAISettingsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISettingsPanelView.swift; sourceTree = "<group>"; };
 		9A88CC42EF5FF51ECCC44DF4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA1000000000000000000001 /* AppFontRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFontRegistrar.swift; sourceTree = "<group>"; };
+		AA1000000000000000000002 /* DMSans-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Variable.ttf"; sourceTree = "<group>"; };
+		AA1000000000000000000003 /* Syne-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Syne-Variable.ttf"; sourceTree = "<group>"; };
 		A058CE86AB9D21A90D4AC4A4 /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
 		A426C3CF17A97D5D9A653E94 /* StatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarView.swift; sourceTree = "<group>"; };
 		A9D17E8ECAB8F8236106375E /* AgentRunPromptPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunPromptPreviewView.swift; sourceTree = "<group>"; };
@@ -209,10 +215,20 @@
 			children = (
 				91AB24534E62FA06AB8B1E0B /* claude-logo.png */,
 				BED1A8DCADC4A4AAE99975A7 /* codex_logo.png */,
+				AA1000000000000000000004 /* fonts */,
 				FE5282CF1F6FD222BC46AD2D /* robot_logo.png */,
 				C3CA754B2C5DFA39473ABA9F /* workstation_logo.png */,
 			);
 			path = assets;
+			sourceTree = "<group>";
+		};
+		AA1000000000000000000004 /* fonts */ = {
+			isa = PBXGroup;
+			children = (
+				AA1000000000000000000002 /* DMSans-Variable.ttf */,
+				AA1000000000000000000003 /* Syne-Variable.ttf */,
+			);
+			path = fonts;
 			sourceTree = "<group>";
 		};
 		2661585F06A7DEF87143599B /* Products */ = {
@@ -314,6 +330,7 @@
 				894623BE6C865390CCA4B26B /* AgentRunNotesView.swift */,
 				A9D17E8ECAB8F8236106375E /* AgentRunPromptPreviewView.swift */,
 				EBEB229B00EA9F96BA7BDE44 /* AgentRunTranscriptView.swift */,
+				AA1000000000000000000001 /* AppFontRegistrar.swift */,
 				24C70366E2909BEEDC4FE54A /* AppViewModel.swift */,
 				D2889E1E4286149FCAA80921 /* Assets.xcassets */,
 				B1E9765ACEE853F40158ABDF /* AssigneeBadgeView.swift */,
@@ -408,9 +425,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				C2A47F3D97BDF75E92AA35A4 /* Assets.xcassets in Resources */,
+				AA1000010000000000000002 /* DMSans-Variable.ttf in Resources */,
 				D689F10F2175DB99B66DCD0C /* claude-logo.png in Resources */,
 				59B5CBBA8A0BB559BD651B5A /* codex_logo.png in Resources */,
 				EDDF6FB1FB7E4DAD8D874515 /* robot_logo.png in Resources */,
+				AA1000010000000000000003 /* Syne-Variable.ttf in Resources */,
 				B1EE02A1356B91B9E4B0E916 /* workstation_logo.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -440,6 +459,7 @@
 				A7D93288EE987302E1DFF8A6 /* AgentRunTranscriptStore.swift in Sources */,
 				434F3A7547E49627055FD4AC /* AgentRunTranscriptView.swift in Sources */,
 				2301A9AA47A99AFEF3B5278F /* AppPreferences.swift in Sources */,
+				AA1000010000000000000001 /* AppFontRegistrar.swift in Sources */,
 				0CDFA601F7028545E917AB14 /* AppViewModel.swift in Sources */,
 				7A0CC18EFC4602BE635FABD0 /* AssigneeAvatarResolver.swift in Sources */,
 				1E82711CB134527950F605D6 /* AssigneeBadgeView.swift in Sources */,

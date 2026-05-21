@@ -240,14 +240,14 @@ enum WorkstationTheme {
     }
 
     enum Fonts {
-        static let label = Font.system(size: 10.5, weight: .semibold)
+        static let label = body(10.5, weight: .semibold)
 
         static func display(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
-            .system(size: size, weight: weight, design: .rounded)
+            Font.custom("Syne", size: size).weight(weight)
         }
 
         static func body(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-            .system(size: size, weight: weight)
+            Font.custom("DM Sans", size: size).weight(weight)
         }
     }
 
