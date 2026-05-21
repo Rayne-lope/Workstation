@@ -67,6 +67,15 @@ struct LocalAIServiceTests {
         #expect(roughIdeaRequest.prompt.contains("Return a single JSON object only"))
         #expect(roughIdeaRequest.prompt.contains("rough idea"))
 
+        let prdRequest = try service.buildRequest(
+            for: .draftIssuesFromPRD(prd: "Build a PRD import flow with draft review"),
+            settings: settings
+        )
+        #expect(prdRequest.model == "strong-model")
+        #expect(prdRequest.prompt.contains("Return a JSON array only"))
+        #expect(prdRequest.prompt.contains("dependency_suggestions"))
+        #expect(prdRequest.prompt.contains("reason"))
+
         let copilotRequest = try service.buildRequest(
             for: .copilot(prompt: "What should I do next?", contextIssues: [issue]),
             settings: settings

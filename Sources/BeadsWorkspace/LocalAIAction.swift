@@ -18,11 +18,12 @@ public enum LocalAIAction: Equatable, Sendable {
     case runSummary(record: AgentRunRecord)
     case simplifyIssueIndonesian(issue: BeadIssue)
     case detailIssueFromRoughIdea(roughIdea: String)
+    case draftIssuesFromPRD(prd: String)
     case copilot(prompt: String, contextIssues: [BeadIssue])
 
     public var modelTier: LocalAIModelTier {
         switch self {
-        case .issueDrafting, .backlogAnalysis, .runSummary, .simplifyIssueIndonesian, .detailIssueFromRoughIdea, .copilot:
+        case .issueDrafting, .backlogAnalysis, .runSummary, .simplifyIssueIndonesian, .detailIssueFromRoughIdea, .draftIssuesFromPRD, .copilot:
             return .strong
         case .promptOptimization, .closeReason:
             return .fast
@@ -123,6 +124,24 @@ public enum LocalAIAction: Equatable, Sendable {
             - `priority` should be an integer from 0 to 4 when possible.
             - Keep split and dependency suggestions advisory only.
             - Do not wrap the JSON in markdown fences or add commentary outside the object.
+            """
+        case let .draftIssuesFromPRD(prd):
+            return """
+            Turn this PRD or long feature plan into reviewable Beads issue drafts.
+
+            PRD:
+            \(prd)
+
+            Output requirements:
+            - Return a JSON array only.
+            - Create a practical set of epics, phase issues, and sub-phase tasks when the PRD supports them.
+            - Use these keys on every draft: title, description, implementation_notes, acceptance_criteria, issue_type, priority, labels, dependency_suggestions, reason.
+            - `acceptance_criteria`, `labels`, and `dependency_suggestions` must be arrays of strings.
+            - `priority` should be an integer from 0 to 4 when possible.
+            - `dependency_suggestions` are advisory only; do not imply dependencies were applied.
+            - `reason` should briefly explain why this draft belongs in the generated plan.
+            - Keep each draft scoped enough for a coding agent to implement.
+            - Do not wrap the JSON in markdown fences or add commentary outside the array.
             """
         case let .copilot(prompt, contextIssues):
             let renderedIssues = contextIssues.isEmpty ? "(no issues provided)" : contextIssues.map(Self.renderIssue).joined(separator: "\n\n")
