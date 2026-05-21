@@ -154,3 +154,4 @@
 {"id":"int-6fc34b6e","kind":"field_change","created_at":"2026-05-21T14:38:27.494015Z","actor":"Rayne-lope","issue_id":"Workstation-dh1","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"DONE"}}
 {"id":"int-63b82201","kind":"field_change","created_at":"2026-05-21T14:53:03.987964Z","actor":"Rayne-lope","issue_id":"Workstation-7jz","extra":{"field":"assignee","new_value":"codex","old_value":""}}
 {"id":"int-0c4db7ef","kind":"field_change","created_at":"2026-05-21T14:53:04.012928Z","actor":"Rayne-lope","issue_id":"Workstation-w4p","extra":{"field":"assignee","new_value":"codex","old_value":""}}
+{"id":"int-212fd646","kind":"field_change","created_at":"2026-05-21T15:04:12.064854Z","actor":"Rayne-lope","issue_id":"Workstation-czv","extra":{"field":"assignee","new_value":"codex","old_value":""}}

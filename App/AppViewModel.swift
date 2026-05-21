@@ -432,7 +432,30 @@ final class AppViewModel {
     }
 
     func setLocalAIProvider(_ provider: LocalAIProvider) {
-        preferencesStore.update { $0.localAI.provider = provider }
+        preferencesStore.update {
+            $0.localAI.provider = provider
+            if provider == .gemini {
+                if $0.localAI.baseURL == LocalAISettings.defaultBaseURL {
+                    $0.localAI.baseURL = LocalAISettings.defaultGeminiBaseURL
+                }
+                if $0.localAI.fastModel == LocalAISettings.defaultFastModel {
+                    $0.localAI.fastModel = LocalAISettings.defaultGeminiModel
+                }
+                if $0.localAI.strongModel == LocalAISettings.defaultStrongModel {
+                    $0.localAI.strongModel = LocalAISettings.defaultGeminiModel
+                }
+            } else if provider == .ollama {
+                if $0.localAI.baseURL == LocalAISettings.defaultGeminiBaseURL {
+                    $0.localAI.baseURL = LocalAISettings.defaultBaseURL
+                }
+                if $0.localAI.fastModel == LocalAISettings.defaultGeminiModel {
+                    $0.localAI.fastModel = LocalAISettings.defaultFastModel
+                }
+                if $0.localAI.strongModel == LocalAISettings.defaultGeminiModel {
+                    $0.localAI.strongModel = LocalAISettings.defaultStrongModel
+                }
+            }
+        }
         clearLocalAIConnectionStatus()
     }
 
@@ -451,9 +474,14 @@ final class AppViewModel {
         clearLocalAIConnectionStatus()
     }
 
+    func setLocalAIAPIKey(_ apiKey: String) {
+        preferencesStore.update { $0.localAI.apiKey = apiKey }
+        clearLocalAIConnectionStatus()
+    }
+
     func testLocalAIConnection() {
         let settings = preferencesStore.preferences.localAI
-        localAIConnectionMessage = "Testing Ollama connection..."
+        localAIConnectionMessage = "Testing \(settings.provider.displayName) connection..."
         localAIConnectionMessageIsError = false
         isTestingLocalAIConnection = true
         let tester = localAIConnectionTester

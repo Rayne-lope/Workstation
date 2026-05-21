@@ -18,7 +18,7 @@ struct LocalAISettingsPanelView: View {
                 .font(WorkstationTheme.Fonts.display(16, weight: .bold))
                 .foregroundStyle(WorkstationTheme.textPrimary)
 
-            Text("Configure Ollama so the app can use a local model for assisted actions.")
+            Text("Configure the AI provider used by Copilot and assisted actions.")
                 .font(WorkstationTheme.Fonts.body(12, weight: .medium))
                 .foregroundStyle(WorkstationTheme.textMuted)
         }
@@ -45,7 +45,7 @@ struct LocalAISettingsPanelView: View {
 
                 settingField(
                     title: "Base URL",
-                    subtitle: "Ollama listens here.",
+                    subtitle: appVM.localAISettings.provider == .gemini ? "Gemini REST API root." : "Ollama listens here.",
                     control: baseURLField
                 )
             }
@@ -62,6 +62,17 @@ struct LocalAISettingsPanelView: View {
                     subtitle: "Used for deeper prompts.",
                     control: strongModelField
                 )
+            }
+
+            if appVM.localAISettings.provider.requiresAPIKey {
+                GridRow {
+                    settingField(
+                        title: "API Key",
+                        subtitle: "Stored with this app's local preferences.",
+                        control: apiKeyField
+                    )
+                    Color.clear
+                }
             }
         }
     }
@@ -94,7 +105,7 @@ struct LocalAISettingsPanelView: View {
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             } else if !appVM.localAISettings.isEnabled {
-                Text("Local AI is disabled. Turn it on to use Ollama-backed assistance.")
+                Text("AI assistance is disabled. Turn it on to use Copilot-backed actions.")
                     .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                     .foregroundStyle(WorkstationTheme.textMuted)
                     .lineSpacing(2)
@@ -120,7 +131,7 @@ struct LocalAISettingsPanelView: View {
 
     private func baseURLField() -> some View {
         TextField(
-            "http://localhost:11434",
+            appVM.localAISettings.provider == .gemini ? LocalAISettings.defaultGeminiBaseURL : LocalAISettings.defaultBaseURL,
             text: binding(
                 get: { appVM.localAISettings.baseURL },
                 set: { appVM.setLocalAIBaseURL($0) }
@@ -131,7 +142,7 @@ struct LocalAISettingsPanelView: View {
 
     private func fastModelField() -> some View {
         TextField(
-            "qwen2.5-coder:3b",
+            appVM.localAISettings.provider == .gemini ? LocalAISettings.defaultGeminiModel : LocalAISettings.defaultFastModel,
             text: binding(
                 get: { appVM.localAISettings.fastModel },
                 set: { appVM.setLocalAIFastModel($0) }
@@ -142,10 +153,21 @@ struct LocalAISettingsPanelView: View {
 
     private func strongModelField() -> some View {
         TextField(
-            "qwen2.5-coder:7b",
+            appVM.localAISettings.provider == .gemini ? LocalAISettings.defaultGeminiModel : LocalAISettings.defaultStrongModel,
             text: binding(
                 get: { appVM.localAISettings.strongModel },
                 set: { appVM.setLocalAIStrongModel($0) }
+            )
+        )
+        .textFieldStyle(.roundedBorder)
+    }
+
+    private func apiKeyField() -> some View {
+        SecureField(
+            "Paste API key",
+            text: binding(
+                get: { appVM.localAISettings.apiKey },
+                set: { appVM.setLocalAIAPIKey($0) }
             )
         )
         .textFieldStyle(.roundedBorder)

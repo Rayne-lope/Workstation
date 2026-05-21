@@ -6,19 +6,22 @@ public struct LocalAIRequest: Sendable, Equatable {
     public let prompt: String
     public let system: String?
     public let stream: Bool
+    public let apiKey: String?
 
     public init(
         baseURL: URL,
         model: String,
         prompt: String,
         system: String? = nil,
-        stream: Bool = false
+        stream: Bool = false,
+        apiKey: String? = nil
     ) {
         self.baseURL = baseURL
         self.model = model
         self.prompt = prompt
         self.system = system
         self.stream = stream
+        self.apiKey = apiKey
     }
 }
 
@@ -212,4 +215,173 @@ public final class OllamaService: LocalAIProviding, @unchecked Sendable {
     private struct RemoteErrorResponse: Decodable {
         let error: String?
     }
+}
+
+public enum GeminiServiceError: LocalizedError, Sendable {
+    case missingAPIKey
+    case invalidResponse
+    case unexpectedStatusCode(Int, message: String?)
+    case unreachable(baseURL: String, underlying: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingAPIKey:
+            return "Gemini requires an API key."
+        case .invalidResponse:
+            return "Gemini returned an invalid response."
+        case let .unexpectedStatusCode(statusCode, message):
+            if let message, !message.isEmpty {
+                return "Gemini returned HTTP \(statusCode): \(message)"
+            }
+            return "Gemini returned HTTP \(statusCode)."
+        case let .unreachable(baseURL, underlying):
+            if underlying.isEmpty {
+                return "Could not reach Gemini at \(baseURL)."
+            }
+            return "Could not reach Gemini at \(baseURL): \(underlying)"
+        }
+    }
+
+    public var recoverySuggestion: String? {
+        switch self {
+        case .missingAPIKey:
+            return "Paste a Gemini API key in Local AI settings, then try again."
+        case .invalidResponse, .unexpectedStatusCode:
+            return "Check the Gemini model name, API key, and provider base URL."
+        case .unreachable:
+            return "Check your internet connection and Gemini provider base URL."
+        }
+    }
+}
+
+public final class GeminiService: LocalAIProviding, @unchecked Sendable {
+    private let session: any URLSessioning
+
+    public init(session: any URLSessioning = URLSession.shared) {
+        self.session = session
+    }
+
+    public func generate(request: LocalAIRequest) async throws -> String {
+        let apiKey = request.apiKey?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !apiKey.isEmpty else {
+            throw GeminiServiceError.missingAPIKey
+        }
+
+        let url = request.baseURL
+            .appendingPathComponent("models")
+            .appendingPathComponent("\(request.model):generateContent")
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
+        urlRequest.httpBody = try JSONEncoder().encode(GeminiGenerateContentRequestBody(from: request))
+
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw GeminiServiceError.invalidResponse
+            }
+
+            if !(200..<300).contains(httpResponse.statusCode) {
+                throw GeminiServiceError.unexpectedStatusCode(
+                    httpResponse.statusCode,
+                    message: Self.decodeRemoteError(from: data)
+                )
+            }
+
+            let payload = try JSONDecoder().decode(GeminiGenerateContentResponse.self, from: data)
+            let text = payload.candidates
+                .flatMap { $0.content.parts }
+                .compactMap(\.text)
+                .joined()
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else {
+                throw GeminiServiceError.invalidResponse
+            }
+            return text
+        } catch let error as GeminiServiceError {
+            throw error
+        } catch let error as URLError {
+            throw GeminiServiceError.unreachable(
+                baseURL: request.baseURL.absoluteString,
+                underlying: error.localizedDescription
+            )
+        } catch {
+            throw GeminiServiceError.unreachable(
+                baseURL: request.baseURL.absoluteString,
+                underlying: error.localizedDescription
+            )
+        }
+    }
+
+    public func generateStream(request: LocalAIRequest) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    let text = try await generate(request: request)
+                    continuation.yield(text)
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+
+    private static func decodeRemoteError(from data: Data) -> String? {
+        guard !data.isEmpty,
+              let payload = try? JSONDecoder().decode(GeminiRemoteErrorResponse.self, from: data) else {
+            return nil
+        }
+        let message = payload.error.message.trimmingCharacters(in: .whitespacesAndNewlines)
+        return message.isEmpty ? nil : message
+    }
+}
+
+private struct GeminiGenerateContentRequestBody: Encodable {
+    let systemInstruction: GeminiContent?
+    let contents: [GeminiContent]
+
+    init(from request: LocalAIRequest) {
+        let system = request.system?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        systemInstruction = system.isEmpty
+            ? nil
+            : GeminiContent(role: nil, parts: [GeminiPart(text: system)])
+        contents = [
+            GeminiContent(
+                role: "user",
+                parts: [GeminiPart(text: request.prompt)]
+            )
+        ]
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case systemInstruction = "system_instruction"
+        case contents
+    }
+}
+
+private struct GeminiContent: Codable {
+    let role: String?
+    let parts: [GeminiPart]
+}
+
+private struct GeminiPart: Codable {
+    let text: String?
+}
+
+private struct GeminiGenerateContentResponse: Decodable {
+    let candidates: [GeminiCandidate]
+}
+
+private struct GeminiCandidate: Decodable {
+    let content: GeminiContent
+}
+
+private struct GeminiRemoteErrorResponse: Decodable {
+    let error: GeminiRemoteError
+}
+
+private struct GeminiRemoteError: Decodable {
+    let message: String
 }

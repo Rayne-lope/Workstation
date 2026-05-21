@@ -111,11 +111,12 @@ struct PreferencesStoreTests {
         store.update {
             $0.localAI = LocalAISettings(
                 isEnabled: true,
-                provider: .ollama,
-                baseURL: "http://localhost:11434",
-                fastModel: "qwen2.5-coder:3b",
-                strongModel: "qwen2.5-coder:7b"
-            )
+            provider: .ollama,
+            baseURL: "http://localhost:11434",
+            fastModel: "qwen2.5-coder:3b",
+            strongModel: "qwen2.5-coder:7b",
+            apiKey: "local-key"
+        )
         }
 
         let reloaded = PreferencesStore(userDefaults: defaults)
@@ -124,7 +125,8 @@ struct PreferencesStoreTests {
             provider: .ollama,
             baseURL: "http://localhost:11434",
             fastModel: "qwen2.5-coder:3b",
-            strongModel: "qwen2.5-coder:7b"
+            strongModel: "qwen2.5-coder:7b",
+            apiKey: "local-key"
         ))
     }
 }

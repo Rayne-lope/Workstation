@@ -86,6 +86,49 @@ struct LocalAIServiceTests {
         #expect(copilotRequest.prompt.contains(issue.id))
     }
 
+    @Test("buildRequest includes API key for Gemini-backed Copilot actions")
+    func buildRequestIncludesGeminiAPIKey() throws {
+        let settings = LocalAISettings(
+            isEnabled: true,
+            provider: .gemini,
+            baseURL: LocalAISettings.defaultGeminiBaseURL,
+            fastModel: LocalAISettings.defaultGeminiModel,
+            strongModel: LocalAISettings.defaultGeminiModel,
+            apiKey: " test-key "
+        )
+        let service = LocalAIService(provider: RecordingProvider())
+
+        let request = try service.buildRequest(
+            for: .copilot(prompt: "Summarize selected issues", contextIssues: [makeIssue()]),
+            settings: settings,
+            stream: true
+        )
+
+        #expect(request.baseURL.absoluteString == LocalAISettings.defaultGeminiBaseURL)
+        #expect(request.model == LocalAISettings.defaultGeminiModel)
+        #expect(request.apiKey == "test-key")
+        #expect(request.stream)
+    }
+
+    @Test("buildRequest rejects Gemini without an API key")
+    func buildRequestRejectsGeminiWithoutAPIKey() throws {
+        let settings = LocalAISettings(
+            isEnabled: true,
+            provider: .gemini,
+            baseURL: LocalAISettings.defaultGeminiBaseURL,
+            fastModel: LocalAISettings.defaultGeminiModel,
+            strongModel: LocalAISettings.defaultGeminiModel
+        )
+        let service = LocalAIService(provider: RecordingProvider())
+
+        #expect(throws: LocalAIServiceError.self) {
+            _ = try service.buildRequest(
+                for: .draftIssuesFromPRD(prd: "A PRD"),
+                settings: settings
+            )
+        }
+    }
+
     @Test("generate sends a non-streaming Ollama request and returns the text response")
     func generateSendsRequest() async throws {
         let settings = LocalAISettings(
@@ -118,6 +161,41 @@ struct LocalAIServiceTests {
 
         let text = try await service.generate(for: .issueDrafting(issue: issue), settings: settings)
         #expect(text == "preview text")
+    }
+
+    @Test("Gemini service sends API key header and decodes generated text")
+    func geminiGenerateSendsAPIKey() async throws {
+        let provider = GeminiService(session: StubURLSession { request in
+            #expect(request.url?.absoluteString == "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent")
+            #expect(request.httpMethod == "POST")
+            #expect(request.value(forHTTPHeaderField: "x-goog-api-key") == "secret-key")
+
+            let body = try #require(request.httpBody)
+            let payload = try JSONDecoder().decode(GeminiRequestBody.self, from: body)
+            #expect(payload.contents.first?.parts.first?.text.contains("Hello") == true)
+            #expect(payload.systemInstruction?.parts.first?.text.contains("system") == true)
+
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (
+                Data(#"{"candidates":[{"content":{"parts":[{"text":"Hi there"}],"role":"model"}}]}"#.utf8),
+                response
+            )
+        })
+        let request = LocalAIRequest(
+            baseURL: URL(string: LocalAISettings.defaultGeminiBaseURL)!,
+            model: "gemini-3.5-flash",
+            prompt: "Hello",
+            system: "system prompt",
+            apiKey: "secret-key"
+        )
+
+        let text = try await provider.generate(request: request)
+        #expect(text == "Hi there")
     }
 
     @Test("generate surfaces Ollama errors cleanly")
@@ -171,6 +249,24 @@ private struct RequestBody: Decodable {
     let prompt: String
     let system: String?
     let stream: Bool
+}
+
+private struct GeminiRequestBody: Decodable {
+    let systemInstruction: GeminiContent?
+    let contents: [GeminiContent]
+
+    enum CodingKeys: String, CodingKey {
+        case systemInstruction = "system_instruction"
+        case contents
+    }
+}
+
+private struct GeminiContent: Decodable {
+    let parts: [GeminiPart]
+}
+
+private struct GeminiPart: Decodable {
+    let text: String
 }
 
 private func makeIssue() -> BeadIssue {
