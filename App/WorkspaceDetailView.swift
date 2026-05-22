@@ -226,13 +226,33 @@ private struct WorkspaceOverviewPlaceholder: View {
             VStack(alignment: .leading, spacing: 20) {
                 // Stat cards quick summary
                 LazyVGrid(columns: Array(repeating: .init(.flexible(), spacing: 14), count: 4), spacing: 14) {
-                    statCard(label: "Total", count: store.issues.count, color: WorkstationTheme.textSecondary)
-                    statCard(label: "In Progress", count: store.inProgressIssues.count, color: WorkstationTheme.accent)
-                    statCard(label: "Blocked", count: store.blockedIssues.count, color: WorkstationTheme.orange)
-                    statCard(label: "Done", count: store.doneIssues.count, color: WorkstationTheme.green)
+                    statCard(
+                        label: "Total Issues",
+                        count: store.issues.count,
+                        sublabel: "Across all workflow columns",
+                        color: WorkstationTheme.textSecondary
+                    )
+                    statCard(
+                        label: "In Progress",
+                        count: store.issues.filter { $0.status == "in_progress" }.count,
+                        sublabel: "Active work happening now",
+                        color: WorkstationTheme.accent
+                    )
+                    statCard(
+                        label: "Blocked",
+                        count: store.blockedIssues.count,
+                        sublabel: "Awaiting blocker resolution",
+                        color: WorkstationTheme.orange
+                    )
+                    statCard(
+                        label: "Done",
+                        count: store.doneIssues.count,
+                        sublabel: "Successfully completed tasks",
+                        color: WorkstationTheme.green
+                    )
                 }
 
-                // Progress breakdown
+                // Progress breakdown card
                 progressBreakdownCard
             }
             .padding(24)
@@ -240,16 +260,22 @@ private struct WorkspaceOverviewPlaceholder: View {
         .background(WorkstationTheme.background)
     }
 
-    private func statCard(label: String, count: Int, color: Color) -> some View {
+    private func statCard(label: String, count: Int, sublabel: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("\(count)")
                 .font(WorkstationTheme.Fonts.display(32, weight: .heavy))
                 .foregroundStyle(color)
                 .monospacedDigit()
 
-            Text(label)
-                .font(WorkstationTheme.Fonts.body(13, weight: .medium))
-                .foregroundStyle(WorkstationTheme.textMuted)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(WorkstationTheme.Fonts.body(13, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+                
+                Text(sublabel)
+                    .font(WorkstationTheme.Fonts.body(10, weight: .regular))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -262,7 +288,74 @@ private struct WorkspaceOverviewPlaceholder: View {
     }
 
     private var progressBreakdownCard: some View {
-        let total = max(store.issues.count, 1)
+        let totalCount = store.issues.count
+        let doneCount = store.doneIssues.count
+        let doneRate = totalCount > 0 ? (Double(doneCount) / Double(totalCount)) : 0.0
+        let safeRate = doneRate.isNaN || doneRate.isInfinite ? 0.0 : max(0.0, min(1.0, doneRate))
+
+        return HStack(alignment: .top, spacing: 32) {
+            progressRingView(doneRate: safeRate)
+            
+            Divider()
+                .overlay(WorkstationTheme.borderSoft)
+            
+            columnBarChart(total: totalCount)
+        }
+        .padding(20)
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+    }
+
+    private func progressRingView(doneRate: Double) -> some View {
+        VStack(spacing: 12) {
+            ZStack {
+                // Background circle track
+                Circle()
+                    .stroke(WorkstationTheme.borderSoft, lineWidth: 10)
+                    .frame(width: 120, height: 120)
+                
+                // Progress circle stroke with gold accent
+                Circle()
+                    .trim(from: 0.0, to: CGFloat(doneRate))
+                    .stroke(
+                        LinearGradient(
+                            colors: [WorkstationTheme.accent, WorkstationTheme.accentHover],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .frame(width: 120, height: 120)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: doneRate)
+                
+                // Percentage text inside using Display/Syne font
+                VStack(spacing: 2) {
+                    Text(String(format: "%.0f%%", doneRate * 100))
+                        .font(WorkstationTheme.Fonts.display(24, weight: .heavy))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                        .monospacedDigit()
+                    Text("DONE")
+                        .font(WorkstationTheme.Fonts.body(9, weight: .bold))
+                        .tracking(0.8)
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                }
+            }
+            .frame(width: 120, height: 120)
+            
+            Text("Workspace Health")
+                .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                .foregroundStyle(WorkstationTheme.textSecondary)
+        }
+        .frame(width: 160)
+    }
+
+    private func columnBarChart(total: Int) -> some View {
+        let maxTotal = max(total, 1)
         let columns: [(String, Int, Color)] = [
             ("Backlog",     store.backlogIssues.count,    WorkstationTheme.textMuted),
             ("Ready",       store.readyIssues.count,      WorkstationTheme.accent),
@@ -271,56 +364,49 @@ private struct WorkspaceOverviewPlaceholder: View {
             ("Blocked",     store.blockedIssues.count,    WorkstationTheme.orange),
             ("Done",        store.doneIssues.count,       WorkstationTheme.green),
         ]
-
-        return VStack(alignment: .leading, spacing: 14) {
-            Text("PROGRESS BREAKDOWN")
-                .font(WorkstationTheme.Fonts.label)
+        
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("Progress Breakdown")
+                .font(WorkstationTheme.Fonts.body(11, weight: .bold))
                 .foregroundStyle(WorkstationTheme.textDisabled)
-                .textCase(.uppercase)
                 .tracking(0.8)
-
-            ForEach(columns, id: \.0) { label, count, color in
-                HStack(spacing: 10) {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 7, height: 7)
-
-                    Text(label)
-                        .font(WorkstationTheme.Fonts.body(12, weight: .medium))
-                        .foregroundStyle(WorkstationTheme.textMuted)
-                        .frame(width: 90, alignment: .leading)
-
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(WorkstationTheme.borderStrong)
-                                .frame(height: 4)
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(color)
-                                .frame(
-                                    width: geo.size.width * CGFloat(count) / CGFloat(total),
-                                    height: 4
-                                )
-                                .animation(.easeOut(duration: 0.5), value: count)
+                .textCase(.uppercase)
+            
+            VStack(spacing: 10) {
+                ForEach(columns, id: \.0) { label, count, color in
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(color)
+                            .frame(width: 6, height: 6)
+                        
+                        Text(label)
+                            .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                            .foregroundStyle(WorkstationTheme.textSecondary)
+                            .frame(width: 90, alignment: .leading)
+                        
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(WorkstationTheme.borderSoft)
+                                    .frame(height: 4)
+                                
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(color)
+                                    .frame(width: geo.size.width * CGFloat(count) / CGFloat(maxTotal), height: 4)
+                                    .animation(.easeOut(duration: 0.3), value: count)
+                            }
                         }
+                        .frame(height: 4)
+                        
+                        Text("\(count)")
+                            .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.textPrimary)
+                            .monospacedDigit()
+                            .frame(width: 24, alignment: .trailing)
                     }
-                    .frame(height: 4)
-
-                    Text("\(count)")
-                        .font(WorkstationTheme.Fonts.body(11, weight: .bold))
-                        .foregroundStyle(WorkstationTheme.textSecondary)
-                        .monospacedDigit()
-                        .frame(width: 28, alignment: .trailing)
                 }
             }
         }
-        .padding(18)
-        .background(WorkstationTheme.card)
-        .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
-                .stroke(WorkstationTheme.border, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
     }
 }
 
