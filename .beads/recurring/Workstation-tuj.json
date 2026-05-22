@@ -1,10 +1,15 @@
 {
-  "cadenceDays" : 90,
+  "cadenceDays" : 7,
   "history" : [
     {
       "completedAt" : "2026-05-20T06:50:52Z",
       "completedBy" : "claude",
       "id" : "D42BE6BF-61DC-41A7-B2F3-8109FE4929CB"
+    },
+    {
+      "completedAt" : "2026-05-21T07:47:20Z",
+      "completedBy" : "claude",
+      "id" : "6A6D0BCF-52F4-4396-B06C-3F9F6D657C88"
     }
   ],
   "isRecurring" : true,

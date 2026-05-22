@@ -1012,7 +1012,7 @@ final class AppViewModel {
     private func tickFocusTimer() {
         guard let id = activeFocusIssueID, !isFocusPaused else { return }
         if let session = focusSessionStore?.session(for: id) {
-            focusElapsedMs = session.currentElapsedMs(pausedMs: 0)
+            focusElapsedMs = session.currentElapsedMs()
         }
     }
 }

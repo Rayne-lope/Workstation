@@ -36,14 +36,14 @@ struct FocusSessionData: Codable, Hashable {
 
     var isActive: Bool { activeInterval != nil }
 
-    /// Returns the current wall-clock elapsed ms, accounting for active interval
-    /// and any pauses. Does NOT include active interval time if the session is paused.
-    func currentElapsedMs(pausedMs: Int64) -> Int64 {
+    /// Returns the current wall-clock elapsed ms, accounting for all completed intervals
+    /// and the currently active interval (if any), minus all accumulated pause time.
+    func currentElapsedMs() -> Int64 {
         var elapsed = totalActiveMs
         if let active = activeInterval {
             elapsed += Int64(Date().timeIntervalSince(active.startedAt) * 1000)
         }
-        return elapsed - pausedMs - totalPauseMs
+        return max(0, elapsed - totalPauseMs)
     }
 
     init(issueID: String) {
