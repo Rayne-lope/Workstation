@@ -415,18 +415,10 @@ struct WorkflowCopilotPane: View {
                                     .foregroundStyle(WorkstationTheme.red)
                             }
                             
-                            MarkdownTextRenderer.copilotText(for: msg.text)
-                                .font(WorkstationTheme.Fonts.body(13))
-                                .foregroundStyle(WorkstationTheme.textPrimary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .textSelection(.enabled)
+                            formattedMessageText(for: msg.text)
                         }
                     } else {
-                        MarkdownTextRenderer.copilotText(for: msg.text)
-                            .font(WorkstationTheme.Fonts.body(13))
-                            .foregroundStyle(WorkstationTheme.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .textSelection(.enabled)
+                        formattedMessageText(for: msg.text)
                     }
                 } else {
                     Text(msg.text)
@@ -1806,6 +1798,25 @@ struct WorkflowCopilotPane: View {
         
         messages.append(.init(role: .assistant, text: "🚀 Launched agent successfully! You can monitor progress in the Agent Console panel."))
     }
+
+    @ViewBuilder
+    private func formattedMessageText(for text: String) -> some View {
+        let blocks = MarkdownTextRenderer.parseContentBlocks(from: text)
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(0..<blocks.count, id: \.self) { idx in
+                switch blocks[idx] {
+                case .text(let plain):
+                    MarkdownTextRenderer.copilotText(for: plain)
+                        .font(WorkstationTheme.Fonts.body(13))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                case .table(let headers, let alignments, let rows):
+                    MarkdownTableView(headers: headers, alignments: alignments, rows: rows)
+                }
+            }
+        }
+    }
 }
 
 private struct PulsingDotModifier: ViewModifier {
@@ -2164,6 +2175,74 @@ private struct CopilotIssueDraft: Identifiable, Equatable {
     private func optional(_ text: String) -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+struct MarkdownTableView: View {
+    let headers: [String]
+    let alignments: [MarkdownTextRenderer.TableAlignment]
+    let rows: [[String]]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: true) {
+                Grid(alignment: .leading, horizontalSpacing: 1, verticalSpacing: 1) {
+                    // Header Row
+                    GridRow {
+                        ForEach(0..<headers.count, id: \.self) { colIdx in
+                            let text = headers[colIdx]
+                            let align = colIdx < alignments.count ? alignments[colIdx] : .left
+                            
+                            Text(text)
+                                .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                                .foregroundStyle(WorkstationTheme.textPrimary)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .frame(minWidth: 100, maxWidth: .infinity, alignment: textAlignment(for: align))
+                                .background(WorkstationTheme.accentBg.opacity(0.8))
+                        }
+                    }
+                    
+                    // Data Rows
+                    ForEach(0..<rows.count, id: \.self) { rowIdx in
+                        let row = rows[rowIdx]
+                        GridRow {
+                            ForEach(0..<row.count, id: \.self) { colIdx in
+                                let cell = row[colIdx]
+                                let align = colIdx < alignments.count ? alignments[colIdx] : .left
+                                
+                                Text(cell)
+                                    .font(WorkstationTheme.Fonts.body(11, weight: .regular))
+                                    .foregroundStyle(WorkstationTheme.textSecondary)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .frame(minWidth: 100, maxWidth: .infinity, alignment: textAlignment(for: align))
+                                    .background(
+                                        rowIdx % 2 == 0
+                                        ? WorkstationTheme.card.opacity(0.2)
+                                        : WorkstationTheme.cardAlt.opacity(0.3)
+                                    )
+                            }
+                        }
+                    }
+                }
+                .background(WorkstationTheme.borderSoft)
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium))
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium)
+                        .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                )
+            }
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func textAlignment(for align: MarkdownTextRenderer.TableAlignment) -> Alignment {
+        switch align {
+        case .left: return .leading
+        case .center: return .center
+        case .right: return .trailing
+        }
     }
 }
 
