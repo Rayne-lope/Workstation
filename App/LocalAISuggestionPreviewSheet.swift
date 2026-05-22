@@ -95,10 +95,10 @@ struct LocalAISuggestionPreviewSheet: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .background(WorkstationTheme.borderSoft)
+                    .background(WorkstationTheme.orangeBg)
                     .overlay(
                         RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                            .stroke(WorkstationTheme.orangeBorder, lineWidth: 1)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
                 }
