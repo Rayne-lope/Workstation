@@ -253,18 +253,13 @@ private struct DotsBackground: View {
                     }
                 }
 
-                guard colorScheme == .dark else { return }
-
-                // 2) Draw twinkling stars on top in dark mode only.
+                // 2) Draw twinkling accent dots — gold in dark mode, soft green in light mode.
                 for star in Self.stars {
                     guard star.col < cols, star.row < rows else { continue }
                     let x = CGFloat(star.col) * spacing
                     let y = CGFloat(star.row) * spacing
 
-                    // Sine-wave brightness: 0 (invisible) to 1 (full glow)
                     let brightness = (sin(now * star.speed * 1.8 + star.phase) + 1.0) / 2.0
-
-                    // Only draw when star is somewhat visible (>10% brightness)
                     guard brightness > 0.1 else { continue }
 
                     let glowRadius = star.radius * CGFloat(brightness)
@@ -278,14 +273,6 @@ private struct DotsBackground: View {
                         width: glowSize,
                         height: glowSize
                     )
-                    let glowColor: Color = star.isGold
-                        ? WorkstationTheme.accent.opacity(alpha * 0.3)
-                        : WorkstationTheme.textPrimary.opacity(alpha * 0.15)
-
-                    context.fill(
-                        Path(ellipseIn: glowRect),
-                        with: .color(glowColor)
-                    )
 
                     // Core bright dot
                     let coreSize = glowRadius * 1.5
@@ -295,14 +282,31 @@ private struct DotsBackground: View {
                         width: coreSize,
                         height: coreSize
                     )
-                    let coreColor: Color = star.isGold
-                        ? WorkstationTheme.accent.opacity(alpha * 0.8)
-                        : WorkstationTheme.textPrimary.opacity(alpha * 0.6)
 
-                    context.fill(
-                        Path(ellipseIn: coreRect),
-                        with: .color(coreColor)
-                    )
+                    if colorScheme == .dark {
+                        // Dark mode: gold accent stars + cool white stars (original behaviour)
+                        let glowColor: Color = star.isGold
+                            ? WorkstationTheme.accent.opacity(alpha * 0.3)
+                            : WorkstationTheme.textPrimary.opacity(alpha * 0.15)
+                        context.fill(Path(ellipseIn: glowRect), with: .color(glowColor))
+
+                        let coreColor: Color = star.isGold
+                            ? WorkstationTheme.accent.opacity(alpha * 0.8)
+                            : WorkstationTheme.textPrimary.opacity(alpha * 0.6)
+                        context.fill(Path(ellipseIn: coreRect), with: .color(coreColor))
+                    } else {
+                        // Light mode: green accent sparkles + muted gray sparkles
+                        // Reduced opacity so they stay airy on the white/light canvas
+                        let glowColor: Color = star.isGold
+                            ? WorkstationTheme.green.opacity(alpha * 0.18)
+                            : WorkstationTheme.textMuted.opacity(alpha * 0.08)
+                        context.fill(Path(ellipseIn: glowRect), with: .color(glowColor))
+
+                        let coreColor: Color = star.isGold
+                            ? WorkstationTheme.green.opacity(alpha * 0.55)
+                            : WorkstationTheme.textMuted.opacity(alpha * 0.30)
+                        context.fill(Path(ellipseIn: coreRect), with: .color(coreColor))
+                    }
                 }
             }
         }
