@@ -328,11 +328,41 @@ enum WorkstationTheme {
     }
 
     // MARK: – Adaptive helper
-    /// Returns a `Color` that resolves to `light` in Light Mode and `dark` in Dark Mode.
-    /// Uses `NSColor`'s dynamic provider so the value updates live when the system appearance changes.
+    /// Returns a `Color` that resolves to the chosen theme or the system light/dark mode.
     private static func adaptive(light: String, dark: String) -> Color {
         Color(NSColor(name: nil, dynamicProvider: { appearance in
-            let hex = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+            let isDark: Bool
+            let activeTheme = PreferencesStore.activeTheme
+            switch activeTheme {
+            case .light:
+                isDark = false
+            case .obsidianDark, .beadsDark:
+                isDark = true
+            case .system:
+                isDark = (appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua)
+            }
+
+            let hex: String
+            if isDark {
+                if activeTheme == .obsidianDark {
+                    switch dark {
+                    case "0F0F0F": hex = "050505"
+                    case "111111": hex = "0C0C0C"
+                    case "141414": hex = "0E0E0E"
+                    case "151515": hex = "101010"
+                    case "1A1A1A": hex = "161616"
+                    case "222222": hex = "1C1C1C"
+                    case "1E1E1E": hex = "1A1A1A"
+                    case "2A2A2A": hex = "242424"
+                    default: hex = dark
+                    }
+                } else {
+                    hex = dark
+                }
+            } else {
+                hex = light
+            }
+
             let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
             var value: UInt64 = 0
             Scanner(string: cleaned).scanHexInt64(&value)

@@ -30,35 +30,35 @@ struct DefaultsSettingsPanelView: View {
 
                 VStack(alignment: .leading, spacing: 20) {
                     defaultIssueTypeSection
-                    Divider().background(Color(hex: "#1A1A1A"))
+                    Divider().overlay(WorkstationTheme.borderSoft)
                     defaultPrioritySection
-                    Divider().background(Color(hex: "#1A1A1A"))
+                    Divider().overlay(WorkstationTheme.borderSoft)
                     closeReasonTemplateSection
                 }
                 .padding(20)
-                .background(Color(hex: "#141414"))
-                .cornerRadius(10)
+                .background(WorkstationTheme.card)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color(hex: "#1E1E1E"), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                        .stroke(WorkstationTheme.border, lineWidth: 1)
                 )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
 
                 Spacer(minLength: 24)
             }
             .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "#0F0F0F"))
+        .background(WorkstationTheme.background)
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Defaults")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundColor(Color(hex: "#F0ECE4"))
+                .font(WorkstationTheme.Fonts.display(22, weight: .bold))
+                .foregroundStyle(WorkstationTheme.textPrimary)
             Text("Default values for new issues and close templates")
-                .font(.system(size: 13))
-                .foregroundColor(Color(hex: "#888888"))
+                .font(WorkstationTheme.Fonts.body(13))
+                .foregroundStyle(WorkstationTheme.textSecondary)
         }
     }
 
@@ -66,11 +66,11 @@ struct DefaultsSettingsPanelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "doc.text")
-                    .foregroundColor(Color(hex: "#888888"))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
                     .font(.system(size: 14))
                 Text("Default issue type")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "#F0ECE4"))
+                    .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
             }
 
             Picker("Issue Type", selection: Binding(
@@ -91,11 +91,11 @@ struct DefaultsSettingsPanelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "flag")
-                    .foregroundColor(Color(hex: "#888888"))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
                     .font(.system(size: 14))
                 Text("Default priority")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "#F0ECE4"))
+                    .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
             }
 
             HStack(spacing: 0) {
@@ -105,31 +105,31 @@ struct DefaultsSettingsPanelView: View {
                     } label: {
                         VStack(spacing: 2) {
                             Text(label)
-                                .font(.system(size: 11, weight: .bold))
+                                .font(WorkstationTheme.Fonts.body(11, weight: .bold))
                             Text(desc)
-                                .font(.system(size: 9))
+                                .font(WorkstationTheme.Fonts.body(9))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(
                             preferences.defaultIssuePriority == value
-                                ? Color(hex: "#ECC864")
-                                : Color(hex: "#1A1A1A")
+                                ? WorkstationTheme.accent
+                                : WorkstationTheme.cardAlt
                         )
-                        .foregroundColor(
+                        .foregroundStyle(
                             preferences.defaultIssuePriority == value
-                                ? Color(hex: "#0F0F0F")
-                                : Color(hex: "#888888")
+                                ? WorkstationTheme.background
+                                : WorkstationTheme.textMuted
                         )
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .background(Color(hex: "#1A1A1A"))
-            .cornerRadius(8)
+            .background(WorkstationTheme.cardAlt)
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(hex: "#2A2A2A"), lineWidth: 1)
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
             )
         }
     }
@@ -138,30 +138,30 @@ struct DefaultsSettingsPanelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "text.alignleft")
-                    .foregroundColor(Color(hex: "#888888"))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
                     .font(.system(size: 14))
                 Text("Default close reason template")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "#F0ECE4"))
+                    .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
             }
 
             Text("This text will prefill the close reason field when closing an issue")
-                .font(.system(size: 12))
-                .foregroundColor(Color(hex: "#888888"))
+                .font(WorkstationTheme.Fonts.body(12))
+                .foregroundStyle(WorkstationTheme.textSecondary)
 
             TextEditor(text: Binding(
                 get: { preferences.defaultCloseReasonTemplate },
                 set: { appVM.setDefaultCloseReasonTemplate($0) }
             ))
-            .font(.system(size: 13))
-            .foregroundColor(Color(hex: "#F0ECE4"))
+            .font(WorkstationTheme.Fonts.body(13))
+            .foregroundStyle(WorkstationTheme.textPrimary)
             .frame(minHeight: 100)
             .padding(8)
-            .background(Color(hex: "#151515"))
-            .cornerRadius(8)
+            .background(WorkstationTheme.cardAlt)
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(hex: "#222222"), lineWidth: 1)
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
             )
         }
     }

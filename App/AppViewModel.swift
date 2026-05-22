@@ -563,6 +563,11 @@ final class AppViewModel {
         preferencesStore.update { $0.theme = theme }
     }
 
+    func resetSettingsToDefaults() {
+        preferencesStore.resetToDefaults()
+        agentProfileStore.resetToDefaults()
+    }
+
     func setDefaultIssueType(_ type: String) {
         preferencesStore.update { $0.defaultIssueType = type }
     }

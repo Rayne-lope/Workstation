@@ -37,5 +37,17 @@ struct ContentView: View {
                 QuickCaptureSheet(store: store)
             }
         }
+        .preferredColorScheme(colorScheme)
+    }
+
+    private var colorScheme: ColorScheme? {
+        switch appVM.preferencesStore.preferences.theme {
+        case .light:
+            return .light
+        case .obsidianDark, .beadsDark:
+            return .dark
+        case .system:
+            return nil
+        }
     }
 }

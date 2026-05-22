@@ -14,37 +14,37 @@ struct GeneralSettingsPanelView: View {
 
                 VStack(alignment: .leading, spacing: 20) {
                     autoRestoreToggle
-                    Divider().background(Color(hex: "#1A1A1A"))
+                    Divider().overlay(WorkstationTheme.borderSoft)
                     autoReloadToggle
-                    Divider().background(Color(hex: "#1A1A1A"))
+                    Divider().overlay(WorkstationTheme.borderSoft)
                     doneVisibilitySection
-                    Divider().background(Color(hex: "#1A1A1A"))
+                    Divider().overlay(WorkstationTheme.borderSoft)
                     themeSection
                 }
                 .padding(20)
-                .background(Color(hex: "#141414"))
-                .cornerRadius(10)
+                .background(WorkstationTheme.card)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color(hex: "#1E1E1E"), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                        .stroke(WorkstationTheme.border, lineWidth: 1)
                 )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
 
                 Spacer(minLength: 24)
             }
             .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "#0F0F0F"))
+        .background(WorkstationTheme.background)
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("General")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundColor(Color(hex: "#F0ECE4"))
+                .font(WorkstationTheme.Fonts.display(22, weight: .bold))
+                .foregroundStyle(WorkstationTheme.textPrimary)
             Text("Workspace behavior and appearance preferences")
-                .font(.system(size: 13))
-                .foregroundColor(Color(hex: "#888888"))
+                .font(WorkstationTheme.Fonts.body(13))
+                .foregroundStyle(WorkstationTheme.textSecondary)
         }
     }
 
@@ -53,10 +53,11 @@ struct GeneralSettingsPanelView: View {
             icon: "arrow.counterclockwise",
             title: "Auto-restore last project",
             subtitle: "Reopen the last used project when the app launches",
-            isOn: preferences.autoRestoreOnLaunch
-        ) {
-            appVM.setAutoRestoreOnLaunch($0)
-        }
+            isOn: Binding(
+                get: { preferences.autoRestoreOnLaunch },
+                set: { appVM.setAutoRestoreOnLaunch($0) }
+            )
+        )
     }
 
     private var autoReloadToggle: some View {
@@ -64,26 +65,27 @@ struct GeneralSettingsPanelView: View {
             icon: "arrow.triangle.2.circlepath",
             title: "Auto-reload issues",
             subtitle: "Automatically refresh issues when the underlying file changes",
-            isOn: preferences.autoReloadEnabled
-        ) {
-            appVM.setAutoReloadEnabled($0)
-        }
+            isOn: Binding(
+                get: { preferences.autoReloadEnabled },
+                set: { appVM.setAutoReloadEnabled($0) }
+            )
+        )
     }
 
     private var doneVisibilitySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "eye")
-                    .foregroundColor(Color(hex: "#888888"))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
                     .font(.system(size: 14))
                 Text("Done visibility window")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "#F0ECE4"))
+                    .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
             }
 
             Text("How long to show completed issues in the Done column")
-                .font(.system(size: 12))
-                .foregroundColor(Color(hex: "#888888"))
+                .font(WorkstationTheme.Fonts.body(12))
+                .foregroundStyle(WorkstationTheme.textMuted)
 
             HStack(spacing: 12) {
                 Slider(
@@ -94,11 +96,11 @@ struct GeneralSettingsPanelView: View {
                     in: 1...72,
                     step: 1
                 )
-                .tint(Color(hex: "#ECC864"))
+                .tint(WorkstationTheme.accent)
 
                 Text("\(Int(preferences.doneVisibilityWindowSeconds / 3600)) hours")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(Color(hex: "#ECC864"))
+                    .font(WorkstationTheme.Fonts.body(12, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.accent)
                     .frame(width: 60, alignment: .trailing)
             }
         }
@@ -108,11 +110,11 @@ struct GeneralSettingsPanelView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "paintpalette")
-                    .foregroundColor(Color(hex: "#888888"))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
                     .font(.system(size: 14))
                 Text("Theme")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "#F0ECE4"))
+                    .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
             }
 
             Picker("Theme", selection: Binding(
@@ -125,7 +127,7 @@ struct GeneralSettingsPanelView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .colorMultiply(Color(hex: "#ECC864"))
+            .colorMultiply(WorkstationTheme.accent)
         }
     }
 }
@@ -134,23 +136,22 @@ struct ToggleRow: View {
     let icon: String
     let title: String
     let subtitle: String
-    @State var isOn: Bool
-    let onChange: (Bool) -> Void
+    @Binding var isOn: Bool
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(Color(hex: "#888888"))
+                .foregroundStyle(WorkstationTheme.textSecondary)
                 .font(.system(size: 14))
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "#F0ECE4"))
+                    .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
                 Text(subtitle)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "#888888"))
+                    .font(WorkstationTheme.Fonts.body(12))
+                    .foregroundStyle(WorkstationTheme.textMuted)
                     .lineLimit(2)
             }
 
@@ -159,9 +160,6 @@ struct ToggleRow: View {
             Toggle("", isOn: $isOn)
                 .toggleStyle(.switch)
                 .labelsHidden()
-                .onChange(of: isOn) { _, newValue in
-                    onChange(newValue)
-                }
         }
     }
 }

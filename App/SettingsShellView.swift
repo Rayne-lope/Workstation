@@ -14,11 +14,31 @@ struct SettingsShellView: View {
     }
 
     private var sidebar: some View {
-        List(SettingsTab.allCases, selection: $appVM.settingsSelectedTab) { tab in
-            Label(tab.label, systemImage: tab.icon)
-                .tag(tab)
+        VStack(alignment: .leading, spacing: 0) {
+            List(SettingsTab.allCases, selection: $appVM.settingsSelectedTab) { tab in
+                Label(tab.label, systemImage: tab.icon)
+                    .tag(tab)
+            }
+            .listStyle(.sidebar)
+
+            Divider().overlay(WorkstationTheme.borderSoft)
+
+            Button(action: {
+                appVM.resetSettingsToDefaults()
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.counterclockwise.circle")
+                        .font(.system(size: 14))
+                    Text("Reset to Defaults")
+                    Spacer()
+                }
+                .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.red)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
         }
-        .listStyle(.sidebar)
         .navigationTitle("Settings")
     }
 

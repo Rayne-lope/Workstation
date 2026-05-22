@@ -4,7 +4,13 @@ import Observation
 @MainActor
 @Observable
 public final class PreferencesStore {
-    public private(set) var preferences: AppPreferences = AppPreferences()
+    public static var activeTheme: AppTheme = .system
+
+    public private(set) var preferences: AppPreferences = AppPreferences() {
+        didSet {
+            PreferencesStore.activeTheme = preferences.theme
+        }
+    }
     public private(set) var errorMessage: String?
 
     private let userDefaults: UserDefaults
