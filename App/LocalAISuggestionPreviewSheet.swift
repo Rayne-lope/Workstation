@@ -168,7 +168,6 @@ struct LocalAISuggestionPreviewSheet: View {
         }
         .frame(width: 760, height: 640)
         .background(WorkstationTheme.surface)
-        .preferredColorScheme(.dark)
     }
 
     private var header: some View {

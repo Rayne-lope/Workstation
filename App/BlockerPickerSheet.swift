@@ -74,7 +74,6 @@ struct BlockerPickerSheet: View {
         }
         .frame(width: 560)
         .background(WorkstationTheme.surface)
-        .preferredColorScheme(.dark)
         .onAppear { searchFocused = true }
     }
 
@@ -221,16 +220,18 @@ struct BlockerPickerSheet: View {
     @ViewBuilder
     private func statusBadge(_ status: String) -> some View {
         let tint = statusTint(status)
+        let fill = statusFill(status)
+        let border = statusBorder(status)
         Text(status.uppercased())
             .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
             .tracking(0.6)
             .foregroundStyle(tint)
             .padding(.horizontal, 7)
             .padding(.vertical, 2)
-            .background(tint.opacity(0.10))
+            .background(fill)
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
-                    .stroke(tint.opacity(0.30), lineWidth: 1)
+                    .stroke(border, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small))
     }
@@ -242,6 +243,26 @@ struct BlockerPickerSheet: View {
         case "blocked": return WorkstationTheme.red
         case "ready", "open": return WorkstationTheme.green
         default: return WorkstationTheme.textMuted
+        }
+    }
+
+    private func statusFill(_ status: String) -> Color {
+        switch status.lowercased() {
+        case "in_progress": return WorkstationTheme.accentBg
+        case "review": return WorkstationTheme.blueBg
+        case "blocked": return WorkstationTheme.redBg
+        case "ready", "open": return WorkstationTheme.greenBg
+        default: return WorkstationTheme.cardAlt
+        }
+    }
+
+    private func statusBorder(_ status: String) -> Color {
+        switch status.lowercased() {
+        case "in_progress": return WorkstationTheme.accentBorder
+        case "review": return WorkstationTheme.blueBorder
+        case "blocked": return WorkstationTheme.redBorder
+        case "ready", "open": return WorkstationTheme.greenBorder
+        default: return WorkstationTheme.borderStrong
         }
     }
 }

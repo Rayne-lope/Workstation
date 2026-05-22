@@ -20,7 +20,7 @@ struct IssueFilterBarView: View {
                 if store.activeFilterCount > 0 {
                     Text("\(store.activeFilterCount)")
                         .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-                        .foregroundStyle(WorkstationTheme.background)
+                        .foregroundStyle(WorkstationTheme.surface)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(
@@ -32,7 +32,7 @@ struct IssueFilterBarView: View {
             .foregroundStyle(store.hasActiveFilters ? WorkstationTheme.textPrimary : WorkstationTheme.textSecondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(store.hasActiveFilters ? WorkstationTheme.card : WorkstationTheme.surface)
+            .background(store.hasActiveFilters ? WorkstationTheme.card : WorkstationTheme.inputBg)
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
                     .stroke(store.hasActiveFilters ? WorkstationTheme.accent : WorkstationTheme.borderStrong, lineWidth: 1)
@@ -210,7 +210,7 @@ struct IssueFilterBarView: View {
     private func filterChip(label: String, isActive: Bool, accent: Color) -> some View {
         Text(label)
             .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
-            .foregroundStyle(isActive ? WorkstationTheme.background : WorkstationTheme.textSecondary)
+            .foregroundStyle(isActive ? WorkstationTheme.surface : WorkstationTheme.textSecondary)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .frame(maxWidth: .infinity, alignment: .center)

@@ -161,7 +161,6 @@ struct CloseIssueSheet: View {
         }
         .frame(width: 560)
         .background(WorkstationTheme.surface)
-        .preferredColorScheme(.dark)
         .onAppear { reasonFocused = true }
     }
 

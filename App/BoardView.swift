@@ -378,7 +378,7 @@ struct WorkstationGhostButtonStyle: ButtonStyle {
             .foregroundStyle(configuration.isPressed ? WorkstationTheme.textPrimary : WorkstationTheme.textSecondary)
             .padding(.horizontal, compact ? 10 : 12)
             .padding(.vertical, compact ? 6 : 8)
-            .background(configuration.isPressed ? WorkstationTheme.borderSoft : Color.clear)
+            .background(configuration.isPressed ? WorkstationTheme.hover : Color.clear)
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
                     .stroke(WorkstationTheme.borderStrong, lineWidth: 1)

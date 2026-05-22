@@ -123,7 +123,6 @@ struct ReviewFollowupSheet: View {
         }
         .frame(width: 520)
         .background(WorkstationTheme.surface)
-        .preferredColorScheme(.dark)
         .onAppear { notesFocused = true }
     }
 

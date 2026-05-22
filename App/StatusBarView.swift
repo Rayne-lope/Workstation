@@ -108,6 +108,14 @@ struct StatusBarView: View {
                     .controlSize(.mini)
             }
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(WorkstationTheme.redBg)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                .stroke(WorkstationTheme.redBorder, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
     }
 
     private func infoRow(label: String, message: String, dismiss: (() -> Void)? = nil) -> some View {
@@ -122,5 +130,13 @@ struct StatusBarView: View {
                     .controlSize(.mini)
             }
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(WorkstationTheme.blueBg)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                .stroke(WorkstationTheme.blueBorder, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
     }
 }

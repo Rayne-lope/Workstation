@@ -108,7 +108,6 @@ struct CreateIssueSheet: View {
         }
         .frame(width: 520)
         .background(WorkstationTheme.surface)
-        .preferredColorScheme(.dark)
         .onAppear { focusedField = .title }
     }
 

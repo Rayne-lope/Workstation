@@ -24,10 +24,10 @@ struct GitDirtyLaunchSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .fill(Color(hex: "26110F"))
+                    .fill(WorkstationTheme.redBg)
                     .overlay(
                         RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                            .stroke(Color(hex: "4A1C18"), lineWidth: 1)
+                            .stroke(WorkstationTheme.redBorder, lineWidth: 1)
                     )
                     .frame(width: 40, height: 40)
                     .overlay(
@@ -49,9 +49,24 @@ struct GitDirtyLaunchSheet: View {
             }
 
             HStack(spacing: 8) {
-                statusChip(label: pendingLaunch.profile.name, tone: WorkstationTheme.accent)
-                statusChip(label: pendingLaunch.workspace.name, tone: WorkstationTheme.blue)
-                statusChip(label: "\(pendingLaunch.gitStatus.changedFiles.count) changed", tone: WorkstationTheme.red)
+                statusChip(
+                    label: pendingLaunch.profile.name,
+                    tone: WorkstationTheme.accent,
+                    fill: WorkstationTheme.accentBg,
+                    border: WorkstationTheme.accentBorder
+                )
+                statusChip(
+                    label: pendingLaunch.workspace.name,
+                    tone: WorkstationTheme.blue,
+                    fill: WorkstationTheme.blueBg,
+                    border: WorkstationTheme.blueBorder
+                )
+                statusChip(
+                    label: "\(pendingLaunch.gitStatus.changedFiles.count) changed",
+                    tone: WorkstationTheme.red,
+                    fill: WorkstationTheme.redBg,
+                    border: WorkstationTheme.redBorder
+                )
             }
         }
     }
@@ -126,10 +141,10 @@ struct GitDirtyLaunchSheet: View {
                 .foregroundStyle(fileTone(for: file.status))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(fileTone(for: file.status).opacity(0.12))
+                .background(fileToneFill(for: file.status))
                 .overlay(
                     RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                        .stroke(fileTone(for: file.status).opacity(0.35), lineWidth: 1)
+                        .stroke(fileToneBorder(for: file.status), lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
 
@@ -171,16 +186,16 @@ struct GitDirtyLaunchSheet: View {
         }
     }
 
-    private func statusChip(label: String, tone: Color) -> some View {
+    private func statusChip(label: String, tone: Color, fill: Color, border: Color) -> some View {
         Text(label)
             .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
             .foregroundStyle(tone)
             .padding(.horizontal, 9)
             .padding(.vertical, 4)
-            .background(tone.opacity(0.12))
+            .background(fill)
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                    .stroke(tone.opacity(0.35), lineWidth: 1)
+                    .stroke(border, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
     }
@@ -205,6 +220,33 @@ struct GitDirtyLaunchSheet: View {
         }
         return WorkstationTheme.accent
     }
+
+    private func fileToneFill(for status: String) -> Color {
+        if status.contains("?") {
+            return WorkstationTheme.orangeBg
+        }
+        if status.contains("D") {
+            return WorkstationTheme.redBg
+        }
+        if status.contains("R") || status.contains("C") {
+            return WorkstationTheme.blueBg
+        }
+        return WorkstationTheme.accentBg
+    }
+
+    private func fileToneBorder(for status: String) -> Color {
+        if status.contains("?") {
+            return WorkstationTheme.orangeBorder
+        }
+        if status.contains("D") {
+            return WorkstationTheme.redBorder
+        }
+        if status.contains("R") || status.contains("C") {
+            return WorkstationTheme.blueBorder
+        }
+        return WorkstationTheme.accentBorder
+    }
+
 }
 
 struct GitWorktreeLaunchSheet: View {
@@ -238,10 +280,10 @@ struct GitWorktreeLaunchSheet: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                .fill(headerTint.opacity(0.18))
+                .fill(headerFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                        .stroke(headerTint.opacity(0.45), lineWidth: 1)
+                        .stroke(headerBorder, lineWidth: 1)
                 )
                 .frame(width: 44, height: 44)
                 .overlay(
@@ -294,6 +336,26 @@ struct GitWorktreeLaunchSheet: View {
             return WorkstationTheme.orange
         }
         return WorkstationTheme.green
+    }
+
+    private var headerFill: Color {
+        if pendingLaunch.preflight.isBlocked {
+            return WorkstationTheme.redBg
+        }
+        if pendingLaunch.preflight.requiresConfirmation {
+            return WorkstationTheme.orangeBg
+        }
+        return WorkstationTheme.greenBg
+    }
+
+    private var headerBorder: Color {
+        if pendingLaunch.preflight.isBlocked {
+            return WorkstationTheme.redBorder
+        }
+        if pendingLaunch.preflight.requiresConfirmation {
+            return WorkstationTheme.orangeBorder
+        }
+        return WorkstationTheme.greenBorder
     }
 
     private var contextCard: some View {
@@ -390,8 +452,18 @@ struct GitWorktreeLaunchSheet: View {
             card(title: "Working Tree") {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 8) {
-                        statusChip(label: statusSummary.branchName ?? "Unknown branch", tone: WorkstationTheme.accent)
-                        statusChip(label: "\(statusSummary.changedFiles.count) changed", tone: WorkstationTheme.red)
+                        statusChip(
+                            label: statusSummary.branchName ?? "Unknown branch",
+                            tone: WorkstationTheme.accent,
+                            fill: WorkstationTheme.accentBg,
+                            border: WorkstationTheme.accentBorder
+                        )
+                        statusChip(
+                            label: "\(statusSummary.changedFiles.count) changed",
+                            tone: WorkstationTheme.red,
+                            fill: WorkstationTheme.redBg,
+                            border: WorkstationTheme.redBorder
+                        )
                     }
 
                     if let lastCommitSummary = statusSummary.lastCommitSummary {
@@ -411,10 +483,10 @@ struct GitWorktreeLaunchSheet: View {
                                         .foregroundStyle(fileTone(for: file.status))
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
-                                        .background(fileTone(for: file.status).opacity(0.12))
+                                        .background(fileToneFill(for: file.status))
                                         .overlay(
                                             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                                                .stroke(fileTone(for: file.status).opacity(0.35), lineWidth: 1)
+                                                .stroke(fileToneBorder(for: file.status), lineWidth: 1)
                                         )
                                         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
 
@@ -624,16 +696,16 @@ struct GitWorktreeLaunchSheet: View {
             .frame(height: 1)
     }
 
-    private func statusChip(label: String, tone: Color) -> some View {
+    private func statusChip(label: String, tone: Color, fill: Color, border: Color) -> some View {
         Text(label)
             .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
             .foregroundStyle(tone)
             .padding(.horizontal, 9)
             .padding(.vertical, 4)
-            .background(tone.opacity(0.12))
+            .background(fill)
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                    .stroke(tone.opacity(0.35), lineWidth: 1)
+                    .stroke(border, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
     }
@@ -649,5 +721,31 @@ struct GitWorktreeLaunchSheet: View {
             return WorkstationTheme.blue
         }
         return WorkstationTheme.accent
+    }
+
+    private func fileToneFill(for status: String) -> Color {
+        if status.contains("?") {
+            return WorkstationTheme.orangeBg
+        }
+        if status.contains("D") {
+            return WorkstationTheme.redBg
+        }
+        if status.contains("R") || status.contains("C") {
+            return WorkstationTheme.blueBg
+        }
+        return WorkstationTheme.accentBg
+    }
+
+    private func fileToneBorder(for status: String) -> Color {
+        if status.contains("?") {
+            return WorkstationTheme.orangeBorder
+        }
+        if status.contains("D") {
+            return WorkstationTheme.redBorder
+        }
+        if status.contains("R") || status.contains("C") {
+            return WorkstationTheme.blueBorder
+        }
+        return WorkstationTheme.accentBorder
     }
 }
