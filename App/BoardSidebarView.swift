@@ -32,6 +32,13 @@ struct BoardSidebarView: View {
             }
             .buttonStyle(WorkstationGhostButtonStyle())
 
+            Button {
+                appVM.presentSettings()
+            } label: {
+                Label("Settings", systemImage: "gearshape")
+            }
+            .buttonStyle(WorkstationGhostButtonStyle())
+
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 20)
@@ -59,13 +66,9 @@ struct BoardSidebarView: View {
                 onDismiss: { appVM.isDebugPresented = false }
             )
         }
-        .sheet(isPresented: $appVM.isLocalAISettingsPresented, onDismiss: { appVM.dismissLocalAISettings() }) {
-            ScrollView {
-                LocalAISettingsPanelView(appVM: appVM)
-                    .padding(20)
-                    .frame(width: 720, alignment: .leading)
-            }
-            .frame(width: 760, height: 560)
+        .sheet(isPresented: $appVM.isSettingsPresented, onDismiss: { appVM.dismissSettings() }) {
+            SettingsShellView(appVM: appVM)
+                .frame(minWidth: 800, minHeight: 600)
         }
     }
 

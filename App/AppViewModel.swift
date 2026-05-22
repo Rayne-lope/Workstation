@@ -56,6 +56,8 @@ final class AppViewModel {
     var blockerPickerExistingBlockerIDs: Set<String> = []
     var isDebugPresented = false
     var isLocalAISettingsPresented = false
+    var isSettingsPresented = false
+    var settingsSelectedTab: SettingsTab = .general
     var localAISuggestionPreview: LocalAISuggestionPreviewState?
     var commandPaletteStore: CommandPaletteStore?
     var isQuickCapturePresented = false
@@ -519,6 +521,45 @@ final class AppViewModel {
     func setLocalAIAPIKey(_ apiKey: String) {
         preferencesStore.update { $0.localAI.apiKey = apiKey }
         clearLocalAIConnectionStatus()
+    }
+
+    // MARK: - Settings
+
+    func presentSettings(tab: SettingsTab = .general) {
+        settingsSelectedTab = tab
+        isSettingsPresented = true
+    }
+
+    func dismissSettings() {
+        isSettingsPresented = false
+    }
+
+    func setAutoRestoreOnLaunch(_ value: Bool) {
+        preferencesStore.update { $0.autoRestoreOnLaunch = value }
+    }
+
+    func setAutoReloadEnabled(_ value: Bool) {
+        preferencesStore.update { $0.autoReloadEnabled = value }
+    }
+
+    func setDoneVisibilityWindowSeconds(_ value: TimeInterval) {
+        preferencesStore.update { $0.doneVisibilityWindowSeconds = value }
+    }
+
+    func setTheme(_ theme: AppTheme) {
+        preferencesStore.update { $0.theme = theme }
+    }
+
+    func setDefaultIssueType(_ type: String) {
+        preferencesStore.update { $0.defaultIssueType = type }
+    }
+
+    func setDefaultIssuePriority(_ priority: Int) {
+        preferencesStore.update { $0.defaultIssuePriority = priority }
+    }
+
+    func setDefaultCloseReasonTemplate(_ template: String) {
+        preferencesStore.update { $0.defaultCloseReasonTemplate = template }
     }
 
     func testLocalAIConnection() {

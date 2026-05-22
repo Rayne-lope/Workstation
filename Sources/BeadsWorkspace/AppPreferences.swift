@@ -10,6 +10,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
     public var defaultIssuePriority: Int
     public var defaultCloseReasonTemplate: String
     public var doneVisibilityWindowSeconds: TimeInterval
+    public var theme: AppTheme
     public var filterState: [String: FilterState]
     public var localAI: LocalAISettings
 
@@ -21,6 +22,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         defaultIssuePriority: Int = 2,
         defaultCloseReasonTemplate: String = "",
         doneVisibilityWindowSeconds: TimeInterval = AppPreferences.defaultDoneVisibilityWindowSeconds,
+        theme: AppTheme = .system,
         filterState: [String: FilterState] = [:],
         localAI: LocalAISettings = LocalAISettings()
     ) {
@@ -31,6 +33,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         self.defaultIssuePriority = defaultIssuePriority
         self.defaultCloseReasonTemplate = defaultCloseReasonTemplate
         self.doneVisibilityWindowSeconds = doneVisibilityWindowSeconds
+        self.theme = theme
         self.filterState = filterState
         self.localAI = localAI
     }
@@ -43,6 +46,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         case defaultIssuePriority
         case defaultCloseReasonTemplate
         case doneVisibilityWindowSeconds
+        case theme
         case filterState
         case localAI
     }
@@ -57,6 +61,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         defaultCloseReasonTemplate = try c.decodeIfPresent(String.self, forKey: .defaultCloseReasonTemplate) ?? ""
         doneVisibilityWindowSeconds = try c.decodeIfPresent(TimeInterval.self, forKey: .doneVisibilityWindowSeconds)
             ?? AppPreferences.defaultDoneVisibilityWindowSeconds
+        theme = try c.decodeIfPresent(AppTheme.self, forKey: .theme) ?? .system
         filterState = try c.decodeIfPresent([String: FilterState].self, forKey: .filterState) ?? [:]
         localAI = try c.decodeIfPresent(LocalAISettings.self, forKey: .localAI) ?? LocalAISettings()
     }
