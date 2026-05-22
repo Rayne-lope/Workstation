@@ -79,9 +79,22 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         isEnabled = try c.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? false
         provider = try c.decodeIfPresent(LocalAIProvider.self, forKey: .provider) ?? .opencode
-        baseURL = try c.decodeIfPresent(String.self, forKey: .baseURL) ?? LocalAISettings.defaultBaseURL
-        fastModel = try c.decodeIfPresent(String.self, forKey: .fastModel) ?? LocalAISettings.defaultFastModel
-        strongModel = try c.decodeIfPresent(String.self, forKey: .strongModel) ?? LocalAISettings.defaultStrongModel
+        
+        let decodedURL = try c.decodeIfPresent(String.self, forKey: .baseURL) ?? LocalAISettings.defaultBaseURL
+        let decodedFast = try c.decodeIfPresent(String.self, forKey: .fastModel) ?? LocalAISettings.defaultFastModel
+        let decodedStrong = try c.decodeIfPresent(String.self, forKey: .strongModel) ?? LocalAISettings.defaultStrongModel
+        
+        // Auto-migrate legacy Google Gemini and Ollama base URLs / models to OpenCode defaults
+        if decodedURL.contains("googleapis.com") || decodedURL.contains("localhost:11434") || decodedURL.contains("127.0.0.1:11434") {
+            baseURL = LocalAISettings.defaultBaseURL
+            fastModel = LocalAISettings.defaultFastModel
+            strongModel = LocalAISettings.defaultStrongModel
+        } else {
+            baseURL = decodedURL
+            fastModel = decodedFast
+            strongModel = decodedStrong
+        }
+        
         let rawKey = try c.decodeIfPresent(String.self, forKey: .apiKey) ?? ""
         apiKey = rawKey.isEmpty ? Self.loadDefaultAPIKey() : rawKey
     }

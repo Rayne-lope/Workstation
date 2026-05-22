@@ -129,4 +129,30 @@ struct PreferencesStoreTests {
             apiKey: "local-key"
         ))
     }
+
+    @Test("Legacy Google Gemini settings auto-migrate to OpenCode defaults")
+    func legacyGeminiAutoMigrates() throws {
+        let (defaults, _) = makeDefaults()
+        let legacyJSON = """
+        {
+            "localAI": {
+                "isEnabled": true,
+                "provider": "gemini",
+                "baseURL": "https://generativelanguage.googleapis.com/v1beta",
+                "fastModel": "gemini-2.0-flash",
+                "strongModel": "gemini-2.0-flash",
+                "apiKey": "some-gemini-key"
+            }
+        }
+        """
+        defaults.set(Data(legacyJSON.utf8), forKey: "com.beads.app.preferences")
+        
+        let store = PreferencesStore(userDefaults: defaults)
+        let localAI = store.preferences.localAI
+        
+        #expect(localAI.provider == .opencode)
+        #expect(localAI.baseURL == LocalAISettings.defaultBaseURL)
+        #expect(localAI.fastModel == LocalAISettings.defaultFastModel)
+        #expect(localAI.strongModel == LocalAISettings.defaultStrongModel)
+    }
 }
