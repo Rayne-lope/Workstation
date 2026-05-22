@@ -20,10 +20,11 @@ public enum LocalAIAction: Equatable, Sendable {
     case detailIssueFromRoughIdea(roughIdea: String)
     case draftIssuesFromPRD(prd: String)
     case copilot(prompt: String, contextIssues: [BeadIssue])
+    case copilotPlan(prompt: String, contextIssues: [BeadIssue])
 
     public var modelTier: LocalAIModelTier {
         switch self {
-        case .issueDrafting, .backlogAnalysis, .runSummary, .simplifyIssueIndonesian, .detailIssueFromRoughIdea, .draftIssuesFromPRD, .copilot:
+        case .issueDrafting, .backlogAnalysis, .runSummary, .simplifyIssueIndonesian, .detailIssueFromRoughIdea, .draftIssuesFromPRD, .copilot, .copilotPlan:
             return .strong
         case .promptOptimization, .closeReason:
             return .fast
@@ -160,6 +161,45 @@ public enum LocalAIAction: Equatable, Sendable {
             - Do not mutate Beads data, execute commands, or claim that a change was applied.
             - If the request requires a mutation, describe the proposed next step for human approval.
             """
+        case let .copilotPlan(prompt, contextIssues):
+            let renderedIssues = contextIssues.isEmpty ? "(no issues provided)" : contextIssues.map(Self.renderIssue).joined(separator: "\n\n")
+            return """
+            You are the Workflow Plan Generator for the Beads Kanban app.
+            Your job is to parse the user request and generate a structured JSON plan to update the board or issues.
+
+            Context issues available in the app:
+            \(renderedIssues)
+
+            User request:
+            \(prompt)
+
+            Output Requirements:
+            - Output ONLY a valid JSON object matching the WorkflowPlan schema. No explanation, no conversational intro/outro.
+            - Do NOT wrap JSON in markdown fences (like ```json ... ```). Output the raw JSON text directly.
+            - If you cannot perform any mutation matching the user request, return an empty actions array.
+            - NEVER fabricate issue IDs. Only reference the issue IDs from the context issues above. If the user refers to "this issue", "issue yang di select", or similar, map it to the active/selected issue in the context.
+
+            JSON Schema:
+            {
+              "summary": "String explaining what changes will be made",
+              "actions": [
+                {
+                  "id": "A unique string id, e.g., action-1, action-2",
+                  "kind": "String: one of 'close_with_reason', 'update_field', 'create_issue', 'skip'",
+                  "issue_id": "String: The ID of the issue (e.g., Workstation-ca6)",
+                  "reason": "String: The reason for this action (for display to the user)",
+                  "field": "Optional String: 'priority', 'status', 'assignee', 'title', 'description' (only for update_field kind)",
+                  "value": "Optional String: The new value (e.g., '1' for priority, 'In Progress' for status, 'claude' for assignee) (only for update_field kind)",
+                  "draft_reason": "Optional String: close reason (only for close_with_reason kind)",
+                  "title": "Optional String: title of new issue (only for create_issue)",
+                  "description": "Optional String: description of new issue (only for create_issue)",
+                  "issue_type": "Optional String: 'feature', 'bug', 'chore', etc. (only for create_issue)",
+                  "priority": "Optional Integer: 0 to 4 (only for create_issue)"
+                }
+              ],
+              "warnings": ["Optional String array of warnings"]
+            }
+            """
         case let .runSummary(record):
             return """
             Summarize the following agent run for a Beads history note.
@@ -236,5 +276,69 @@ public enum LocalAIAction: Equatable, Sendable {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter.string(from: date)
+    }
+}
+
+public struct WorkflowPlan: Codable, Equatable, Sendable {
+    public let summary: String
+    public var actions: [WorkflowAction]
+    public let warnings: [String]?
+
+    public init(summary: String, actions: [WorkflowAction], warnings: [String]? = nil) {
+        self.summary = summary
+        self.actions = actions
+        self.warnings = warnings
+    }
+}
+
+public struct WorkflowAction: Identifiable, Codable, Equatable, Sendable {
+    public let id: String
+    public let kind: String // "close_with_reason", "update_field", "create_issue", "skip"
+    public let issueId: String?
+    public let reason: String?
+    
+    // For update_field
+    public let field: String?
+    public let value: String?
+    
+    // For close_with_reason
+    public let draftReason: String?
+    
+    // For create_issue
+    public let title: String?
+    public let description: String?
+    public let issueType: String?
+    public let priority: Int?
+    
+    // UI Selection
+    public var isSelected: Bool? = true
+
+    public enum CodingKeys: String, CodingKey {
+        case id
+        case kind
+        case issueId = "issue_id"
+        case reason
+        case field
+        case value
+        case draftReason = "draft_reason"
+        case title
+        case description
+        case issueType = "issue_type"
+        case priority
+    }
+    
+    public init(id: String, kind: String, issueId: String? = nil, reason: String? = nil, field: String? = nil, value: String? = nil, draftReason: String? = nil, title: String? = nil, description: String? = nil, issueType: String? = nil, priority: Int? = nil, isSelected: Bool? = true) {
+        self.id = id
+        self.kind = kind
+        self.issueId = issueId
+        self.reason = reason
+        self.field = field
+        self.value = value
+        self.draftReason = draftReason
+        self.title = title
+        self.description = description
+        self.issueType = issueType
+        self.priority = priority
+        self.isSelected = isSelected
     }
 }

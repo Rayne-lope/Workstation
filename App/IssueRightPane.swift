@@ -342,8 +342,8 @@ struct WorkflowCopilotPane: View {
 
     private var conversationSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(messages) { message in
-                chatBubble(message)
+            ForEach($messages) { $message in
+                chatBubble(message: $message)
             }
             if isSending, messages.last?.role != .assistant {
                 thinkingIndicator
@@ -364,9 +364,10 @@ struct WorkflowCopilotPane: View {
         .padding(.vertical, 8)
     }
 
-    private func chatBubble(_ message: CopilotConversationMessage) -> some View {
-        VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
-            if message.role == .assistant, let duration = message.thinkingDuration {
+    private func chatBubble(message: Binding<CopilotConversationMessage>) -> some View {
+        let msg = message.wrappedValue
+        return VStack(alignment: msg.role == .user ? .trailing : .leading, spacing: 4) {
+            if msg.role == .assistant, let duration = msg.thinkingDuration {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.system(size: 9))
@@ -378,16 +379,16 @@ struct WorkflowCopilotPane: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    Text(message.roleLabel)
+                    Text(msg.roleLabel)
                         .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
-                        .foregroundStyle(message.roleLabelColor)
+                        .foregroundStyle(msg.roleLabelColor)
                     Spacer(minLength: 0)
-                    Text(message.createdAt.formatted(date: .omitted, time: .shortened))
+                    Text(msg.createdAt.formatted(date: .omitted, time: .shortened))
                         .font(WorkstationTheme.Fonts.body(9))
                         .foregroundStyle(WorkstationTheme.textDisabled)
                 }
 
-                if message.isStreaming && message.text.isEmpty {
+                if msg.isStreaming && msg.text.isEmpty {
                     HStack(spacing: 6) {
                         Circle()
                             .fill(WorkstationTheme.accent)
@@ -397,36 +398,56 @@ struct WorkflowCopilotPane: View {
                             .font(WorkstationTheme.Fonts.body(12))
                             .foregroundStyle(WorkstationTheme.textMuted)
                     }
-                } else if message.role == .assistant {
-                    MarkdownTextRenderer.copilotText(for: message.text)
-                        .font(WorkstationTheme.Fonts.body(13))
-                        .foregroundStyle(WorkstationTheme.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
+                } else if msg.role == .assistant {
+                    if msg.isPlan {
+                        planCardView(message: message)
+                    } else if let planError = msg.planError {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(WorkstationTheme.red)
+                                Text("Could not parse plan: \(planError). Falling back to response text:")
+                                    .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                                    .foregroundStyle(WorkstationTheme.red)
+                            }
+                            
+                            MarkdownTextRenderer.copilotText(for: msg.text)
+                                .font(WorkstationTheme.Fonts.body(13))
+                                .foregroundStyle(WorkstationTheme.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .textSelection(.enabled)
+                        }
+                    } else {
+                        MarkdownTextRenderer.copilotText(for: msg.text)
+                            .font(WorkstationTheme.Fonts.body(13))
+                            .foregroundStyle(WorkstationTheme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
                 } else {
-                    Text(message.text)
+                    Text(msg.text)
                         .font(WorkstationTheme.Fonts.body(13))
-                        .foregroundStyle(message.foregroundColor)
+                        .foregroundStyle(msg.foregroundColor)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                 }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .frame(maxWidth: message.role == .user ? 320 : .infinity, alignment: .leading)
-            .background(message.bubbleBackground)
+            .frame(maxWidth: msg.role == .user ? 320 : .infinity, alignment: .leading)
+            .background(msg.bubbleBackground)
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
-                    .stroke(message.bubbleBorderColor, lineWidth: 1)
+                    .stroke(msg.bubbleBorderColor, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
 
-            if message.role == .assistant && !message.isStreaming && !message.text.isEmpty {
-                responseActions(for: message)
+            if msg.role == .assistant && !msg.isStreaming && !msg.text.isEmpty && !msg.isPlan {
+                responseActions(for: msg)
                     .padding(.top, 2)
             }
         }
-        .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
+        .frame(maxWidth: .infinity, alignment: msg.role == .user ? .trailing : .leading)
     }
 
     private func responseActions(for message: CopilotConversationMessage) -> some View {
@@ -719,14 +740,42 @@ struct WorkflowCopilotPane: View {
         streamCopilotResponse(prompt: lastCopilotRequest.prompt, contextIssues: lastCopilotRequest.contextIssues)
     }
 
+    private func looksLikeMutationRequest(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        let keywords = [
+            "close", "tutup", "selesai", "sudah",
+            "priority", "prio", "p1", "p2", "p3", "p4", "p0", "penting",
+            "status", "progress", "pindah", "geser", "kolom", "ready", "backlog", "in progress", "review", "done", "blocked",
+            "assign", "tunjuk", "tugaskan", "launch", "kerjakan",
+            "create", "buat", "tambah", "issue baru"
+        ]
+        return keywords.contains { lower.contains($0) }
+    }
+
+    private func cleanJSONString(_ raw: String) -> String {
+        var cleaned = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cleaned.hasPrefix("```json") {
+            cleaned = String(cleaned.dropFirst(7))
+        } else if cleaned.hasPrefix("```") {
+            cleaned = String(cleaned.dropFirst(3))
+        }
+        if cleaned.hasSuffix("```") {
+            cleaned = String(cleaned.dropLast(3))
+        }
+        return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private func streamCopilotResponse(prompt request: String, contextIssues: [BeadIssue]) {
         isSending = true
         streamingStartTime = Date()
         Task {
             do {
-                let stream = try appVM.requestLocalAIResponseStream(
-                    for: .copilot(prompt: request, contextIssues: contextIssues)
-                )
+                let isMutation = looksLikeMutationRequest(request)
+                let actionToRequest: LocalAIAction = isMutation ?
+                    .copilotPlan(prompt: request, contextIssues: contextIssues) :
+                    .copilot(prompt: request, contextIssues: contextIssues)
+                
+                let stream = try appVM.requestLocalAIResponseStream(for: actionToRequest)
                 let streamingIdx = await MainActor.run { () -> Int in
                     messages.append(.init(role: .assistant, text: "", isStreaming: true))
                     return messages.count - 1
@@ -741,6 +790,21 @@ struct WorkflowCopilotPane: View {
                     let duration = Date().timeIntervalSince(streamingStartTime ?? Date())
                     messages[streamingIdx].isStreaming = false
                     messages[streamingIdx].thinkingDuration = duration
+                    
+                    if isMutation {
+                        let rawText = messages[streamingIdx].text
+                        let cleaned = cleanJSONString(rawText)
+                        if let data = cleaned.data(using: .utf8) {
+                            do {
+                                let plan = try JSONDecoder().decode(WorkflowPlan.self, from: data)
+                                messages[streamingIdx].plan = plan
+                                messages[streamingIdx].isPlan = true
+                            } catch {
+                                messages[streamingIdx].planError = error.localizedDescription
+                            }
+                        }
+                    }
+                    
                     isSending = false
                     streamingStartTime = nil
                 }
@@ -750,6 +814,231 @@ struct WorkflowCopilotPane: View {
                     isSending = false
                     streamingStartTime = nil
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func planCardView(message: Binding<CopilotConversationMessage>) -> some View {
+        let msg = message.wrappedValue
+        if let plan = msg.plan {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(plan.summary)
+                    .font(WorkstationTheme.Fonts.body(13, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.accent)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Divider().overlay(WorkstationTheme.borderSoft)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(plan.actions.indices, id: \.self) { idx in
+                        let action = plan.actions[idx]
+                        HStack(alignment: .top, spacing: 8) {
+                            if !msg.isExecuted {
+                                Toggle("", isOn: Binding(
+                                    get: { message.plan.wrappedValue?.actions[idx].isSelected ?? true },
+                                    set: { message.plan.wrappedValue?.actions[idx].isSelected = $0 }
+                                ))
+                                .toggleStyle(.checkbox)
+                                .labelsHidden()
+                                .padding(.top, 2)
+                            } else {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(WorkstationTheme.green)
+                                    .padding(.top, 2)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 4) {
+                                    actionIcon(for: action.kind)
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(WorkstationTheme.textSubtle)
+
+                                    if let issueId = action.issueId {
+                                        Text(issueId)
+                                            .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                                            .foregroundStyle(WorkstationTheme.accent)
+                                    }
+                                    
+                                    Text(actionDescription(for: action))
+                                        .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                                        .foregroundStyle(WorkstationTheme.textPrimary)
+                                }
+
+                                if let reason = action.reason {
+                                    Text(reason)
+                                        .font(WorkstationTheme.Fonts.body(10))
+                                        .foregroundStyle(WorkstationTheme.textMuted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                        .padding(6)
+                        .background(WorkstationTheme.background.opacity(0.4))
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                    }
+                }
+
+                if let warnings = plan.warnings, !warnings.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(warnings, id: \.self) { warning in
+                            HStack(spacing: 4) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(WorkstationTheme.orange)
+                                Text(warning)
+                                    .font(WorkstationTheme.Fonts.body(10.5))
+                                    .foregroundStyle(WorkstationTheme.textSecondary)
+                            }
+                        }
+                    }
+                    .padding(8)
+                    .background(WorkstationTheme.orange.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
+                            .stroke(WorkstationTheme.orange.opacity(0.2), lineWidth: 1)
+                    )
+                }
+
+                Divider().overlay(WorkstationTheme.borderSoft)
+
+                HStack {
+                    if msg.isExecuted {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundStyle(WorkstationTheme.green)
+                            Text("Applied Successfully")
+                                .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
+                                .foregroundStyle(WorkstationTheme.green)
+                        }
+                    } else {
+                        Button {
+                            message.wrappedValue.plan = nil
+                            message.wrappedValue.isPlan = false
+                        } label: {
+                            Text("Cancel")
+                        }
+                        .buttonStyle(WorkstationGhostButtonStyle(compact: true))
+                        .disabled(msg.isExecuting)
+
+                        Spacer()
+
+                        Button {
+                            executePlan(message: message)
+                        } label: {
+                            if msg.isExecuting {
+                                HStack(spacing: 6) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .tint(.white)
+                                    Text("Executing...")
+                                }
+                            } else {
+                                Text("Proceed")
+                            }
+                        }
+                        .buttonStyle(WorkstationPrimaryButtonStyle())
+                        .disabled(msg.isExecuting || !(plan.actions.contains { $0.isSelected ?? true }))
+                    }
+                }
+                .padding(.top, 4)
+            }
+            .padding(10)
+            .background(WorkstationTheme.card)
+            .cornerRadius(WorkstationTheme.Radius.medium)
+        }
+    }
+
+    private func actionIcon(for kind: String) -> Image {
+        switch kind {
+        case "close_with_reason":
+            return Image(systemName: "checkmark.circle")
+        case "update_field":
+            return Image(systemName: "pencil.circle")
+        case "create_issue":
+            return Image(systemName: "plus.circle")
+        case "skip":
+            return Image(systemName: "slash.circle")
+        default:
+            return Image(systemName: "gearshape")
+        }
+    }
+
+    private func actionDescription(for action: WorkflowAction) -> String {
+        switch action.kind {
+        case "close_with_reason":
+            return "Close issue"
+        case "update_field":
+            if let field = action.field, let value = action.value {
+                return "Set \(field) to '\(value)'"
+            }
+            return "Update field"
+        case "create_issue":
+            if let title = action.title {
+                return "Create issue: \(title)"
+            }
+            return "Create issue"
+        case "skip":
+            return "Skip action"
+        default:
+            return "Modify issue"
+        }
+    }
+
+    private func executePlan(message: Binding<CopilotConversationMessage>) {
+        guard let plan = message.wrappedValue.plan, !message.wrappedValue.isExecuting else { return }
+
+        message.wrappedValue.isExecuting = true
+        Task {
+            let approvedActions = plan.actions.filter { $0.isSelected ?? true }
+            for action in approvedActions {
+                guard let issueId = action.issueId else { continue }
+                
+                switch action.kind {
+                case "close_with_reason":
+                    await store.close(id: issueId, reason: action.reason ?? action.draftReason ?? "Closed via Copilot")
+                    
+                case "update_field":
+                    guard let field = action.field, let value = action.value else { continue }
+                    if field == "priority" {
+                        if let priorityVal = Int(value) {
+                            await store.update(id: issueId, UpdateIssueInput(priority: priorityVal))
+                        }
+                    } else if field == "status" {
+                        await store.update(id: issueId, UpdateIssueInput(status: value))
+                    } else if field == "assignee" {
+                        await store.update(id: issueId, UpdateIssueInput(assignee: value))
+                    } else if field == "title" {
+                        await store.update(id: issueId, UpdateIssueInput(title: value))
+                    } else if field == "description" {
+                        await store.update(id: issueId, UpdateIssueInput(description: value))
+                    }
+                    
+                case "create_issue":
+                    if let title = action.title {
+                        let input = CreateIssueInput(
+                            title: title,
+                            description: action.description ?? "",
+                            issueType: action.issueType ?? "feature",
+                            priority: action.priority ?? 2,
+                            labels: []
+                        )
+                        await store.createIssue(input)
+                    }
+                    
+                default:
+                    break
+                }
+            }
+            
+            await store.reload()
+            
+            await MainActor.run {
+                message.wrappedValue.isExecuting = false
+                message.wrappedValue.isExecuted = true
+                
+                messages.append(.init(role: .assistant, text: "Executed \(approvedActions.count) plan action(s) successfully! The Kanban board has been updated."))
             }
         }
     }
@@ -839,6 +1128,35 @@ private struct CopilotConversationMessage: Identifiable, Equatable {
     var text: String
     var isStreaming: Bool = false
     var thinkingDuration: TimeInterval?
+    
+    // Action plan fields
+    var plan: WorkflowPlan? = nil
+    var isPlan: Bool = false
+    var planError: String? = nil
+    var isExecuted: Bool = false
+    var isExecuting: Bool = false
+
+    init(
+        role: Role,
+        text: String,
+        isStreaming: Bool = false,
+        thinkingDuration: TimeInterval? = nil,
+        plan: WorkflowPlan? = nil,
+        isPlan: Bool = false,
+        planError: String? = nil,
+        isExecuted: Bool = false,
+        isExecuting: Bool = false
+    ) {
+        self.role = role
+        self.text = text
+        self.isStreaming = isStreaming
+        self.thinkingDuration = thinkingDuration
+        self.plan = plan
+        self.isPlan = isPlan
+        self.planError = planError
+        self.isExecuted = isExecuted
+        self.isExecuting = isExecuting
+    }
 
     var roleLabel: String {
         switch role {
