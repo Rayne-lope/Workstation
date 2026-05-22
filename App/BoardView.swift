@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct BoardView: View {
@@ -17,8 +18,8 @@ struct BoardView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                if let selected = store.selectedIssue {
-                    IssueRightPane(appVM: appVM, store: store, issue: selected)
+                if store.selectedIssue != nil || appVM.detailPaneMode == .bulkAction || appVM.detailPaneMode == .copilot {
+                    IssueRightPane(appVM: appVM, store: store, issue: store.selectedIssue)
                         .frame(width: 440)
                 }
             }
@@ -136,7 +137,7 @@ struct BoardView: View {
                 .buttonStyle(WorkstationPrimaryButtonStyle())
                 .keyboardShortcut("n", modifiers: [.command])
 
-                IssueFilterBarView(
+IssueFilterBarView(
                     store: store,
                     onClearAll: { store.clearFilters() }
                 )
@@ -210,27 +211,56 @@ struct BoardView: View {
 }
 
 enum WorkstationTheme {
-    static let background = Color(hex: "0F0F0F")
-    static let surface = Color(hex: "111111")
-    static let card = Color(hex: "141414")
-    static let cardAlt = Color(hex: "151515")
-    static let borderSoft = Color(hex: "1A1A1A")
-    static let border = Color(hex: "1E1E1E")
-    static let borderStrong = Color(hex: "2A2A2A")
+    // MARK: – Backgrounds
+    /// Page-level canvas (darkest bg in dark mode, lightest in light mode)
+    static let background   = adaptive(light: "F4F4F4", dark: "0F0F0F")
+    /// Panel / sidebar surface
+    static let surface      = adaptive(light: "FFFFFF", dark: "111111")
+    /// Card surface (slightly elevated in dark, same white in light)
+    static let card         = adaptive(light: "FFFFFF", dark: "141414")
+    /// Alternate card / secondary panel (e.g. sidebar tree, mini-cards)
+    static let cardAlt      = adaptive(light: "FAFAFA", dark: "151515")
+    /// Hover highlight background
+    static let hover        = adaptive(light: "F0F0F0", dark: "1A1A1A")
+    /// Pressed / active state background
+    static let active       = adaptive(light: "EBEBEB", dark: "222222")
+    /// Input field fill
+    static let inputBg      = adaptive(light: "F7F7F7", dark: "141414")
 
-    static let textPrimary = Color(hex: "F0ECE4")
-    static let textSecondary = Color(hex: "888888")
-    static let textMuted = Color(hex: "555555")
-    static let textDisabled = Color(hex: "333333")
-    static let textSubtle = Color(hex: "444444")
+    // MARK: – Borders
+    /// Very subtle separator (section dividers)
+    static let borderSoft   = adaptive(light: "EEEEEE", dark: "1A1A1A")
+    /// Default border
+    static let border       = adaptive(light: "E5E5E5", dark: "1E1E1E")
+    /// Emphasis border (focused inputs, strong dividers)
+    static let borderStrong = adaptive(light: "D8D8D8", dark: "2A2A2A")
 
-    static let accent = Color(hex: "ECC864")
-    static let accentHover = Color(hex: "F5D980")
-    static let blue = Color(hex: "7DD3FC")
-    static let green = Color(hex: "86EFAC")
-    static let purple = Color(hex: "D8B4FE")
-    static let red = Color(hex: "F87171")
-    static let orange = Color(hex: "FB923C")
+    // MARK: – Text
+    /// Primary / heading text
+    static let textPrimary  = adaptive(light: "111111", dark: "F0ECE4")
+    /// Secondary body text
+    static let textSecondary = adaptive(light: "555555", dark: "888888")
+    /// Muted metadata / labels
+    static let textMuted    = adaptive(light: "999999", dark: "555555")
+    /// Disabled / placeholder text
+    static let textDisabled = adaptive(light: "C8C8C8", dark: "333333")
+    /// Subtle supporting text (slightly darker than muted in dark, same as secondary in light)
+    static let textSubtle   = adaptive(light: "555555", dark: "444444")
+
+    // MARK: – Accent
+    /// Primary accent — gold in dark mode, near-black in light mode
+    static let accent       = adaptive(light: "111111", dark: "ECC864")
+    /// Hovered accent
+    static let accentHover  = adaptive(light: "333333", dark: "F5D980")
+
+    // MARK: – Semantic colors
+    static let green        = adaptive(light: "4CAF74", dark: "86EFAC")
+    static let greenBg      = adaptive(light: "F0FAF4", dark: "1A2F22")
+    static let greenBorder  = adaptive(light: "C3EACF", dark: "2A4A35")
+    static let blue         = adaptive(light: "3B82F6", dark: "7DD3FC")
+    static let purple       = adaptive(light: "8B5CF6", dark: "D8B4FE")
+    static let red          = adaptive(light: "EF4444", dark: "F87171")
+    static let orange       = adaptive(light: "F97316", dark: "FB923C")
 
     enum Radius {
         static let small: CGFloat = 4
@@ -281,6 +311,24 @@ enum WorkstationTheme {
         default:
             return textMuted
         }
+    }
+
+    // MARK: – Adaptive helper
+    /// Returns a `Color` that resolves to `light` in Light Mode and `dark` in Dark Mode.
+    /// Uses `NSColor`'s dynamic provider so the value updates live when the system appearance changes.
+    private static func adaptive(light: String, dark: String) -> Color {
+        Color(NSColor(name: nil, dynamicProvider: { appearance in
+            let hex = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+            let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+            var value: UInt64 = 0
+            Scanner(string: cleaned).scanHexInt64(&value)
+            return NSColor(
+                red:   CGFloat((value >> 16) & 0xFF) / 255,
+                green: CGFloat((value >>  8) & 0xFF) / 255,
+                blue:  CGFloat( value        & 0xFF) / 255,
+                alpha: 1
+            )
+        }))
     }
 }
 
