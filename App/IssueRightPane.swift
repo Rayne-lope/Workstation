@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct IssueRightPane: View {
     @Bindable var appVM: AppViewModel
@@ -37,6 +38,97 @@ struct IssueRightPane: View {
     }
 }
 
+private final class CopilotTextView: NSTextView {
+    var onPlainReturn: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 36 {
+            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            if modifiers.isEmpty {
+                let text = self.string.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !text.isEmpty {
+                    onPlainReturn?()
+                }
+                return
+            }
+        }
+        super.keyDown(with: event)
+    }
+}
+
+private struct EnterToSendTextEditor: NSViewRepresentable {
+    @Binding var text: String
+    var fontSize: CGFloat = 13
+    var onSend: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text, onSend: onSend)
+    }
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let textView = CopilotTextView()
+        textView.onPlainReturn = { context.coordinator.handleReturn() }
+        textView.delegate = context.coordinator
+        textView.isRichText = false
+        textView.allowsUndo = true
+        textView.font = NSFont(name: "DM Sans-Medium", size: fontSize) ?? NSFont.systemFont(ofSize: fontSize, weight: .medium)
+        textView.drawsBackground = false
+        textView.backgroundColor = .clear
+        textView.textColor = NSColor(WorkstationTheme.textPrimary)
+        textView.insertionPointColor = NSColor(WorkstationTheme.accent)
+        textView.isEditable = true
+        textView.isSelectable = true
+        textView.isHorizontallyResizable = false
+        textView.isVerticallyResizable = true
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.minSize = NSSize(width: 0, height: 0)
+        textView.textContainerInset = NSSize(width: 10, height: 8)
+        textView.isContinuousSpellCheckingEnabled = true
+        textView.isAutomaticQuoteSubstitutionEnabled = false
+        textView.isAutomaticDashSubstitutionEnabled = false
+        textView.isAutomaticTextReplacementEnabled = false
+
+        let scrollView = NSTextView.scrollableTextView()
+        scrollView.documentView = textView
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.drawsBackground = false
+        scrollView.borderType = .noBorder
+        scrollView.backgroundColor = .clear
+
+        context.coordinator.textView = textView
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        guard let textView = scrollView.documentView as? CopilotTextView else { return }
+        if textView.string != text {
+            textView.string = text
+        }
+        textView.onPlainReturn = { context.coordinator.handleReturn() }
+    }
+
+    class Coordinator: NSObject, NSTextViewDelegate {
+        var text: Binding<String>
+        var onSend: () -> Void
+        weak var textView: NSTextView?
+
+        init(text: Binding<String>, onSend: @escaping () -> Void) {
+            self.text = text
+            self.onSend = onSend
+        }
+
+        func handleReturn() {
+            onSend()
+        }
+
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            text.wrappedValue = textView.string
+        }
+    }
+}
+
 struct WorkflowCopilotPane: View {
     @Bindable var appVM: AppViewModel
     let store: IssueStore
@@ -49,10 +141,17 @@ struct WorkflowCopilotPane: View {
     @State private var lastCopilotRequest: CopilotRequest?
     @State private var lastPRDText: String?
     @State private var scrollPulse = 0
-    @FocusState private var promptFocused: Bool
+    @State private var streamingStartTime: Date?
+    @State private var excludedContextIDs: Set<String> = []
+    @State private var hoveredMessageID: UUID?
 
     private var selected: [BeadIssue] {
         store.selectedIssues()
+    }
+
+    private var visibleContextIssues: [BeadIssue] {
+        let issues = selected.isEmpty ? Array(store.issues.prefix(50)) : selected
+        return issues.filter { !excludedContextIDs.contains($0.id) }
     }
 
     private var canSend: Bool {
@@ -67,19 +166,30 @@ struct WorkflowCopilotPane: View {
         prdDrafts.filter(\.isSelected).count
     }
 
+    private var modelName: String {
+        let settings = appVM.localAISettings
+        let name = settings.strongModel
+        if let slash = name.lastIndex(of: "/") {
+            return String(name[name.index(after: slash)])
+        }
+        return name
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-                .padding(.horizontal, 20)
-                .padding(.top, 18)
-                .padding(.bottom, 14)
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+                .padding(.bottom, 10)
 
             Divider().overlay(WorkstationTheme.borderSoft)
 
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        contextSection
+                    VStack(alignment: .leading, spacing: 12) {
+                        if messages.isEmpty && !isSending {
+                            emptyStateView
+                        }
                         conversationSection
                         if !prdDrafts.isEmpty {
                             prdDraftReviewSection
@@ -88,7 +198,7 @@ struct WorkflowCopilotPane: View {
                             .frame(height: 1)
                             .id(CopilotScrollTarget.bottom)
                     }
-                    .padding(20)
+                    .padding(16)
                 }
                 .onChange(of: messages.count) { _, _ in
                     scrollToBottom(proxy)
@@ -103,37 +213,33 @@ struct WorkflowCopilotPane: View {
 
             Divider().overlay(WorkstationTheme.borderSoft)
 
-            inputSection
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
+            inputBar
         }
         .frame(maxHeight: .infinity)
         .background(WorkstationTheme.surface)
-        .onAppear { promptFocused = true }
     }
 
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("WORKFLOW")
-                    .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
-                    .tracking(0.9)
-                    .foregroundStyle(WorkstationTheme.textSubtle)
-                Text("Copilot")
-                    .font(WorkstationTheme.Fonts.display(22, weight: .heavy))
-                    .foregroundStyle(WorkstationTheme.textPrimary)
-                Text("Ask about the current board or selected issues.")
-                    .font(WorkstationTheme.Fonts.body(11))
-                    .foregroundStyle(WorkstationTheme.textMuted)
-            }
+        HStack(alignment: .center, spacing: 8) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.accent)
+            Text("Copilot")
+                .font(WorkstationTheme.Fonts.display(18, weight: .heavy))
+                .foregroundStyle(WorkstationTheme.textPrimary)
             Spacer()
+            if isSending || isGeneratingPRDDrafts || isCreatingPRDDrafts {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(WorkstationTheme.accent)
+            }
             Button {
                 appVM.resetDetailPaneToIssue()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(WorkstationTheme.textMuted)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 26, height: 26)
                     .overlay(
                         RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
                             .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
@@ -144,133 +250,239 @@ struct WorkflowCopilotPane: View {
         }
     }
 
-    private var contextSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("CONTEXT")
-                .font(WorkstationTheme.Fonts.body(10.5, weight: .semibold))
-                .tracking(0.8)
-                .foregroundStyle(WorkstationTheme.textSubtle)
-
-            if selected.isEmpty {
-                Text("No issues selected. Copilot will use board-level context.")
-                    .font(WorkstationTheme.Fonts.body(12))
-                    .foregroundStyle(WorkstationTheme.textMuted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                    .background(WorkstationTheme.card)
-                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
-            } else {
-                ForEach(selected) { issue in
-                    HStack(spacing: 8) {
-                        Text(issue.id)
-                            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-                            .foregroundStyle(WorkstationTheme.accent)
-                        Text(issue.title)
-                            .font(WorkstationTheme.Fonts.body(12, weight: .medium))
-                            .foregroundStyle(WorkstationTheme.textPrimary)
-                            .lineLimit(1)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 9)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(WorkstationTheme.card)
-                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
-                }
-            }
+    private var emptyStateView: some View {
+        VStack(alignment: .center, spacing: 12) {
+            Image(systemName: "bubble.left.and.bubble.right")
+                .font(.system(size: 28))
+                .foregroundStyle(WorkstationTheme.textDisabled)
+            Text("Ask about your board or selected issues")
+                .font(WorkstationTheme.Fonts.body(13, weight: .medium))
+                .foregroundStyle(WorkstationTheme.textMuted)
+            Text("Shift + Enter for a new line")
+                .font(WorkstationTheme.Fonts.body(11))
+                .foregroundStyle(WorkstationTheme.textDisabled)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 
     private var conversationSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(messages.isEmpty ? "READY" : "CONVERSATION")
-                .font(WorkstationTheme.Fonts.body(10.5, weight: .semibold))
-                .tracking(0.8)
-                .foregroundStyle(WorkstationTheme.textSubtle)
-
-            if messages.isEmpty {
-                Text("Type a request below. Existing Local AI entry points remain available while Copilot wiring is expanded.")
-                    .font(WorkstationTheme.Fonts.body(12))
-                    .foregroundStyle(WorkstationTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else {
-                ForEach(messages) { message in
-                    conversationBubble(message)
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(messages) { message in
+                chatBubble(message)
+            }
+            if isSending, messages.last?.role != .assistant {
+                thinkingIndicator
             }
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(WorkstationTheme.background)
-        .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
-                .stroke(WorkstationTheme.border, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
     }
 
-    private var inputSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("ASK COPILOT")
-                    .font(WorkstationTheme.Fonts.body(10.5, weight: .semibold))
-                    .tracking(0.8)
-                    .foregroundStyle(WorkstationTheme.textSubtle)
-                Spacer()
-                if isSending || isGeneratingPRDDrafts || isCreatingPRDDrafts {
-                    ProgressView()
-                        .controlSize(.small)
+    private var thinkingIndicator: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(WorkstationTheme.accent)
+                .frame(width: 6, height: 6)
+                .modifier(PulsingDotModifier())
+            Text("Thinking...")
+                .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                .foregroundStyle(WorkstationTheme.textMuted)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func chatBubble(_ message: CopilotConversationMessage) -> some View {
+        VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
+            if message.role == .assistant, let duration = message.thinkingDuration {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 9))
+                    Text("Thought for \(Int(duration))s")
+                        .font(WorkstationTheme.Fonts.body(10))
                 }
+                .foregroundStyle(WorkstationTheme.textSubtle)
             }
 
-            TextEditor(text: $prompt)
-                .font(WorkstationTheme.Fonts.body(13))
-                .foregroundStyle(WorkstationTheme.textPrimary)
-                .scrollContentBackground(.hidden)
-                .padding(10)
-                .frame(minHeight: 82)
-                .background(WorkstationTheme.card)
-                .overlay(
-                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                        .stroke(promptFocused ? WorkstationTheme.accent : WorkstationTheme.borderStrong, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
-                .focused($promptFocused)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Text(message.roleLabel)
+                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                        .foregroundStyle(message.roleLabelColor)
+                    Spacer(minLength: 0)
+                    Text(message.createdAt.formatted(date: .omitted, time: .shortened))
+                        .font(WorkstationTheme.Fonts.body(9))
+                        .foregroundStyle(WorkstationTheme.textDisabled)
+                }
 
-            HStack(spacing: 10) {
-                Text("Uses selected issues as context.")
-                    .font(WorkstationTheme.Fonts.body(11))
-                    .foregroundStyle(WorkstationTheme.textMuted)
+                if message.isStreaming && message.text.isEmpty {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(WorkstationTheme.accent)
+                            .frame(width: 6, height: 6)
+                            .modifier(PulsingDotModifier())
+                        Text("Thinking...")
+                            .font(WorkstationTheme.Fonts.body(12))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                    }
+                } else {
+                    Text(message.text)
+                        .font(WorkstationTheme.Fonts.body(13))
+                        .foregroundStyle(message.foregroundColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(maxWidth: message.role == .user ? 320 : .infinity, alignment: .leading)
+            .background(message.bubbleBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                    .stroke(message.bubbleBorderColor, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+
+            if message.role == .assistant && !message.isStreaming && !message.text.isEmpty {
+                responseActions(for: message)
+                    .padding(.top, 2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
+    }
+
+    private func responseActions(for message: CopilotConversationMessage) -> some View {
+        HStack(spacing: 2) {
+            Button {
+                copyMessageText(message.text)
+            } label: {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 11))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(WorkstationTheme.textMuted)
+            .help("Copy response")
+
+            if messages.last?.id == message.id, lastCopilotRequest != nil {
+                Button {
+                    regenerateLastResponse()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(WorkstationTheme.textMuted)
+                .disabled(isSending || isGeneratingPRDDrafts || isCreatingPRDDrafts)
+                .help("Regenerate response")
+            }
+        }
+    }
+
+    private var inputBar: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if !visibleContextIssues.isEmpty {
+                contextChips
+                    .padding(.horizontal, 12)
+                    .padding(.top, 10)
+            }
+
+            EnterToSendTextEditor(text: $prompt, onSend: sendPrompt)
+                .frame(minHeight: 38, maxHeight: 120)
+                .padding(.horizontal, 4)
+                .padding(.vertical, visibleContextIssues.isEmpty ? 10 : 4)
+
+            HStack(spacing: 8) {
+                Text(modelName)
+                    .font(WorkstationTheme.Fonts.body(10))
+                    .foregroundStyle(WorkstationTheme.textDisabled)
                     .lineLimit(1)
                 Spacer()
                 if let lastCopilotRequest, !lastCopilotRequest.prompt.isEmpty {
                     Button {
                         regenerateLastResponse()
                     } label: {
-                        Label("Regenerate", systemImage: "arrow.clockwise")
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11))
                     }
-                    .buttonStyle(WorkstationGhostButtonStyle(compact: true))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(WorkstationTheme.textMuted)
                     .disabled(isSending || isGeneratingPRDDrafts || isCreatingPRDDrafts)
-                    .help("Regenerate the latest Copilot answer using the same prompt and context")
+                    .help("Regenerate last response")
                 }
                 Button {
                     generatePRDDrafts()
                 } label: {
-                    Label(isGeneratingPRDDrafts ? "Drafting" : "Draft Issues", systemImage: "doc.text.magnifyingglass")
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.system(size: 12))
                 }
-                .buttonStyle(WorkstationGhostButtonStyle(compact: true))
+                .buttonStyle(.plain)
+                .foregroundStyle(WorkstationTheme.textMuted)
                 .disabled(!canGeneratePRDDrafts)
-                .help("Use Copilot to draft reviewable Beads issues from the text above")
+                .help("Draft issues from PRD text")
+
                 Button {
                     sendPrompt()
                 } label: {
-                    Label(isSending ? "Sending" : "Send", systemImage: "paperplane.fill")
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(canSend ? WorkstationTheme.background : WorkstationTheme.textDisabled)
+                        .frame(width: 30, height: 30)
+                        .background(canSend ? WorkstationTheme.accent : WorkstationTheme.card)
+                        .clipShape(Circle())
                 }
-                .buttonStyle(WorkstationPrimaryButtonStyle())
-                .keyboardShortcut(.return, modifiers: [.command])
+                .buttonStyle(.plain)
                 .disabled(!canSend)
-                .help("Send to Workflow Copilot")
+                .help("Send to Copilot (Enter)")
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 10)
+        }
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous)
+                .stroke(WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private var contextChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(visibleContextIssues.prefix(10)) { issue in
+                    HStack(spacing: 4) {
+                        Text(issue.id)
+                            .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.accent)
+                        Text(issue.title)
+                            .font(WorkstationTheme.Fonts.body(10))
+                            .foregroundStyle(WorkstationTheme.textSecondary)
+                            .lineLimit(1)
+                        Button {
+                            excludedContextIDs.insert(issue.id)
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundStyle(WorkstationTheme.textMuted)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(WorkstationTheme.hover)
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                            .stroke(WorkstationTheme.borderStrong, lineWidth: 0.5)
+                    )
+                }
             }
         }
+    }
+
+    private func copyMessageText(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
     }
 
     private var prdDraftReviewSection: some View {
@@ -397,38 +609,11 @@ struct WorkflowCopilotPane: View {
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
     }
 
-    private func conversationBubble(_ message: CopilotConversationMessage) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Text(message.roleLabel)
-                    .font(WorkstationTheme.Fonts.body(10.5, weight: .semibold))
-                    .foregroundStyle(message.foregroundColor)
-                Spacer()
-                Text(message.createdAt.formatted(date: .omitted, time: .shortened))
-                    .font(WorkstationTheme.Fonts.body(10))
-                    .foregroundStyle(WorkstationTheme.textMuted)
-            }
-            Text(message.text.isEmpty ? "Thinking..." : message.text)
-                .font(WorkstationTheme.Fonts.body(12))
-                .foregroundStyle(message.foregroundColor)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
-        .background(message.backgroundColor)
-        .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                .stroke(message.borderColor, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
-    }
-
     private func sendPrompt() {
         let request = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !request.isEmpty, !isSending else { return }
 
         prompt = ""
-        promptFocused = true
         messages.append(.init(role: .user, text: request))
 
         let contextIssues = selected.isEmpty ? Array(store.issues.prefix(50)) : selected
@@ -443,13 +628,14 @@ struct WorkflowCopilotPane: View {
 
     private func streamCopilotResponse(prompt request: String, contextIssues: [BeadIssue]) {
         isSending = true
+        streamingStartTime = Date()
         Task {
             do {
                 let stream = try appVM.requestLocalAIResponseStream(
                     for: .copilot(prompt: request, contextIssues: contextIssues)
                 )
                 let streamingIdx = await MainActor.run { () -> Int in
-                    messages.append(.init(role: .assistant, text: ""))
+                    messages.append(.init(role: .assistant, text: "", isStreaming: true))
                     return messages.count - 1
                 }
                 for try await chunk in stream {
@@ -459,14 +645,17 @@ struct WorkflowCopilotPane: View {
                     }
                 }
                 await MainActor.run {
+                    let duration = Date().timeIntervalSince(streamingStartTime ?? Date())
+                    messages[streamingIdx].isStreaming = false
+                    messages[streamingIdx].thinkingDuration = duration
                     isSending = false
-                    promptFocused = true
+                    streamingStartTime = nil
                 }
             } catch {
                 await MainActor.run {
                     messages.append(.init(role: .error, text: error.localizedDescription))
                     isSending = false
-                    promptFocused = true
+                    streamingStartTime = nil
                 }
             }
         }
@@ -497,13 +686,11 @@ struct WorkflowCopilotPane: View {
                     prdDrafts = drafts
                     messages.append(.init(role: .assistant, text: "Drafted \(drafts.count) issue\(drafts.count == 1 ? "" : "s"). Review and edit them below, then create only the selected drafts."))
                     isGeneratingPRDDrafts = false
-                    promptFocused = true
                 }
             } catch {
                 await MainActor.run {
                     messages.append(.init(role: .error, text: "Could not draft PRD issues: \(error.localizedDescription)"))
                     isGeneratingPRDDrafts = false
-                    promptFocused = true
                 }
             }
         }
@@ -524,7 +711,6 @@ struct WorkflowCopilotPane: View {
                 }
                 messages.append(.init(role: .assistant, text: "Created \(selectedDrafts.count) selected issue\(selectedDrafts.count == 1 ? "" : "s"). Dependency suggestions were left as preview-only."))
                 isCreatingPRDDrafts = false
-                promptFocused = true
             }
         }
     }
@@ -533,6 +719,17 @@ struct WorkflowCopilotPane: View {
         withAnimation(.easeOut(duration: 0.16)) {
             proxy.scrollTo(CopilotScrollTarget.bottom, anchor: .bottom)
         }
+    }
+}
+
+private struct PulsingDotModifier: ViewModifier {
+    @State private var isPulsing = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isPulsing ? 0.4 : 1.0)
+            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPulsing)
+            .onAppear { isPulsing = true }
     }
 }
 
@@ -547,15 +744,28 @@ private struct CopilotConversationMessage: Identifiable, Equatable {
     let createdAt = Date()
     let role: Role
     var text: String
+    var isStreaming: Bool = false
+    var thinkingDuration: TimeInterval?
 
     var roleLabel: String {
         switch role {
         case .user:
-            return "YOU"
+            return "You"
         case .assistant:
-            return "COPILOT"
+            return "Copilot"
         case .error:
-            return "ERROR"
+            return "Error"
+        }
+    }
+
+    var roleLabelColor: Color {
+        switch role {
+        case .user:
+            return WorkstationTheme.accent
+        case .assistant:
+            return WorkstationTheme.textSecondary
+        case .error:
+            return WorkstationTheme.red
         }
     }
 
@@ -568,18 +778,18 @@ private struct CopilotConversationMessage: Identifiable, Equatable {
         }
     }
 
-    var backgroundColor: Color {
+    var bubbleBackground: Color {
         switch role {
         case .user:
-            return WorkstationTheme.card
+            return WorkstationTheme.accentBg
         case .assistant:
-            return WorkstationTheme.background
+            return WorkstationTheme.card
         case .error:
             return WorkstationTheme.redBg
         }
     }
 
-    var borderColor: Color {
+    var bubbleBorderColor: Color {
         switch role {
         case .user:
             return WorkstationTheme.accentBorder
