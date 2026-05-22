@@ -1,5 +1,51 @@
 import Foundation
 
+public struct LocalAIRequest: Sendable, Equatable {
+    public let baseURL: URL
+    public let model: String
+    public let prompt: String
+    public let system: String?
+    public let stream: Bool
+    public let apiKey: String?
+
+    public init(
+        baseURL: URL,
+        model: String,
+        prompt: String,
+        system: String? = nil,
+        stream: Bool = false,
+        apiKey: String? = nil
+    ) {
+        self.baseURL = baseURL
+        self.model = model
+        self.prompt = prompt
+        self.system = system
+        self.stream = stream
+        self.apiKey = apiKey
+    }
+}
+
+public protocol LocalAIProviding: Sendable {
+    func generate(request: LocalAIRequest) async throws -> String
+    func generateStream(request: LocalAIRequest) -> AsyncThrowingStream<String, Error>
+}
+
+extension LocalAIProviding {
+    public func generateStream(request: LocalAIRequest) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    let result = try await generate(request: request)
+                    continuation.yield(result)
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+}
+
 public enum LocalAIServiceError: LocalizedError, Sendable {
     case disabled
     case unsupportedProvider(String)
@@ -27,20 +73,16 @@ public enum LocalAIServiceError: LocalizedError, Sendable {
 }
 
 public struct LocalAIService: Sendable {
-    private let ollamaProvider: any LocalAIProviding
-    private let geminiProvider: any LocalAIProviding
+    private let opencodeProvider: any LocalAIProviding
 
     public init(
-        ollamaProvider: any LocalAIProviding = OllamaService(),
-        geminiProvider: any LocalAIProviding = GeminiService()
+        opencodeProvider: any LocalAIProviding = OpenCodeService()
     ) {
-        self.ollamaProvider = ollamaProvider
-        self.geminiProvider = geminiProvider
+        self.opencodeProvider = opencodeProvider
     }
 
     public init(provider: any LocalAIProviding) {
-        self.ollamaProvider = provider
-        self.geminiProvider = provider
+        self.opencodeProvider = provider
     }
 
     public func buildRequest(for action: LocalAIAction, settings: LocalAISettings, stream: Bool = false) throws -> LocalAIRequest {
@@ -78,12 +120,12 @@ public struct LocalAIService: Sendable {
 
     public func generate(for action: LocalAIAction, settings: LocalAISettings) async throws -> String {
         let request = try buildRequest(for: action, settings: settings)
-        return try await provider(for: settings.provider).generate(request: request)
+        return try await opencodeProvider.generate(request: request)
     }
 
     public func generateStream(for action: LocalAIAction, settings: LocalAISettings) throws -> AsyncThrowingStream<String, Error> {
         let request = try buildRequest(for: action, settings: settings, stream: true)
-        return provider(for: settings.provider).generateStream(request: request)
+        return opencodeProvider.generateStream(request: request)
     }
 
     public func modelName(for action: LocalAIAction, settings: LocalAISettings) -> String {
@@ -94,9 +136,6 @@ public struct LocalAIService: Sendable {
         case .strong:
             raw = settings.strongModel.trimmingCharacters(in: .whitespacesAndNewlines)
         }
-        if settings.provider == .gemini && !raw.hasPrefix("gemini") {
-            return LocalAISettings.defaultGeminiModel
-        }
         return raw
     }
 
@@ -105,11 +144,6 @@ public struct LocalAIService: Sendable {
     }
 
     private func provider(for provider: LocalAIProvider) -> any LocalAIProviding {
-        switch provider {
-        case .ollama:
-            return ollamaProvider
-        case .gemini:
-            return geminiProvider
-        }
+        return opencodeProvider
     }
 }

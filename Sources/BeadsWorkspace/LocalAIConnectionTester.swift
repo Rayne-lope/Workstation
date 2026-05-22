@@ -72,7 +72,7 @@ public protocol LocalAIConnectionTesting: Sendable {
     func testConnection(settings: LocalAISettings) async throws -> LocalAIConnectionResult
 }
 
-public final class OllamaConnectionTester: LocalAIConnectionTesting, @unchecked Sendable {
+public final class OpenCodeConnectionTester: LocalAIConnectionTesting, @unchecked Sendable {
     private let session: any URLSessioning
 
     public init(session: any URLSessioning = URLSession.shared) {
@@ -80,72 +80,28 @@ public final class OllamaConnectionTester: LocalAIConnectionTesting, @unchecked 
     }
 
     public func testConnection(settings: LocalAISettings) async throws -> LocalAIConnectionResult {
-        switch settings.provider {
-        case .ollama:
-            return try await testOllama(settings: settings)
-        case .gemini:
-            return try await testGemini(settings: settings)
-        }
-    }
-
-    private func testOllama(settings: LocalAISettings) async throws -> LocalAIConnectionResult {
-        guard let url = settings.tagsURL() else {
-            throw LocalAIConnectionError.invalidBaseURL
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-
-        do {
-            let (data, response) = try await session.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw LocalAIConnectionError.invalidResponse
-            }
-
-            guard 200..<300 ~= httpResponse.statusCode else {
-                throw LocalAIConnectionError.unexpectedStatusCode(httpResponse.statusCode)
-            }
-
-            _ = data
-            return LocalAIConnectionResult(
-                message: "Ollama is reachable at \(settings.baseURL.trimmingCharacters(in: .whitespacesAndNewlines))."
-            )
-        } catch let error as LocalAIConnectionError {
-            throw error
-        } catch let error as URLError {
-            throw LocalAIConnectionError.unreachable(
-                provider: settings.provider.displayName,
-                baseURL: settings.baseURL.trimmingCharacters(in: .whitespacesAndNewlines),
-                underlying: error.localizedDescription
-            )
-        } catch {
-            throw LocalAIConnectionError.unreachable(
-                provider: settings.provider.displayName,
-                baseURL: settings.baseURL.trimmingCharacters(in: .whitespacesAndNewlines),
-                underlying: error.localizedDescription
-            )
-        }
-    }
-
-    private func testGemini(settings: LocalAISettings) async throws -> LocalAIConnectionResult {
         let apiKey = settings.trimmedAPIKey
         guard !apiKey.isEmpty else {
-            throw LocalAIConnectionError.missingAPIKey(settings.provider.displayName)
+            throw LocalAIConnectionError.missingAPIKey("OpenCode")
         }
         guard let rootURL = settings.generationRootURL() else {
             throw LocalAIConnectionError.invalidBaseURL
         }
 
         let model = settings.strongModel.trimmingCharacters(in: .whitespacesAndNewlines)
-        let url = rootURL
-            .appendingPathComponent("models")
-            .appendingPathComponent("\(model):generateContent")
+        let url = rootURL.appendingPathComponent("chat/completions")
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
-        request.httpBody = Data(#"{"contents":[{"parts":[{"text":"Reply with OK only."}]}]}"#.utf8)
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        let body = OpenCodeChatCompletionRequestBody(from: LocalAIRequest(
+            baseURL: rootURL,
+            model: model,
+            prompt: "Reply with OK only."
+        ))
+        request.httpBody = try JSONEncoder().encode(body)
 
         do {
             let (data, response) = try await session.data(for: request)
@@ -155,11 +111,10 @@ public final class OllamaConnectionTester: LocalAIConnectionTesting, @unchecked 
             guard 200..<300 ~= httpResponse.statusCode else {
                 throw LocalAIConnectionError.unexpectedStatusCode(
                     httpResponse.statusCode,
-                    message: Self.decodeGeminiError(from: data)
+                    message: Self.decodeOpenCodeError(from: data)
                 )
             }
-            _ = data
-            return LocalAIConnectionResult(message: "Gemini is reachable with model \(model).")
+            return LocalAIConnectionResult(message: "OpenCode is reachable with model \(model).")
         } catch let error as LocalAIConnectionError {
             throw error
         } catch let error as URLError {
@@ -177,20 +132,11 @@ public final class OllamaConnectionTester: LocalAIConnectionTesting, @unchecked 
         }
     }
 
-    private static func decodeGeminiError(from data: Data) -> String? {
+    private static func decodeOpenCodeError(from data: Data) -> String? {
         guard !data.isEmpty,
-              let payload = try? JSONDecoder().decode(GeminiErrorResponse.self, from: data) else {
+              let payload = try? JSONDecoder().decode(OpenCodeRemoteErrorResponse.self, from: data) else {
             return nil
         }
-        let message = payload.error.message.trimmingCharacters(in: .whitespacesAndNewlines)
-        return message.isEmpty ? nil : message
-    }
-
-    private struct GeminiErrorResponse: Decodable {
-        let error: GeminiError
-    }
-
-    private struct GeminiError: Decodable {
-        let message: String
+        return payload.error.message.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

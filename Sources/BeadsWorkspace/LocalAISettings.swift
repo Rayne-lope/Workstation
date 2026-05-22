@@ -1,36 +1,35 @@
 import Foundation
 
 public enum LocalAIProvider: String, Codable, CaseIterable, Identifiable, Sendable {
-    case ollama
-    case gemini
+    case opencode
 
     public var id: String { rawValue }
 
     public var displayName: String {
         switch self {
-        case .ollama:
-            return "Ollama"
-        case .gemini:
-            return "Gemini"
+        case .opencode:
+            return "OpenCode"
         }
     }
 
     public var requiresAPIKey: Bool {
         switch self {
-        case .ollama:
-            return false
-        case .gemini:
+        case .opencode:
             return true
         }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        self = LocalAIProvider(rawValue: rawValue.lowercased()) ?? .opencode
     }
 }
 
 public struct LocalAISettings: Codable, Equatable, Sendable {
-    public static let defaultBaseURL = "http://localhost:11434"
-    public static let defaultGeminiBaseURL = "https://generativelanguage.googleapis.com/v1beta"
-    public static let defaultFastModel = "qwen2.5-coder:3b"
-    public static let defaultStrongModel = "qwen2.5-coder:7b"
-    public static let defaultGeminiModel = "gemini-2.0-flash"
+    public static let defaultBaseURL = "https://opencode.ai/zen/go/v1"
+    public static let defaultFastModel = "opencode-go/deepseek-v4-flash"
+    public static let defaultStrongModel = "opencode-go/deepseek-v4-flash"
 
     public var isEnabled: Bool
     public var provider: LocalAIProvider
@@ -39,9 +38,21 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
     public var strongModel: String
     public var apiKey: String
 
+    public static func loadDefaultAPIKey() -> String {
+        let home = NSHomeDirectory()
+        let path = (home as NSString).appendingPathComponent(".local/share/opencode/auth.json")
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let opencodeGo = json["opencode-go"] as? [String: Any],
+              let key = opencodeGo["key"] as? String else {
+            return ""
+        }
+        return key
+    }
+
     public init(
         isEnabled: Bool = false,
-        provider: LocalAIProvider = .ollama,
+        provider: LocalAIProvider = .opencode,
         baseURL: String = LocalAISettings.defaultBaseURL,
         fastModel: String = LocalAISettings.defaultFastModel,
         strongModel: String = LocalAISettings.defaultStrongModel,
@@ -52,7 +63,7 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
         self.baseURL = baseURL
         self.fastModel = fastModel
         self.strongModel = strongModel
-        self.apiKey = apiKey
+        self.apiKey = apiKey.isEmpty ? Self.loadDefaultAPIKey() : apiKey
     }
 
     enum CodingKeys: String, CodingKey {
@@ -67,41 +78,25 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         isEnabled = try c.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? false
-        provider = try c.decodeIfPresent(LocalAIProvider.self, forKey: .provider) ?? .ollama
+        provider = try c.decodeIfPresent(LocalAIProvider.self, forKey: .provider) ?? .opencode
         baseURL = try c.decodeIfPresent(String.self, forKey: .baseURL) ?? LocalAISettings.defaultBaseURL
         fastModel = try c.decodeIfPresent(String.self, forKey: .fastModel) ?? LocalAISettings.defaultFastModel
         strongModel = try c.decodeIfPresent(String.self, forKey: .strongModel) ?? LocalAISettings.defaultStrongModel
-        apiKey = try c.decodeIfPresent(String.self, forKey: .apiKey) ?? ""
+        let rawKey = try c.decodeIfPresent(String.self, forKey: .apiKey) ?? ""
+        apiKey = rawKey.isEmpty ? Self.loadDefaultAPIKey() : rawKey
     }
 
     public func apiRootURL() -> URL? {
         let trimmed = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, var components = URLComponents(string: trimmed) else { return nil }
-
-        let path = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        if path.isEmpty {
-            components.path = "/api"
-        } else if path == "api" || path.hasSuffix("/api") {
-            components.path = "/\(path)"
-        } else {
-            components.path = "/\(path)/api"
-        }
-        return components.url
+        return URL(string: trimmed)
     }
 
     public func tagsURL() -> URL? {
-        apiRootURL()?.appendingPathComponent("tags")
+        nil
     }
 
     public func generationRootURL() -> URL? {
-        switch provider {
-        case .ollama:
-            return apiRootURL()
-        case .gemini:
-            let trimmed = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty, let url = URL(string: trimmed) else { return nil }
-            return url
-        }
+        apiRootURL()
     }
 
     public var trimmedAPIKey: String {

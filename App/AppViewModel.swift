@@ -91,7 +91,7 @@ final class AppViewModel {
         agentRunTranscriptStore: AgentRunTranscriptStore = AgentRunTranscriptStore(),
         gitWorktreeService: GitWorktreeService? = nil,
         terminalLauncher: any TerminalLaunching = TerminalLauncherAdapter(),
-        localAIConnectionTester: any LocalAIConnectionTesting = OllamaConnectionTester(),
+        localAIConnectionTester: any LocalAIConnectionTesting = OpenCodeConnectionTester(),
         localAIService: LocalAIService = LocalAIService()
     ) {
         self.shellRunner = shellRunner
@@ -491,27 +491,6 @@ final class AppViewModel {
     func setLocalAIProvider(_ provider: LocalAIProvider) {
         preferencesStore.update {
             $0.localAI.provider = provider
-            if provider == .gemini {
-                if $0.localAI.baseURL == LocalAISettings.defaultBaseURL {
-                    $0.localAI.baseURL = LocalAISettings.defaultGeminiBaseURL
-                }
-                if !$0.localAI.fastModel.hasPrefix("gemini") {
-                    $0.localAI.fastModel = LocalAISettings.defaultGeminiModel
-                }
-                if !$0.localAI.strongModel.hasPrefix("gemini") {
-                    $0.localAI.strongModel = LocalAISettings.defaultGeminiModel
-                }
-            } else if provider == .ollama {
-                if $0.localAI.baseURL == LocalAISettings.defaultGeminiBaseURL {
-                    $0.localAI.baseURL = LocalAISettings.defaultBaseURL
-                }
-                if $0.localAI.fastModel.hasPrefix("gemini") {
-                    $0.localAI.fastModel = LocalAISettings.defaultFastModel
-                }
-                if $0.localAI.strongModel.hasPrefix("gemini") {
-                    $0.localAI.strongModel = LocalAISettings.defaultStrongModel
-                }
-            }
         }
         clearLocalAIConnectionStatus()
     }

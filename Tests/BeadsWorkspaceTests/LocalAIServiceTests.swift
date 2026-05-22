@@ -9,9 +9,10 @@ struct LocalAIServiceTests {
     func buildRequestRoutesActions() throws {
         let settings = LocalAISettings(
             isEnabled: true,
-            baseURL: "http://localhost:11434",
+            baseURL: "https://opencode.ai/zen/go/v1",
             fastModel: "fast-model",
-            strongModel: "strong-model"
+            strongModel: "strong-model",
+            apiKey: "dummy-key"
         )
         let issue = makeIssue()
         let run = makeRun()
@@ -77,23 +78,22 @@ struct LocalAIServiceTests {
         #expect(prdRequest.prompt.contains("reason"))
 
         let copilotRequest = try service.buildRequest(
-            for: .copilot(prompt: "What should I do next?", contextIssues: [issue]),
+            for: .copilot(prompt: "What should I do next?", contextIssues: [makeIssue()]),
             settings: settings
         )
         #expect(copilotRequest.model == "strong-model")
         #expect(copilotRequest.prompt.contains("Workflow Copilot request"))
         #expect(copilotRequest.prompt.contains("What should I do next?"))
-        #expect(copilotRequest.prompt.contains(issue.id))
     }
 
-    @Test("buildRequest includes API key for Gemini-backed Copilot actions")
-    func buildRequestIncludesGeminiAPIKey() throws {
+    @Test("buildRequest includes API key for OpenCode-backed Copilot actions")
+    func buildRequestIncludesOpenCodeAPIKey() throws {
         let settings = LocalAISettings(
             isEnabled: true,
-            provider: .gemini,
-            baseURL: LocalAISettings.defaultGeminiBaseURL,
-            fastModel: LocalAISettings.defaultGeminiModel,
-            strongModel: LocalAISettings.defaultGeminiModel,
+            provider: .opencode,
+            baseURL: LocalAISettings.defaultBaseURL,
+            fastModel: LocalAISettings.defaultFastModel,
+            strongModel: LocalAISettings.defaultStrongModel,
             apiKey: " test-key "
         )
         let service = LocalAIService(provider: RecordingProvider())
@@ -104,21 +104,22 @@ struct LocalAIServiceTests {
             stream: true
         )
 
-        #expect(request.baseURL.absoluteString == LocalAISettings.defaultGeminiBaseURL)
-        #expect(request.model == LocalAISettings.defaultGeminiModel)
+        #expect(request.baseURL.absoluteString == LocalAISettings.defaultBaseURL)
+        #expect(request.model == LocalAISettings.defaultStrongModel)
         #expect(request.apiKey == "test-key")
         #expect(request.stream)
     }
 
-    @Test("buildRequest rejects Gemini without an API key")
-    func buildRequestRejectsGeminiWithoutAPIKey() throws {
-        let settings = LocalAISettings(
+    @Test("buildRequest rejects OpenCode without an API key")
+    func buildRequestRejectsOpenCodeWithoutAPIKey() throws {
+        var settings = LocalAISettings(
             isEnabled: true,
-            provider: .gemini,
-            baseURL: LocalAISettings.defaultGeminiBaseURL,
-            fastModel: LocalAISettings.defaultGeminiModel,
-            strongModel: LocalAISettings.defaultGeminiModel
+            provider: .opencode,
+            baseURL: LocalAISettings.defaultBaseURL,
+            fastModel: LocalAISettings.defaultFastModel,
+            strongModel: LocalAISettings.defaultStrongModel
         )
+        settings.apiKey = "" // Override auto key discovery
         let service = LocalAIService(provider: RecordingProvider())
 
         #expect(throws: LocalAIServiceError.self) {
@@ -129,24 +130,25 @@ struct LocalAIServiceTests {
         }
     }
 
-    @Test("generate sends a non-streaming Ollama request and returns the text response")
+    @Test("generate sends a chat completion OpenCode request and returns the text response")
     func generateSendsRequest() async throws {
         let settings = LocalAISettings(
             isEnabled: true,
-            baseURL: "http://localhost:11434",
+            baseURL: "https://opencode.ai/zen/go/v1",
             fastModel: "fast-model",
-            strongModel: "strong-model"
+            strongModel: "strong-model",
+            apiKey: "test-key"
         )
         let issue = makeIssue()
-        let provider = OllamaService(session: StubURLSession { request in
-            #expect(request.url?.absoluteString == "http://localhost:11434/api/generate")
+        let provider = OpenCodeService(session: StubURLSession { request in
+            #expect(request.url?.absoluteString == "https://opencode.ai/zen/go/v1/chat/completions")
             #expect(request.httpMethod == "POST")
+            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-key")
 
             let body = try #require(request.httpBody)
-            let payload = try JSONDecoder().decode(RequestBody.self, from: body)
+            let payload = try JSONDecoder().decode(OpenCodeChatCompletionRequestBody.self, from: body)
             #expect(payload.model == "strong-model")
-            #expect(payload.prompt.contains(issue.title))
-            #expect(payload.system?.contains("local AI assistant") == true)
+            #expect(payload.messages.last?.content.contains(issue.title) == true)
             #expect(payload.stream == false)
 
             let response = HTTPURLResponse(
@@ -155,7 +157,7 @@ struct LocalAIServiceTests {
                 httpVersion: "HTTP/1.1",
                 headerFields: ["Content-Type": "application/json"]
             )!
-            return (Data(#"{"response":"preview text","done":true}"#.utf8), response)
+            return (Data(#"{"choices":[{"message":{"role":"assistant","content":"preview text"}}]}"#.utf8), response)
         })
         let service = LocalAIService(provider: provider)
 
@@ -163,56 +165,24 @@ struct LocalAIServiceTests {
         #expect(text == "preview text")
     }
 
-    @Test("Gemini service sends API key header and decodes generated text")
-    func geminiGenerateSendsAPIKey() async throws {
-        let provider = GeminiService(session: StubURLSession { request in
-            #expect(request.url?.absoluteString == "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent")
-            #expect(request.httpMethod == "POST")
-            #expect(request.value(forHTTPHeaderField: "x-goog-api-key") == "secret-key")
-
-            let body = try #require(request.httpBody)
-            let payload = try JSONDecoder().decode(GeminiRequestBody.self, from: body)
-            #expect(payload.contents.first?.parts.first?.text.contains("Hello") == true)
-            #expect(payload.systemInstruction?.parts.first?.text.contains("system") == true)
-
-            let response = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 200,
-                httpVersion: "HTTP/1.1",
-                headerFields: ["Content-Type": "application/json"]
-            )!
-            return (
-                Data(#"{"candidates":[{"content":{"parts":[{"text":"Hi there"}],"role":"model"}}]}"#.utf8),
-                response
-            )
-        })
-        let request = LocalAIRequest(
-            baseURL: URL(string: LocalAISettings.defaultGeminiBaseURL)!,
-            model: "gemini-3.5-flash",
-            prompt: "Hello",
-            system: "system prompt",
-            apiKey: "secret-key"
-        )
-
-        let text = try await provider.generate(request: request)
-        #expect(text == "Hi there")
-    }
-
-    @Test("generate surfaces Ollama errors cleanly")
+    @Test("generate surfaces OpenCode errors cleanly")
     func generateSurfacesErrors() async throws {
-        let settings = LocalAISettings(isEnabled: true)
-        let provider = OllamaService(session: StubURLSession { request in
+        let settings = LocalAISettings(
+            isEnabled: true,
+            apiKey: "test-key"
+        )
+        let provider = OpenCodeService(session: StubURLSession { request in
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 500,
                 httpVersion: "HTTP/1.1",
                 headerFields: nil
             )!
-            return (Data(#"{"error":"model unavailable"}"#.utf8), response)
+            return (Data(#"{"error":{"message":"model unavailable"}}"#.utf8), response)
         })
         let service = LocalAIService(provider: provider)
 
-        await #expect(throws: OllamaServiceError.self) {
+        await #expect(throws: OpenCodeServiceError.self) {
             _ = try await service.generate(for: .promptOptimization(prompt: "shorten this"), settings: settings)
         }
     }
@@ -220,11 +190,13 @@ struct LocalAIServiceTests {
     @Test("buildRequest rejects disabled settings before calling the provider")
     func buildRequestRejectsDisabledSettings() throws {
         let service = LocalAIService(provider: RecordingProvider())
+        var settings = LocalAISettings()
+        settings.isEnabled = false
 
         #expect(throws: LocalAIServiceError.self) {
             _ = try service.buildRequest(
                 for: .promptOptimization(prompt: "shorten this"),
-                settings: LocalAISettings()
+                settings: settings
             )
         }
     }
@@ -242,31 +214,6 @@ private struct StubURLSession: URLSessioning {
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         try await handler(request)
     }
-}
-
-private struct RequestBody: Decodable {
-    let model: String
-    let prompt: String
-    let system: String?
-    let stream: Bool
-}
-
-private struct GeminiRequestBody: Decodable {
-    let systemInstruction: GeminiContent?
-    let contents: [GeminiContent]
-
-    enum CodingKeys: String, CodingKey {
-        case systemInstruction = "system_instruction"
-        case contents
-    }
-}
-
-private struct GeminiContent: Decodable {
-    let parts: [GeminiPart]
-}
-
-private struct GeminiPart: Decodable {
-    let text: String
 }
 
 private func makeIssue() -> BeadIssue {

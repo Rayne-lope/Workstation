@@ -4,72 +4,44 @@ import Testing
 
 @Suite("LocalAIConnectionTester")
 struct LocalAIConnectionTesterTests {
-    @Test("Builds an Ollama tags URL from the base URL")
-    func buildsTagsURL() {
-        let settings = LocalAISettings(baseURL: "http://localhost:11434")
-        #expect(settings.tagsURL()?.absoluteString == "http://localhost:11434/api/tags")
-    }
-
-    @Test("Accepts a base URL that already points at /api")
-    func acceptsApiBaseURL() {
-        let settings = LocalAISettings(baseURL: "http://localhost:11434/api")
-        #expect(settings.tagsURL()?.absoluteString == "http://localhost:11434/api/tags")
-    }
-
-    @Test("Returns a friendly success message when Ollama responds")
-    func successMessage() async throws {
-        let settings = LocalAISettings(isEnabled: true)
-        let tester = OllamaConnectionTester(session: StubURLSession { request in
-            #expect(request.url?.absoluteString == "http://localhost:11434/api/tags")
-
-            let response = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 200,
-                httpVersion: "HTTP/1.1",
-                headerFields: nil
-            )!
-            return (Data(#"{"models":[]}"#.utf8), response)
-        })
-
-        let result = try await tester.testConnection(settings: settings)
-        #expect(result.message.contains("Ollama is reachable"))
-    }
-
-    @Test("Gemini connection test requires API key")
-    func geminiRequiresAPIKey() async throws {
-        let settings = LocalAISettings(
+    @Test("OpenCode connection test requires API key")
+    func openCodeRequiresAPIKey() async throws {
+        var settings = LocalAISettings(
             isEnabled: true,
-            provider: .gemini,
-            baseURL: LocalAISettings.defaultGeminiBaseURL,
-            fastModel: LocalAISettings.defaultGeminiModel,
-            strongModel: LocalAISettings.defaultGeminiModel
+            provider: .opencode,
+            baseURL: LocalAISettings.defaultBaseURL,
+            fastModel: LocalAISettings.defaultFastModel,
+            strongModel: LocalAISettings.defaultStrongModel
         )
-        let tester = OllamaConnectionTester(session: StubURLSession { _ in
+        settings.apiKey = "" // Explicitly empty key to override auto key discovery
+        let tester = OpenCodeConnectionTester(session: StubURLSession { _ in
             #expect(Bool(false), "Connection test should fail before network without an API key")
             throw URLError(.badURL)
         })
 
         do {
             _ = try await tester.testConnection(settings: settings)
-            #expect(Bool(false))
+            #expect(Bool(false), "Should have thrown missingAPIKey error")
+        } catch let error as LocalAIConnectionError {
+            #expect(error.errorDescription?.contains("requires an API key") == true)
         } catch {
-            #expect(error.localizedDescription.contains("requires an API key"))
+            #expect(Bool(false), "Unexpected error: \(error)")
         }
     }
 
-    @Test("Gemini connection test sends API key header")
-    func geminiConnectionSendsAPIKey() async throws {
+    @Test("Returns a friendly success message when OpenCode responds successfully")
+    func successMessage() async throws {
         let settings = LocalAISettings(
             isEnabled: true,
-            provider: .gemini,
-            baseURL: LocalAISettings.defaultGeminiBaseURL,
-            fastModel: LocalAISettings.defaultGeminiModel,
-            strongModel: LocalAISettings.defaultGeminiModel,
+            provider: .opencode,
+            baseURL: "https://opencode.ai/zen/go/v1",
+            fastModel: "fast-model",
+            strongModel: "strong-model",
             apiKey: "secret-key"
         )
-        let tester = OllamaConnectionTester(session: StubURLSession { request in
-            #expect(request.url?.absoluteString == "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent")
-            #expect(request.value(forHTTPHeaderField: "x-goog-api-key") == "secret-key")
+        let tester = OpenCodeConnectionTester(session: StubURLSession { request in
+            #expect(request.url?.absoluteString == "https://opencode.ai/zen/go/v1/chat/completions")
+            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer secret-key")
 
             let response = HTTPURLResponse(
                 url: request.url!,
@@ -77,25 +49,60 @@ struct LocalAIConnectionTesterTests {
                 httpVersion: "HTTP/1.1",
                 headerFields: nil
             )!
-            return (Data(#"{"candidates":[{"content":{"parts":[{"text":"OK"}]}}]}"#.utf8), response)
+            return (Data(#"{"choices":[{"message":{"role":"assistant","content":"OK"}}]}"#.utf8), response)
         })
 
         let result = try await tester.testConnection(settings: settings)
-        #expect(result.message.contains("Gemini is reachable"))
+        #expect(result.message.contains("OpenCode is reachable with model strong-model."))
     }
 
     @Test("Maps connection failures to friendly errors")
     func unreachableMessage() async throws {
-        let settings = LocalAISettings(isEnabled: true)
-        let tester = OllamaConnectionTester(session: StubURLSession { _ in
+        let settings = LocalAISettings(
+            isEnabled: true,
+            provider: .opencode,
+            baseURL: "https://opencode.ai/zen/go/v1",
+            apiKey: "secret-key"
+        )
+        let tester = OpenCodeConnectionTester(session: StubURLSession { _ in
             throw URLError(.cannotConnectToHost)
         })
 
         do {
             _ = try await tester.testConnection(settings: settings)
-            #expect(Bool(false))
+            #expect(Bool(false), "Should have thrown unreachable error")
+        } catch let error as LocalAIConnectionError {
+            #expect(error.errorDescription?.contains("Could not reach OpenCode") == true)
         } catch {
-            #expect(error.localizedDescription.contains("Could not reach Ollama"))
+            #expect(Bool(false), "Unexpected error: \(error)")
+        }
+    }
+
+    @Test("Propagates remote error messages correctly")
+    func remoteErrorMessage() async throws {
+        let settings = LocalAISettings(
+            isEnabled: true,
+            provider: .opencode,
+            baseURL: "https://opencode.ai/zen/go/v1",
+            apiKey: "secret-key"
+        )
+        let tester = OpenCodeConnectionTester(session: StubURLSession { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 400,
+                httpVersion: "HTTP/1.1",
+                headerFields: nil
+            )!
+            return (Data(#"{"error":{"message":"Invalid model selected"}}"#.utf8), response)
+        })
+
+        do {
+            _ = try await tester.testConnection(settings: settings)
+            #expect(Bool(false), "Should have thrown unexpectedStatusCode error")
+        } catch let error as LocalAIConnectionError {
+            #expect(error.errorDescription?.contains("Invalid model selected") == true)
+        } catch {
+            #expect(Bool(false), "Unexpected error: \(error)")
         }
     }
 }

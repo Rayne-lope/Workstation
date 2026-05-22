@@ -93,19 +93,22 @@ struct LocalAISettingsPanelView: View {
             }
 
             HStack(spacing: 16) {
-                Picker(
-                    "Provider",
-                    selection: binding(
-                        get: { settings.provider },
-                        set: { appVM.setLocalAIProvider($0) }
-                    )
-                ) {
-                    ForEach(LocalAIProvider.allCases) { provider in
-                        Text(provider.displayName).tag(provider)
-                    }
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(WorkstationTheme.accent)
+                    Text("OpenCode Go")
+                        .font(WorkstationTheme.Fonts.body(13, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
                 }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 240)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(WorkstationTheme.cardAlt)
+                .cornerRadius(WorkstationTheme.Radius.medium)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                        .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                )
 
                 Spacer()
             }
@@ -118,44 +121,23 @@ struct LocalAISettingsPanelView: View {
 
     @ViewBuilder
     private var providerInfoBanner: some View {
-        switch settings.provider {
-        case .ollama:
-            HStack(spacing: 8) {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(WorkstationTheme.textMuted)
-                Text("Ollama runs locally. Make sure the Ollama daemon is running before testing connection.")
-                    .font(WorkstationTheme.Fonts.body(11, weight: .medium))
-                    .foregroundStyle(WorkstationTheme.textMuted)
-                    .lineSpacing(2)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(WorkstationTheme.cardAlt)
-            .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                    .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
-        case .gemini:
-            HStack(spacing: 8) {
-                Image(systemName: "cloud")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(WorkstationTheme.textMuted)
-                Text("Gemini uses Google's API. An API key stored in local preferences is required.")
-                    .font(WorkstationTheme.Fonts.body(11, weight: .medium))
-                    .foregroundStyle(WorkstationTheme.textMuted)
-                    .lineSpacing(2)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(WorkstationTheme.cardAlt)
-            .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                    .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+        HStack(spacing: 8) {
+            Image(systemName: "info.circle")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(WorkstationTheme.textMuted)
+            Text("OpenCode Go utilizes a high-performance OpenAI-compatible gateway. Stored API keys are maintained securely in your local preferences.")
+                .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                .foregroundStyle(WorkstationTheme.textMuted)
+                .lineSpacing(2)
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(WorkstationTheme.cardAlt)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
     }
 
     private var modelsSection: some View {
@@ -172,7 +154,7 @@ struct LocalAISettingsPanelView: View {
             VStack(alignment: .leading, spacing: 10) {
                 modelField(
                     label: "Base URL",
-                    placeholder: settings.provider == .gemini ? LocalAISettings.defaultGeminiBaseURL : LocalAISettings.defaultBaseURL,
+                    placeholder: LocalAISettings.defaultBaseURL,
                     text: binding(
                         get: { settings.baseURL },
                         set: { appVM.setLocalAIBaseURL($0) }
@@ -183,7 +165,7 @@ struct LocalAISettingsPanelView: View {
                     modelField(
                         label: "Fast Model",
                         subtitle: "Lighter prompts: drafting, suggestions",
-                        placeholder: settings.provider == .gemini ? LocalAISettings.defaultGeminiModel : LocalAISettings.defaultFastModel,
+                        placeholder: LocalAISettings.defaultFastModel,
                         text: binding(
                             get: { settings.fastModel },
                             set: { appVM.setLocalAIFastModel($0) }
@@ -193,7 +175,7 @@ struct LocalAISettingsPanelView: View {
                     modelField(
                         label: "Strong Model",
                         subtitle: "Deeper prompts: analysis, reasoning",
-                        placeholder: settings.provider == .gemini ? LocalAISettings.defaultGeminiModel : LocalAISettings.defaultStrongModel,
+                        placeholder: LocalAISettings.defaultStrongModel,
                         text: binding(
                             get: { settings.strongModel },
                             set: { appVM.setLocalAIStrongModel($0) }
@@ -235,6 +217,19 @@ struct LocalAISettingsPanelView: View {
                     .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+
+            let defaultKey = LocalAISettings.loadDefaultAPIKey()
+            if !defaultKey.isEmpty && settings.apiKey == defaultKey {
+                HStack(spacing: 6) {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 10))
+                        .foregroundStyle(WorkstationTheme.accent)
+                    Text("Auto-discovered API key from your local OpenCode CLI auth config!")
+                        .font(WorkstationTheme.Fonts.body(10, weight: .medium))
+                        .foregroundStyle(WorkstationTheme.accent)
+                }
+                .padding(.top, 2)
+            }
         }
         .opacity(settings.isEnabled ? 1 : 0.45)
         .animation(.easeInOut(duration: 0.2), value: settings.isEnabled)

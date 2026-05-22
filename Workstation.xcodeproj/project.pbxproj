@@ -81,7 +81,7 @@
 		9926BC17F1066C0C699D12A6 /* StatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A426C3CF17A97D5D9A653E94 /* StatusBarView.swift */; };
 		9DE8D944D6B9FFCBC04D65A9 /* CommandResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BCFB88A153DA46E90B604B /* CommandResult.swift */; };
 		9F22ABD938821CFC6D7A6309 /* qwen.png in Resources */ = {isa = PBXBuildFile; fileRef = 6D6C6686F1BEF68085058BBE /* qwen.png */; };
-		A05FA52B36E9BBD98D2C1BC5 /* OllamaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80C121B91608F53292B12425 /* OllamaService.swift */; };
+		A6435CD7D9DD630A68657484 /* OpenCodeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A28009152681A0BC8E3C9F2 /* OpenCodeService.swift */; };
 		A7D93288EE987302E1DFF8A6 /* AgentRunTranscriptStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB07A4DAE97C487B1BBB698 /* AgentRunTranscriptStore.swift */; };
 		AE2A5C4732C0B1A1CC6200D0 /* ProjectWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B8DC4F74056EA4C65C2E4F8 /* ProjectWorkspace.swift */; };
 		B0979FA4A91BDF3F917471B0 /* LocalAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D0D0C643D2854E7420E3F1 /* LocalAIService.swift */; };
@@ -172,6 +172,7 @@
 		55BE8F5533EF4EB0D6E15910 /* RecurringStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringStore.swift; sourceTree = "<group>"; };
 		573D11F28CE8BB30BC0028B3 /* IssueFileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFileWatcher.swift; sourceTree = "<group>"; };
 		577CDDC714F1C8C5E07746BD /* UpdateIssueInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateIssueInput.swift; sourceTree = "<group>"; };
+		5A28009152681A0BC8E3C9F2 /* OpenCodeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeService.swift; sourceTree = "<group>"; };
 		5F061841017E55D4A9256432 /* LocalAISuggestionPreviewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISuggestionPreviewState.swift; sourceTree = "<group>"; };
 		5F33C251A2CDC821C3E898D7 /* CreateIssueSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateIssueSheet.swift; sourceTree = "<group>"; };
 		6224D67B91244DA59C02E583 /* ProjectRootDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRootDiscovery.swift; sourceTree = "<group>"; };
@@ -190,7 +191,6 @@
 		7B9D720E12CC0C5AB38C73A5 /* BeadsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadsService.swift; sourceTree = "<group>"; };
 		7E8076A719C88118D525766F /* glm.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = glm.png; sourceTree = "<group>"; };
 		7F33F1DA015B079DD64713C6 /* BeadIssue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadIssue.swift; sourceTree = "<group>"; };
-		80C121B91608F53292B12425 /* OllamaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaService.swift; sourceTree = "<group>"; };
 		816CB71D780855351A7B0945 /* WorkspaceCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCheck.swift; sourceTree = "<group>"; };
 		828B13449CC3B4C9E1667F4B /* GeneralSettingsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsPanelView.swift; sourceTree = "<group>"; };
 		876B61BCEC422CC1BB78AA8A /* IssueFilterBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFilterBarView.swift; sourceTree = "<group>"; };
@@ -314,7 +314,7 @@
 				B2D0D0C643D2854E7420E3F1 /* LocalAIService.swift */,
 				B683B26AD79C94797EF8BC0B /* LocalAISettings.swift */,
 				55778B25F81A4161985826B3 /* MarkdownTextRenderer.swift */,
-				80C121B91608F53292B12425 /* OllamaService.swift */,
+				5A28009152681A0BC8E3C9F2 /* OpenCodeService.swift */,
 				2BD81A20C71C6B6D1C6B9BBD /* PreferencesStore.swift */,
 				4E76DEF5D604366BFFE11D3E /* ProcessCommandRunner.swift */,
 				6224D67B91244DA59C02E583 /* ProjectRootDiscovery.swift */,
@@ -575,7 +575,7 @@
 				B0980720256C3BAF8099F85A /* LocalAISuggestionPreviewSheet.swift in Sources */,
 				FD95960F5160696403B26C3F /* LocalAISuggestionPreviewState.swift in Sources */,
 				32993856C442FC02097AB25E /* MarkdownTextRenderer.swift in Sources */,
-				A05FA52B36E9BBD98D2C1BC5 /* OllamaService.swift in Sources */,
+				A6435CD7D9DD630A68657484 /* OpenCodeService.swift in Sources */,
 				DDAA21F8D7F173B850F13D8A /* PreferencesStore.swift in Sources */,
 				83732800378670E8A9ED4945 /* PriorityDifficulty.swift in Sources */,
 				11D1BE62C48EB0F95709C208 /* ProcessCommandRunner.swift in Sources */,

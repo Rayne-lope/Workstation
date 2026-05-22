@@ -111,21 +111,21 @@ struct PreferencesStoreTests {
         store.update {
             $0.localAI = LocalAISettings(
                 isEnabled: true,
-            provider: .ollama,
-            baseURL: "http://localhost:11434",
-            fastModel: "qwen2.5-coder:3b",
-            strongModel: "qwen2.5-coder:7b",
-            apiKey: "local-key"
-        )
+                provider: .opencode,
+                baseURL: "https://opencode.ai/zen/go/v1",
+                fastModel: "opencode-go/deepseek-v4-flash",
+                strongModel: "opencode-go/deepseek-v4-flash",
+                apiKey: "local-key"
+            )
         }
 
         let reloaded = PreferencesStore(userDefaults: defaults)
         #expect(reloaded.preferences.localAI == LocalAISettings(
             isEnabled: true,
-            provider: .ollama,
-            baseURL: "http://localhost:11434",
-            fastModel: "qwen2.5-coder:3b",
-            strongModel: "qwen2.5-coder:7b",
+            provider: .opencode,
+            baseURL: "https://opencode.ai/zen/go/v1",
+            fastModel: "opencode-go/deepseek-v4-flash",
+            strongModel: "opencode-go/deepseek-v4-flash",
             apiKey: "local-key"
         ))
     }
