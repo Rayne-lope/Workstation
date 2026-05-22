@@ -1,5 +1,9 @@
 import SwiftUI
 import AppKit
+import Foundation
+#if canImport(BeadsWorkspace)
+import BeadsWorkspace
+#endif
 
 struct IssueRightPane: View {
     @Bindable var appVM: AppViewModel
@@ -60,9 +64,11 @@ private struct EnterToSendTextEditor: NSViewRepresentable {
     @Binding var text: String
     var fontSize: CGFloat = 13
     var onSend: () -> Void
+    /// Callback with content height for auto-resize
+    var onHeightChange: ((CGFloat) -> Void)?
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text, onSend: onSend)
+        Coordinator(text: $text, onSend: onSend, onHeightChange: onHeightChange)
     }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -88,6 +94,9 @@ private struct EnterToSendTextEditor: NSViewRepresentable {
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.isAutomaticTextReplacementEnabled = false
 
+        // Disable autoresizing mask translation so we can control frame
+        textView.translatesAutoresizingMaskIntoConstraints = false
+
         let scrollView = NSTextView.scrollableTextView()
         scrollView.documentView = textView
         scrollView.hasVerticalScroller = true
@@ -95,8 +104,19 @@ private struct EnterToSendTextEditor: NSViewRepresentable {
         scrollView.drawsBackground = false
         scrollView.borderType = .noBorder
         scrollView.backgroundColor = .clear
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Disable scroll view autoresizing to allow SwiftUI to control height
+        scrollView.autoresizingMask = []
+        scrollView.isVerticalScrollElasticityAllowed = false
+
+        // Set initial frame
+        let initialHeight: CGFloat = 38
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: initialHeight)
+        scrollView.frame = NSRect(x: 0, y: 0, width: 400, height: initialHeight)
 
         context.coordinator.textView = textView
+        context.coordinator.scrollView = scrollView
         return scrollView
     }
 
@@ -106,16 +126,30 @@ private struct EnterToSendTextEditor: NSViewRepresentable {
             textView.string = text
         }
         textView.onPlainReturn = { context.coordinator.handleReturn() }
+
+        // Update height constraint based on content
+        context.coordinator.updateHeight()
     }
 
     class Coordinator: NSObject, NSTextViewDelegate {
         var text: Binding<String>
         var onSend: () -> Void
+        var onHeightChange: ((CGFloat) -> Void)?
         weak var textView: NSTextView?
+        weak var scrollView: NSScrollView?
 
-        init(text: Binding<String>, onSend: @escaping () -> Void) {
+        // Height constraints
+        private var heightConstraint: NSLayoutConstraint?
+
+        // Line height approximation
+        private let lineHeight: CGFloat = 20
+        private let minHeight: CGFloat = 38
+        private let maxHeight: CGFloat = 180 // ~6-8 lines
+
+        init(text: Binding<String>, onSend: @escaping () -> Void, onHeightChange: ((CGFloat) -> Void)?) {
             self.text = text
             self.onSend = onSend
+            self.onHeightChange = onHeightChange
         }
 
         func handleReturn() {
@@ -125,6 +159,41 @@ private struct EnterToSendTextEditor: NSViewRepresentable {
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             text.wrappedValue = textView.string
+            updateHeight()
+        }
+
+        func updateHeight() {
+            guard let textView = textView, let scrollView = scrollView else { return }
+
+            // Calculate needed height based on content
+            let layoutManager = textView.layoutManager!
+            let textContainer = textView.textContainer!
+            let textStorage = textView.textStorage!
+
+            // Force layout if needed
+            layoutManager.ensureLayout(for: textContainer)
+
+            let boundingRect = layoutManager.boundingRect(
+                forGlyphRange: layoutManager.characterRange(forLineRange: NSRange(location: 0, length: textStorage.length)),
+                in: textContainer
+            )
+
+            // Add padding for text container insets
+            let neededHeight = boundingRect.height + 16 // 8 top + 8 bottom padding
+
+            // Clamp between min and max
+            let clampedHeight = min(max(neededHeight, minHeight), maxHeight)
+
+            // Update scroll view frame
+            var frame = scrollView.frame
+            frame.size.height = clampedHeight
+            scrollView.frame = frame
+
+            // Also update text view frame to match
+            textView.frame = NSRect(x: 0, y: 0, width: frame.size.width, height: clampedHeight)
+
+            // Notify parent of height change
+            onHeightChange?(clampedHeight)
         }
     }
 }
@@ -144,6 +213,7 @@ struct WorkflowCopilotPane: View {
     @State private var streamingStartTime: Date?
     @State private var excludedContextIDs: Set<String> = []
     @State private var hoveredMessageID: UUID?
+    @State private var showingCopilotMenu = false
 
     private var selected: [BeadIssue] {
         store.selectedIssues()
@@ -323,6 +393,12 @@ struct WorkflowCopilotPane: View {
                             .font(WorkstationTheme.Fonts.body(12))
                             .foregroundStyle(WorkstationTheme.textMuted)
                     }
+                } else if message.role == .assistant {
+                    MarkdownTextRenderer.copilotText(for: message.text)
+                        .font(WorkstationTheme.Fonts.body(13))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
                 } else {
                     Text(message.text)
                         .font(WorkstationTheme.Fonts.body(13))
@@ -390,33 +466,44 @@ struct WorkflowCopilotPane: View {
                 .padding(.vertical, visibleContextIssues.isEmpty ? 10 : 4)
 
             HStack(spacing: 8) {
+                // "+" menu button
+                Button {
+                    showingCopilotMenu.toggle()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                        .frame(width: 28, height: 28)
+                        .background(WorkstationTheme.card)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(WorkstationTheme.border, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showingCopilotMenu, arrowEdge: .top) {
+                    CopilotMenuPopover(
+                        hasPRDText: !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                        hasLastRequest: lastCopilotRequest?.prompt.isEmpty == false,
+                        onDraftPRD: {
+                            showingCopilotMenu = false
+                            generatePRDDrafts()
+                        },
+                        onRegenerate: {
+                            showingCopilotMenu = false
+                            regenerateLastResponse()
+                        }
+                    )
+                    .frame(width: 200)
+                }
+
                 Text(modelName)
                     .font(WorkstationTheme.Fonts.body(10))
                     .foregroundStyle(WorkstationTheme.textDisabled)
                     .lineLimit(1)
+
                 Spacer()
-                if let lastCopilotRequest, !lastCopilotRequest.prompt.isEmpty {
-                    Button {
-                        regenerateLastResponse()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 11))
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(WorkstationTheme.textMuted)
-                    .disabled(isSending || isGeneratingPRDDrafts || isCreatingPRDDrafts)
-                    .help("Regenerate last response")
-                }
-                Button {
-                    generatePRDDrafts()
-                } label: {
-                    Image(systemName: "doc.text.magnifyingglass")
-                        .font(.system(size: 12))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(WorkstationTheme.textMuted)
-                .disabled(!canGeneratePRDDrafts)
-                .help("Draft issues from PRD text")
 
                 Button {
                     sendPrompt()
@@ -808,6 +895,71 @@ private struct CopilotRequest {
 
 private enum CopilotScrollTarget {
     static let bottom = "copilot-bottom"
+}
+
+private struct CopilotMenuPopover: View {
+    let hasPRDText: Bool
+    let hasLastRequest: Bool
+    let onDraftPRD: () -> Void
+    let onRegenerate: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("COPILOT")
+                .font(WorkstationTheme.Fonts.body(9.5, weight: .semibold))
+                .tracking(0.8)
+                .foregroundStyle(WorkstationTheme.textSubtle)
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+
+            Divider().overlay(WorkstationTheme.borderSoft)
+
+            Button {
+                onDraftPRD()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.system(size: 12))
+                    Text("Draft Issue(s) from PRD")
+                        .font(WorkstationTheme.Fonts.body(12.5))
+                    Spacer()
+                    Text("PRD text in input")
+                        .font(WorkstationTheme.Fonts.body(10))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                }
+                .foregroundStyle(hasPRDText ? WorkstationTheme.textPrimary : WorkstationTheme.textDisabled)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+            .buttonStyle(.plain)
+            .disabled(!hasPRDText)
+            .help(hasPRDText ? "Generate issue drafts from the PRD text in your input" : "Enter PRD text in the input field first")
+
+            Button {
+                onRegenerate()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12))
+                    Text("Regenerate Last Response")
+                        .font(WorkstationTheme.Fonts.body(12.5))
+                    Spacer()
+                }
+                .foregroundStyle(hasLastRequest ? WorkstationTheme.textPrimary : WorkstationTheme.textDisabled)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+            .buttonStyle(.plain)
+            .disabled(!hasLastRequest)
+            .help(hasLastRequest ? "Regenerate the last copilot response" : "No previous response to regenerate")
+        }
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+    }
 }
 
 private struct CopilotIssueDraft: Identifiable, Equatable {
