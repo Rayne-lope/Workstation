@@ -258,9 +258,19 @@ enum WorkstationTheme {
     static let greenBg      = adaptive(light: "F0FAF4", dark: "1A2F22")
     static let greenBorder  = adaptive(light: "C3EACF", dark: "2A4A35")
     static let blue         = adaptive(light: "3B82F6", dark: "7DD3FC")
+    static let blueBg       = adaptive(light: "EFF6FF", dark: "0F1A1F")
+    static let blueBorder   = adaptive(light: "BFDBFE", dark: "0F2535")
     static let purple       = adaptive(light: "8B5CF6", dark: "D8B4FE")
+    static let purpleBg     = adaptive(light: "F5F3FF", dark: "1A0F1F")
+    static let purpleBorder = adaptive(light: "DDD6FE", dark: "2E1A40")
     static let red          = adaptive(light: "EF4444", dark: "F87171")
+    static let redBg        = adaptive(light: "FEF2F2", dark: "1F0F0F")
+    static let redBorder    = adaptive(light: "FECACA", dark: "3A1414")
     static let orange       = adaptive(light: "F97316", dark: "FB923C")
+    static let orangeBg     = adaptive(light: "FFF7ED", dark: "1A1008")
+    static let orangeBorder = adaptive(light: "FED7AA", dark: "3A220A")
+    static let accentBg     = adaptive(light: "F1F1F1", dark: "1A1608")
+    static let accentBorder = adaptive(light: "D4D4D4", dark: "3A2F0A")
 
     enum Radius {
         static let small: CGFloat = 4

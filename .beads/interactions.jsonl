@@ -155,3 +155,11 @@
 {"id":"int-63b82201","kind":"field_change","created_at":"2026-05-21T14:53:03.987964Z","actor":"Rayne-lope","issue_id":"Workstation-7jz","extra":{"field":"assignee","new_value":"codex","old_value":""}}
 {"id":"int-0c4db7ef","kind":"field_change","created_at":"2026-05-21T14:53:04.012928Z","actor":"Rayne-lope","issue_id":"Workstation-w4p","extra":{"field":"assignee","new_value":"codex","old_value":""}}
 {"id":"int-212fd646","kind":"field_change","created_at":"2026-05-21T15:04:12.064854Z","actor":"Rayne-lope","issue_id":"Workstation-czv","extra":{"field":"assignee","new_value":"codex","old_value":""}}
+{"id":"int-0664b4aa","kind":"field_change","created_at":"2026-05-21T15:34:53.127268Z","actor":"Rayne-lope","issue_id":"Workstation-v7r","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
+{"id":"int-45e80403","kind":"field_change","created_at":"2026-05-21T15:34:55.147385Z","actor":"Rayne-lope","issue_id":"Workstation-av4","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
+{"id":"int-880c19b3","kind":"field_change","created_at":"2026-05-21T15:34:57.219288Z","actor":"Rayne-lope","issue_id":"Workstation-7jz","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
+{"id":"int-006c732d","kind":"field_change","created_at":"2026-05-21T15:34:59.332102Z","actor":"Rayne-lope","issue_id":"Workstation-w4p","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
+{"id":"int-762bca6e","kind":"field_change","created_at":"2026-05-21T15:35:01.409183Z","actor":"Rayne-lope","issue_id":"Workstation-czv","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
+{"id":"int-d79eebb5","kind":"field_change","created_at":"2026-05-22T04:11:31.215122Z","actor":"Rayne-lope","issue_id":"Workstation-m8y","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
+{"id":"int-6e456ffc","kind":"field_change","created_at":"2026-05-22T04:14:19.826243Z","actor":"Rayne-lope","issue_id":"Workstation-o3k","extra":{"field":"assignee","new_value":"codex","old_value":""}}
+{"id":"int-306fcef5","kind":"field_change","created_at":"2026-05-22T04:14:20.53044Z","actor":"Rayne-lope","issue_id":"Workstation-ld8","extra":{"field":"assignee","new_value":"codex","old_value":""}}

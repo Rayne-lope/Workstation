@@ -59,7 +59,7 @@ struct IssueCardView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
         .shadow(
-            color: isSelected ? WorkstationTheme.accent.opacity(0.08) : (isHovering ? Color.black.opacity(0.40) : .clear),
+            color: isSelected ? WorkstationTheme.accent.opacity(0.08) : (isHovering ? WorkstationTheme.textPrimary.opacity(0.10) : .clear),
             radius: isSelected || isHovering ? 16 : 0,
             x: 0,
             y: 8

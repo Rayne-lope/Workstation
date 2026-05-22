@@ -189,7 +189,7 @@ struct KanbanBoardView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 28)
-        .background(WorkstationTheme.card.opacity(0.72))
+        .background(WorkstationTheme.card)
         .overlay(
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
                 .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
@@ -201,6 +201,8 @@ struct KanbanBoardView: View {
 }
 
 private struct DotsBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     /// Pre-computed star positions for the twinkling effect.
     /// Each star has: grid position (col, row), phase offset, speed multiplier, and max radius.
     private struct Star {
@@ -251,7 +253,9 @@ private struct DotsBackground: View {
                     }
                 }
 
-                // 2) Draw twinkling stars on top
+                guard colorScheme == .dark else { return }
+
+                // 2) Draw twinkling stars on top in dark mode only.
                 for star in Self.stars {
                     guard star.col < cols, star.row < rows else { continue }
                     let x = CGFloat(star.col) * spacing
@@ -276,7 +280,7 @@ private struct DotsBackground: View {
                     )
                     let glowColor: Color = star.isGold
                         ? WorkstationTheme.accent.opacity(alpha * 0.3)
-                        : Color.white.opacity(alpha * 0.15)
+                        : WorkstationTheme.textPrimary.opacity(alpha * 0.15)
 
                     context.fill(
                         Path(ellipseIn: glowRect),
@@ -293,7 +297,7 @@ private struct DotsBackground: View {
                     )
                     let coreColor: Color = star.isGold
                         ? WorkstationTheme.accent.opacity(alpha * 0.8)
-                        : Color(hex: "E8E4DD").opacity(alpha * 0.6)
+                        : WorkstationTheme.textPrimary.opacity(alpha * 0.6)
 
                     context.fill(
                         Path(ellipseIn: coreRect),

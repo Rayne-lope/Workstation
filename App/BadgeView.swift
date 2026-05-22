@@ -63,15 +63,15 @@ enum BadgeStyle {
         case .accent:
             return WorkstationTheme.accent
         case .priority(let priority):
-            return priority <= 1 ? Color(hex: "1A1608") : WorkstationTheme.cardAlt
+            return priority <= 1 ? WorkstationTheme.accentBg : WorkstationTheme.cardAlt
         case .info:
-            return Color(hex: "0F1A1F")
+            return WorkstationTheme.blueBg
         case .blocked:
-            return Color(hex: "1F0F0F")
+            return WorkstationTheme.redBg
         case .warning:
-            return Color(hex: "1A1008")
+            return WorkstationTheme.orangeBg
         case .recurring(let isOverdue):
-            return isOverdue ? Color(hex: "1F1108") : Color(hex: "1A0F1F")
+            return isOverdue ? WorkstationTheme.orangeBg : WorkstationTheme.purpleBg
         }
     }
 
@@ -84,15 +84,15 @@ enum BadgeStyle {
         case .accent:
             return WorkstationTheme.accent
         case .priority(let priority):
-            return priority <= 1 ? Color(hex: "3A2F0A") : WorkstationTheme.borderStrong
+            return priority <= 1 ? WorkstationTheme.accentBorder : WorkstationTheme.borderStrong
         case .info:
-            return Color(hex: "0F2535")
+            return WorkstationTheme.blueBorder
         case .blocked:
-            return Color(hex: "3A1414")
+            return WorkstationTheme.redBorder
         case .warning:
-            return Color(hex: "3A220A")
+            return WorkstationTheme.orangeBorder
         case .recurring(let isOverdue):
-            return isOverdue ? Color(hex: "3A2310") : Color(hex: "2E1A40")
+            return isOverdue ? WorkstationTheme.orangeBorder : WorkstationTheme.purpleBorder
         }
     }
 }

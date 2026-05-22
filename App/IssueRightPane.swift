@@ -575,18 +575,18 @@ private struct CopilotConversationMessage: Identifiable, Equatable {
         case .assistant:
             return WorkstationTheme.background
         case .error:
-            return WorkstationTheme.red.opacity(0.08)
+            return WorkstationTheme.redBg
         }
     }
 
     var borderColor: Color {
         switch role {
         case .user:
-            return WorkstationTheme.accent.opacity(0.45)
+            return WorkstationTheme.accentBorder
         case .assistant:
             return WorkstationTheme.border
         case .error:
-            return WorkstationTheme.red.opacity(0.45)
+            return WorkstationTheme.redBorder
         }
     }
 }

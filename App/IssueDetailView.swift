@@ -255,10 +255,10 @@ struct IssueDetailView: View {
         .foregroundStyle(WorkstationTheme.blue)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color(hex: "0F1A1F"))
+        .background(WorkstationTheme.blueBg)
         .overlay(
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                .stroke(Color(hex: "0F2535"), lineWidth: 1)
+                .stroke(WorkstationTheme.blueBorder, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
         .help(path)
