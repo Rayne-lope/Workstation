@@ -27,5 +27,6 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Workstation
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        INFOPLIST_KEY_NSAppleEventsUsageDescription: "This application needs permission to control Terminal to run local agent tasks."
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1

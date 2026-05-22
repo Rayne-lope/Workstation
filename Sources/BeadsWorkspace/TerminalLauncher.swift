@@ -24,7 +24,7 @@ public enum TerminalLauncher {
     }
 
     static func makeCDCommand(projectURL: URL) throws -> String {
-        let path = projectURL.path
+        let path = projectURL.absoluteURL.path
         guard !path.isEmpty else {
             throw LaunchError.launchFailed("Project path is empty")
         }
@@ -45,10 +45,21 @@ public enum TerminalLauncher {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         process.arguments = ["-e", appleScript]
+        
+        let errorPipe = Pipe()
+        process.standardError = errorPipe
+        
         do {
             try process.run()
+            process.waitUntilExit()
         } catch {
             throw LaunchError.launchFailed(error.localizedDescription)
+        }
+        
+        if process.terminationStatus != 0 {
+            let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+            let errorString = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            throw LaunchError.launchFailed("osascript failed with exit code \(process.terminationStatus): \(errorString)")
         }
     }
 
@@ -60,6 +71,7 @@ public enum TerminalLauncher {
     /// Only `"` needs escaping; backslashes are left intact because the input
     /// already contains shell escapes (e.g. `\"`) that must survive to the shell.
     static func escapeForAppleScript(_ string: String) -> String {
-        string.replacingOccurrences(of: "\"", with: "\\\"")
+        string.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
     }
 }

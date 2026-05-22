@@ -48,9 +48,9 @@ struct TerminalLauncherTests {
     func escapeForAppleScriptPreservesShellEscapes() {
         // Shell command already contains \" (escaped quotes)
         let escaped = TerminalLauncher.escapeForAppleScript("echo \"Fix \\\"bug\\\"\"")
-        // AppleScript should only escape the outer double quotes,
-        // leaving the inner \" intact so the shell receives proper escapes.
-        #expect(escaped == "echo \\\"Fix \\\\\"bug\\\\\"\\\"")
+        // AppleScript should escape both backslashes and double quotes,
+        // so the shell receives the proper \" intact.
+        #expect(escaped == "echo \\\"Fix \\\\\\\"bug\\\\\\\"\\\"")
     }
 
     @Test("quoteForShell wraps path in single quotes")

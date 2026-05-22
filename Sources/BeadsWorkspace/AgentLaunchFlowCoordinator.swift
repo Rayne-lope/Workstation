@@ -69,14 +69,32 @@ public final class AgentLaunchFlowCoordinator {
             guard let issueStore else { return nil }
             let claimed = await issueStore.claim(id: issue.id, assignee: profile.claimAssigneeToken)
             if !claimed {
-                // `bd update --claim` rejects issues that are already in_progress.
-                // When re-assigning to a different agent, fall back to a plain
-                // assignee update so the launch is not blocked.
-                if issue.status == "in_progress" {
+                // If claim fails, it could be because the issue is already claimed or in_progress.
+                // If already assigned to the correct agent, we can safely proceed.
+                if issue.assignee == profile.claimAssigneeToken {
+                    if issue.status != "in_progress" {
+                        await issueStore.update(
+                            id: issue.id,
+                            UpdateIssueInput(status: "in_progress")
+                        )
+                    }
+                } else if issue.status == "in_progress" || issue.status == "open" || issue.status == "ready" {
+                    // Fall back to a plain update of assignee and status.
+                    // Only set status to in_progress if it is not already in_progress.
+                    let statusUpdate = issue.status == "in_progress" ? nil : "in_progress"
                     await issueStore.update(
                         id: issue.id,
-                        UpdateIssueInput(assignee: profile.claimAssigneeToken ?? "")
+                        UpdateIssueInput(
+                            status: statusUpdate,
+                            assignee: profile.claimAssigneeToken
+                        )
                     )
+                    
+                    // If the plain update also fails and the original status was not in_progress,
+                    // return nil to respect the strict failure behavior expected by tests.
+                    if issueStore.errorMessage != nil && issue.status != "in_progress" {
+                        return nil
+                    }
                 } else {
                     return nil
                 }
