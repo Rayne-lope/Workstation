@@ -10,6 +10,7 @@ struct CloseIssueSheet: View {
     @State private var isGeneratingAISuggestion = false
     @State private var localAIErrorMessage: String?
     @FocusState private var reasonFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
 
     init(
         issue: BeadIssue,
@@ -161,6 +162,7 @@ struct CloseIssueSheet: View {
         }
         .frame(width: 560)
         .background(WorkstationTheme.surface)
+        .preferredColorScheme(colorScheme)
         .onAppear { reasonFocused = true }
     }
 

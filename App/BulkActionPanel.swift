@@ -171,6 +171,7 @@ struct BulkCloseSheet: View {
 
     @State private var reason: String
     @FocusState private var reasonFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
 
     init(
         appVM: AppViewModel,
@@ -272,7 +273,7 @@ struct BulkCloseSheet: View {
         }
         .frame(width: 480)
         .background(WorkstationTheme.surface)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(colorScheme)
         .onAppear { reasonFocused = true }
     }
 }
