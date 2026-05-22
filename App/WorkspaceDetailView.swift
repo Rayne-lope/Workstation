@@ -204,9 +204,9 @@ struct WorkspaceDetailView: View {
         case .issues:
             WorkspaceIssuesView(appVM: appVM, store: store)
         case .team:
-            WorkspaceTeamPlaceholder(store: store)
+            WorkspaceTeamView(store: store, profiles: appVM.agentProfileStore.profiles)
         case .activity:
-            WorkspaceActivityPlaceholder(store: store)
+            WorkspaceActivityView(appVM: appVM, store: store, profiles: appVM.agentProfileStore.profiles)
         }
     }
 }
@@ -560,46 +560,511 @@ struct WorkspaceIssueRowView: View {
     }
 }
 
-private struct WorkspaceTeamPlaceholder: View {
+struct WorkspaceTeamView: View {
     let store: IssueStore
+    let profiles: [AgentProfile]
 
     var body: some View {
+        let grouped = Dictionary(grouping: store.issues) { issue in
+            issue.assignee?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        }
+        
+        let sortedAssignees = grouped.keys.sorted { lhs, rhs in
+            if lhs.isEmpty { return true }
+            if rhs.isEmpty { return false }
+            return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+        }
+
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if store.issues.isEmpty {
+                    emptyState
+                } else {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 280, maximum: 360), spacing: 16)], spacing: 16) {
+                        ForEach(sortedAssignees, id: \.self) { assignee in
+                            let assigneeIssues = grouped[assignee] ?? []
+                            WorkspaceTeamCardView(
+                                assignee: assignee.isEmpty ? nil : assignee,
+                                issues: assigneeIssues,
+                                profiles: profiles
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(24)
+        }
+        .background(WorkstationTheme.background)
+    }
+
+    private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "person.2")
                 .font(.system(size: 40, weight: .light))
                 .foregroundStyle(WorkstationTheme.textDisabled)
             VStack(spacing: 6) {
-                Text("Team Tab")
-                    .font(WorkstationTheme.Fonts.display(20, weight: .bold))
+                Text("No team activity")
+                    .font(WorkstationTheme.Fonts.display(18, weight: .bold))
                     .foregroundStyle(WorkstationTheme.textPrimary)
-                Text("Assignee breakdown cards — coming in Workstation-6ky")
+                Text("Assignee statistics will appear once issues are created and claimed.")
                     .font(WorkstationTheme.Fonts.body(13))
                     .foregroundStyle(WorkstationTheme.textMuted)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(WorkstationTheme.background)
+        .frame(maxWidth: .infinity, minHeight: 250, alignment: .center)
     }
 }
 
-private struct WorkspaceActivityPlaceholder: View {
-    let store: IssueStore
+struct WorkspaceTeamCardView: View {
+    let assignee: String?
+    let issues: [BeadIssue]
+    let profiles: [AgentProfile]
+
+    @State private var isHovering = false
 
     var body: some View {
+        let resolver = AssigneeAvatarResolver()
+        let descriptor = resolver.resolve(assignee: assignee, profiles: profiles)
+
+        let displayName = descriptor?.label ?? (assignee ?? "No assignee")
+        let roleName: String = {
+            if assignee == nil {
+                return "Unassigned"
+            }
+            if let name = assignee,
+               let profile = profiles.first(where: { $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }) {
+                return profile.role.displayName
+            }
+            if let name = assignee, AssigneeAvatarResolver.brandKind(forShortToken: name) != nil {
+                return "AI Executor"
+            }
+            return "Developer"
+        }()
+
+        // Stats calculation
+        let assignedCount = issues.count
+        let doneCount = issues.filter { $0.status == "closed" }.count
+        let inProgressCount = issues.filter { $0.status == "in_progress" }.count
+        
+        let completionRate = assignedCount > 0 ? (Double(doneCount) / Double(assignedCount)) : 0.0
+        let safeCompletion = completionRate.isNaN || completionRate.isInfinite ? 0.0 : max(0.0, min(1.0, completionRate))
+
+        VStack(alignment: .leading, spacing: 14) {
+            // Header: Avatar + Info (name + role)
+            HStack(spacing: 12) {
+                if assignee == nil {
+                    Circle()
+                        .fill(WorkstationTheme.hover)
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Image(systemName: "person.fill.questionmark")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(WorkstationTheme.textMuted)
+                        )
+                } else {
+                    AssigneeBadgeView(assignee: assignee, profiles: profiles, compact: false, showName: false)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(displayName)
+                        .font(WorkstationTheme.Fonts.display(14, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                        .lineLimit(1)
+
+                    Text(roleName)
+                        .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+            }
+
+            Divider().overlay(WorkstationTheme.borderSoft)
+
+            // 2x2 grid of mini stats
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                miniStatBlock(label: "Assigned", value: "\(assignedCount)", color: WorkstationTheme.textSecondary)
+                miniStatBlock(label: "In Progress", value: "\(inProgressCount)", color: WorkstationTheme.accent)
+                miniStatBlock(label: "Done", value: "\(doneCount)", color: WorkstationTheme.green)
+                miniStatBlock(label: "Completion", value: String(format: "%.0f%%", safeCompletion * 100), color: WorkstationTheme.blue)
+            }
+
+            // Progress bar
+            VStack(alignment: .leading, spacing: 6) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(WorkstationTheme.border)
+                            .frame(height: 3)
+                        
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(
+                                LinearGradient(
+                                    colors: [WorkstationTheme.accent, WorkstationTheme.accentHover],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geo.size.width * CGFloat(safeCompletion), height: 3)
+                    }
+                }
+                .frame(height: 3)
+            }
+        }
+        .padding(16)
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(isHovering ? WorkstationTheme.borderStrong : WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+        .offset(y: isHovering ? -2 : 0)
+        .shadow(color: isHovering ? Color.black.opacity(0.4) : Color.clear, radius: 8, x: 0, y: 4)
+        .animation(.easeOut(duration: 0.18), value: isHovering)
+        #if os(macOS)
+        .onHover { isHovering = $0 }
+        #endif
+    }
+
+    private func miniStatBlock(label: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value)
+                .font(WorkstationTheme.Fonts.display(18, weight: .bold))
+                .foregroundStyle(color)
+                .monospacedDigit()
+            Text(label.uppercased())
+                .font(WorkstationTheme.Fonts.body(9, weight: .bold))
+                .tracking(0.5)
+                .foregroundStyle(WorkstationTheme.textDisabled)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(WorkstationTheme.cardAlt)
+        .cornerRadius(WorkstationTheme.Radius.medium)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+        )
+    }
+}
+
+struct UnifiedActivityItem: Identifiable, Hashable, Sendable {
+    enum ActivityType: Hashable, Sendable {
+        case shellCommand(CommandSnapshot)
+        case agentRun(AgentRunRecord)
+    }
+
+    let id: String
+    let type: ActivityType
+    let timestamp: Date
+}
+
+struct WorkspaceActivityView: View {
+    @Bindable var appVM: AppViewModel
+    let store: IssueStore
+    let profiles: [AgentProfile]
+
+    var activityItems: [UnifiedActivityItem] {
+        let shellSnapshots = appVM.shellRunner.history.map {
+            UnifiedActivityItem(
+                id: "shell-\($0.timestamp.timeIntervalSince1970)-\($0.command)-\($0.arguments.joined())",
+                type: .shellCommand($0),
+                timestamp: $0.timestamp
+            )
+        }
+
+        let agentRecords = appVM.agentRunHistoryStore.records.map {
+            UnifiedActivityItem(
+                id: "agent-\($0.startedAt.timeIntervalSince1970)-\($0.id)",
+                type: .agentRun($0),
+                timestamp: $0.startedAt
+            )
+        }
+
+        return (shellSnapshots + agentRecords).sorted { $0.timestamp > $1.timestamp }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                let items = activityItems
+                if items.isEmpty {
+                    emptyState
+                } else {
+                    LazyVStack(spacing: 12) {
+                        ForEach(items) { item in
+                            WorkspaceActivityRowView(item: item, store: store, appVM: appVM, profiles: profiles)
+                            
+                            if item.id != items.last?.id {
+                                Divider()
+                                    .overlay(WorkstationTheme.borderSoft)
+                                    .padding(.leading, 48)
+                            }
+                        }
+                    }
+                    .padding(16)
+                    .background(WorkstationTheme.card)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                            .stroke(WorkstationTheme.border, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+                }
+            }
+            .padding(24)
+        }
+        .background(WorkstationTheme.background)
+    }
+
+    private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 40, weight: .light))
                 .foregroundStyle(WorkstationTheme.textDisabled)
             VStack(spacing: 6) {
-                Text("Activity Tab")
-                    .font(WorkstationTheme.Fonts.display(20, weight: .bold))
+                Text("No activity yet")
+                    .font(WorkstationTheme.Fonts.display(18, weight: .bold))
                     .foregroundStyle(WorkstationTheme.textPrimary)
-                Text("Shell command & bd operation feed — coming in Workstation-795")
+                Text("All shell commands and agent operations will be logged here in real-time.")
                     .font(WorkstationTheme.Fonts.body(13))
                     .foregroundStyle(WorkstationTheme.textMuted)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(WorkstationTheme.background)
+        .frame(maxWidth: .infinity, minHeight: 250, alignment: .center)
+    }
+}
+
+struct WorkspaceActivityRowView: View {
+    let item: UnifiedActivityItem
+    let store: IssueStore
+    let appVM: AppViewModel
+    let profiles: [AgentProfile]
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            iconView
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .center) {
+                    headerText
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 8) {
+                        Text(relativeTime(for: item.timestamp))
+                            .font(WorkstationTheme.Fonts.body(11))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                        
+                        statusBadge
+                    }
+                }
+
+                snippetBox
+            }
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+    }
+
+    @ViewBuilder
+    private var iconView: some View {
+        switch item.type {
+        case .shellCommand(let snapshot):
+            let isGit = snapshot.command.lowercased().contains("git")
+            let isBd = snapshot.command.lowercased().contains("bd")
+            
+            Circle()
+                .fill(isGit ? WorkstationTheme.purpleBg : (isBd ? WorkstationTheme.accentBg : WorkstationTheme.hover))
+                .frame(width: 28, height: 28)
+                .overlay(
+                    Image(systemName: isGit ? "arrow.triangle.pull" : (isBd ? "terminal.fill" : "terminal"))
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(isGit ? WorkstationTheme.purple : (isBd ? WorkstationTheme.accent : WorkstationTheme.textSecondary))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(isGit ? WorkstationTheme.purpleBorder : (isBd ? WorkstationTheme.accentBorder : WorkstationTheme.border), lineWidth: 1)
+                )
+
+        case .agentRun(let record):
+            AssigneeBadgeView(assignee: record.agentName, profiles: profiles, compact: true, showName: false)
+                .frame(width: 28, height: 28)
+        }
+    }
+
+    @ViewBuilder
+    private var headerText: some View {
+        switch item.type {
+        case .shellCommand(let snapshot):
+            let cmdString = "\(snapshot.command) \(snapshot.arguments.joined(separator: " "))"
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Executed Shell Command")
+                    .font(WorkstationTheme.Fonts.body(12, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+                
+                Text(cmdString)
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+                    .lineLimit(1)
+            }
+
+        case .agentRun(let record):
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text("Agent Session Launched")
+                        .font(WorkstationTheme.Fonts.body(12, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                    
+                    Button {
+                        store.selectIssue(id: record.issueID)
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            appVM.viewMode = .kanban
+                        }
+                    } label: {
+                        Text(record.issueID)
+                            .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.accent)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1.5)
+                            .background(WorkstationTheme.accentBg)
+                            .cornerRadius(WorkstationTheme.Radius.small)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
+                                    .stroke(WorkstationTheme.accentBorder, lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .help("Go to \(record.issueID) on Kanban board")
+                }
+                
+                Text(record.issueTitle)
+                    .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var statusBadge: some View {
+        switch item.type {
+        case .shellCommand(let snapshot):
+            let success = snapshot.exitCode == 0
+            Text(success ? "\(snapshot.durationMs)ms" : "Exit \(snapshot.exitCode)")
+                .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                .foregroundStyle(success ? WorkstationTheme.green : WorkstationTheme.red)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(success ? WorkstationTheme.greenBg : WorkstationTheme.redBg)
+                .cornerRadius(WorkstationTheme.Radius.small)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
+                        .stroke(success ? WorkstationTheme.greenBorder : WorkstationTheme.redBorder, lineWidth: 1)
+                )
+
+        case .agentRun(let record):
+            let status = record.status
+            let color = statusColor(status)
+            let bgColor = statusBgColor(status)
+            let borderColor = statusBorderColor(status)
+            
+            Text(status.displayName)
+                .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                .foregroundStyle(color)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(bgColor)
+                .cornerRadius(WorkstationTheme.Radius.small)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
+                        .stroke(borderColor, lineWidth: 1)
+                )
+        }
+    }
+
+    @ViewBuilder
+    private var snippetBox: some View {
+        switch item.type {
+        case .shellCommand(let snapshot):
+            let outputText = !snapshot.stderr.isEmpty ? snapshot.stderr : snapshot.stdout
+            let displayString = snapshot.errorMessage ?? outputText
+            
+            if !displayString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                VStack(alignment: .leading) {
+                    Text(displayString.prefix(400))
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(snapshot.exitCode == 0 ? WorkstationTheme.textSecondary : WorkstationTheme.red)
+                        .lineLimit(6)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(10)
+                .background(WorkstationTheme.cardAlt)
+                .cornerRadius(WorkstationTheme.Radius.medium)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium)
+                        .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                )
+            }
+
+        case .agentRun(let record):
+            let displayString = record.notes ?? record.prompt
+            
+            if !displayString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                VStack(alignment: .leading) {
+                    Text(displayString.prefix(400))
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(WorkstationTheme.textSecondary)
+                        .lineLimit(6)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(10)
+                .background(WorkstationTheme.cardAlt)
+                .cornerRadius(WorkstationTheme.Radius.medium)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium)
+                        .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                )
+            }
+        }
+    }
+
+    private func relativeTime(for date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func statusColor(_ status: AgentRunStatus) -> Color {
+        switch status {
+        case .accepted: return WorkstationTheme.green
+        case .failed: return WorkstationTheme.red
+        case .needsReview: return WorkstationTheme.blue
+        case .abandoned: return WorkstationTheme.textMuted
+        default: return WorkstationTheme.accent
+        }
+    }
+
+    private func statusBgColor(_ status: AgentRunStatus) -> Color {
+        switch status {
+        case .accepted: return WorkstationTheme.greenBg
+        case .failed: return WorkstationTheme.redBg
+        case .needsReview: return WorkstationTheme.blueBg
+        case .abandoned: return WorkstationTheme.hover
+        default: return WorkstationTheme.accentBg
+        }
+    }
+
+    private func statusBorderColor(_ status: AgentRunStatus) -> Color {
+        switch status {
+        case .accepted: return WorkstationTheme.greenBorder
+        case .failed: return WorkstationTheme.redBorder
+        case .needsReview: return WorkstationTheme.blueBorder
+        case .abandoned: return WorkstationTheme.borderStrong
+        default: return WorkstationTheme.accentBorder
+        }
     }
 }
