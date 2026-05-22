@@ -91,10 +91,10 @@ struct BoardSidebarView: View {
                     )
             } else {
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .fill(Color(hex: "1A1608"))
+                    .fill(WorkstationTheme.accentBg)
                     .overlay(
                         RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                            .stroke(Color(hex: "2A2508"), lineWidth: 1)
+                            .stroke(WorkstationTheme.accentBorder, lineWidth: 1)
                     )
                     .frame(width: 36, height: 36)
                     .overlay(
@@ -217,6 +217,10 @@ struct BoardSidebarView: View {
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2)
                 .background(WorkstationTheme.borderSoft)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                        .stroke(WorkstationTheme.border, lineWidth: 1)
+                )
                 .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
         }
         .padding(.vertical, 2)
@@ -250,11 +254,11 @@ private struct SidebarNavButtonStyle: ButtonStyle {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .fill(isActive ? Color(hex: "1A1608") : (configuration.isPressed ? WorkstationTheme.borderSoft : Color.clear))
+                    .fill(isActive ? WorkstationTheme.accentBg : (configuration.isPressed ? WorkstationTheme.hover : Color.clear))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .stroke(isActive ? Color(hex: "2A2508") : Color.clear, lineWidth: 1)
+                    .stroke(isActive ? WorkstationTheme.accentBorder : Color.clear, lineWidth: 1)
             )
     }
 }

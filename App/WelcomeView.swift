@@ -498,8 +498,8 @@ struct WelcomeView: View {
     }
 
     private func metricCell(title: String, value: String, tint: Color? = nil) -> some View {
-        let backgroundColor = tint.map { $0.opacity(0.08) } ?? WorkstationTheme.cardAlt
-        let borderColor = tint.map { $0.opacity(0.35) } ?? WorkstationTheme.borderStrong
+        let backgroundColor = tint.map(tintBackground) ?? WorkstationTheme.cardAlt
+        let borderColor = tint.map(tintBorder) ?? WorkstationTheme.borderStrong
 
         return VStack(alignment: .leading, spacing: 4) {
             Text(title.uppercased())
@@ -557,7 +557,7 @@ struct WelcomeView: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 32, height: 32)
-                .background(tint.opacity(0.12), in: Circle())
+                .background(tintBackground(for: tint), in: Circle())
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -572,10 +572,10 @@ struct WelcomeView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(tint.opacity(0.08))
+        .background(tintBackground(for: tint))
         .overlay(
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                .stroke(tint.opacity(0.35), lineWidth: 1)
+                .stroke(tintBorder(for: tint), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
     }
@@ -619,7 +619,7 @@ struct WelcomeView: View {
         .background(badgeBackground(for: state))
         .overlay(
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                .stroke(tint.opacity(0.35), lineWidth: 1)
+                .stroke(tintBorder(for: tint), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
     }
@@ -627,24 +627,25 @@ struct WelcomeView: View {
     private func badgeBackground(for state: WorkspaceCheckState) -> Color {
         switch state {
         case .ok:
-            return Color(hex: "0E170F")
+            return WorkstationTheme.greenBg
         case .missing:
-            return Color(hex: "1A1108")
+            return WorkstationTheme.orangeBg
         case .failed:
-            return Color(hex: "1A0F0F")
+            return WorkstationTheme.redBg
         }
     }
 
     private func exitBadge(for code: Int32) -> some View {
-        Text("exit \(code)")
+        let tint = code == 0 ? WorkstationTheme.green : WorkstationTheme.orange
+        return Text("exit \(code)")
             .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-            .foregroundStyle(code == 0 ? WorkstationTheme.green : WorkstationTheme.orange)
+            .foregroundStyle(tint)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
-            .background(code == 0 ? Color(hex: "0E170F") : Color(hex: "1A1108"))
+            .background(code == 0 ? WorkstationTheme.greenBg : WorkstationTheme.orangeBg)
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                    .stroke(code == 0 ? WorkstationTheme.green.opacity(0.35) : WorkstationTheme.orange.opacity(0.35), lineWidth: 1)
+                    .stroke(tintBorder(for: tint), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
     }
@@ -680,10 +681,10 @@ struct WelcomeView: View {
                 )
         } else {
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                .fill(Color(hex: "1A1608"))
+                .fill(WorkstationTheme.accentBg)
                 .overlay(
                     RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                        .stroke(Color(hex: "2A2508"), lineWidth: 1)
+                        .stroke(WorkstationTheme.accentBorder, lineWidth: 1)
                 )
                 .frame(width: 44, height: 44)
                 .overlay(
@@ -955,22 +956,32 @@ struct WelcomeView: View {
             .textSelection(.enabled)
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(Color(hex: "1A0F0F"))
+            .background(WorkstationTheme.redBg)
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .stroke(WorkstationTheme.red.opacity(0.35), lineWidth: 1)
+                    .stroke(WorkstationTheme.redBorder, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+    }
+
+    private func tintBackground(for tint: Color) -> Color {
+        tint.opacity(0.08)
+    }
+
+    private func tintBorder(for tint: Color) -> Color {
+        tint.opacity(0.35)
     }
 }
 
 private struct HomeBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         ZStack {
             LinearGradient(
                 colors: [
                     WorkstationTheme.background,
-                    Color(hex: "101010"),
+                    colorScheme == .dark ? WorkstationTheme.cardAlt : WorkstationTheme.surface,
                     WorkstationTheme.background
                 ],
                 startPoint: .topLeading,
@@ -999,7 +1010,7 @@ private struct HomeBackdrop: View {
 
             LinearGradient(
                 colors: [
-                    Color.white.opacity(0.02),
+                    WorkstationTheme.surface.opacity(colorScheme == .dark ? 0.04 : 0.34),
                     .clear
                 ],
                 startPoint: .top,

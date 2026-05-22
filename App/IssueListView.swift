@@ -215,7 +215,7 @@ private struct ListSectionView: View {
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.vertical, 20)
-        .background(WorkstationTheme.card.opacity(0.5))
+        .background(WorkstationTheme.card)
         .overlay(
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
                 .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
@@ -335,14 +335,15 @@ private struct IssueListRowView: View {
             .padding(.vertical, 12)
             .background(
                 isSelected
-                    ? WorkstationTheme.card
-                    : (isHovering ? WorkstationTheme.card.opacity(0.6) : Color.clear)
+                    ? WorkstationTheme.active
+                    : (isHovering ? WorkstationTheme.hover : Color.clear)
             )
-            .overlay(alignment: .leading) {
+            .overlay {
                 if isSelected {
-                    Rectangle()
-                        .fill(WorkstationTheme.accent)
-                        .frame(width: 3)
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                        .stroke(WorkstationTheme.accentBorder, lineWidth: 1)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
                 }
             }
             .overlay(alignment: .bottom) {
