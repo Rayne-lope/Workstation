@@ -662,81 +662,260 @@ struct WorkflowCopilotPane: View {
     }
 
     private func prdDraftCard(_ draft: Binding<CopilotIssueDraft>) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header Row (Always Visible)
+            HStack(alignment: .center, spacing: 8) {
+                // Left Vertical Priority Accent Stripe
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(priorityColor(for: draft.wrappedValue.priority))
+                    .frame(width: 4, height: 18)
+
                 Toggle("", isOn: draft.isSelected)
                     .toggleStyle(.checkbox)
                     .labelsHidden()
+
+                // Mini Pill Priority Badge
+                Text("P\(draft.wrappedValue.priority)")
+                    .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                    .foregroundStyle(priorityColor(for: draft.wrappedValue.priority))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2.5)
+                    .background(priorityColor(for: draft.wrappedValue.priority).opacity(0.12))
+                    .clipShape(Capsule())
+
                 TextField("Issue title", text: draft.title)
                     .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
                     .foregroundStyle(WorkstationTheme.textPrimary)
                     .textFieldStyle(.plain)
+
+                Spacer()
+
                 Text("Why?")
-                    .font(WorkstationTheme.Fonts.body(10.5, weight: .semibold))
+                    .font(WorkstationTheme.Fonts.body(10, weight: .bold))
                     .foregroundStyle(WorkstationTheme.accent)
                     .help(draft.wrappedValue.reasonText)
-            }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2.5)
+                    .background(WorkstationTheme.accentBg)
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(WorkstationTheme.accentBorder, lineWidth: 0.5)
+                    )
 
-            TextEditor(text: draft.description)
-                .font(WorkstationTheme.Fonts.body(12))
-                .foregroundStyle(WorkstationTheme.textSecondary)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 54)
-                .padding(8)
-                .background(WorkstationTheme.card)
-                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
-
-            TextEditor(text: draft.acceptanceCriteria)
-                .font(WorkstationTheme.Fonts.body(12))
-                .foregroundStyle(WorkstationTheme.textSecondary)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 54)
-                .padding(8)
-                .background(WorkstationTheme.card)
-                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
-                .help("Acceptance criteria")
-
-            HStack(spacing: 10) {
-                TextField("type", text: draft.issueType)
-                    .font(WorkstationTheme.Fonts.body(11))
-                    .textFieldStyle(.plain)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(WorkstationTheme.card)
-                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
-                Stepper("P\(draft.priority.wrappedValue)", value: draft.priority, in: 0...4)
-                    .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
-                    .foregroundStyle(WorkstationTheme.textSecondary)
-                    .frame(width: 92)
-                TextField("labels", text: draft.labelsText)
-                    .font(WorkstationTheme.Fonts.body(11))
-                    .textFieldStyle(.plain)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(WorkstationTheme.card)
-                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
-            }
-
-            if !draft.wrappedValue.dependencySuggestions.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("DEPENDENCY SUGGESTIONS")
-                        .font(WorkstationTheme.Fonts.body(9.5, weight: .semibold))
-                        .tracking(0.7)
-                        .foregroundStyle(WorkstationTheme.textSubtle)
-                    Text(draft.wrappedValue.dependencySuggestions.joined(separator: "\n"))
-                        .font(WorkstationTheme.Fonts.body(11))
-                        .foregroundStyle(WorkstationTheme.textMuted)
-                        .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                        draft.wrappedValue.isExpanded.toggle()
+                    }
+                } label: {
+                    Image(systemName: draft.wrappedValue.isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textSecondary)
+                        .frame(width: 20, height: 20)
+                        .background(WorkstationTheme.hover)
+                        .clipShape(Circle())
                 }
+                .buttonStyle(.plain)
+            }
+            .padding(.vertical, 4)
+
+            // Collapsible Content Body
+            if draft.wrappedValue.isExpanded {
+                VStack(alignment: .leading, spacing: 12) {
+                    Divider().overlay(WorkstationTheme.borderSoft)
+                        .padding(.vertical, 4)
+
+                    // Description
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("DESCRIPTION")
+                            .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                            .tracking(0.8)
+                            .foregroundStyle(WorkstationTheme.textSubtle)
+                        
+                        TextEditor(text: draft.description)
+                            .font(WorkstationTheme.Fonts.body(12))
+                            .foregroundStyle(WorkstationTheme.textSecondary)
+                            .scrollContentBackground(.hidden)
+                            .frame(minHeight: 54, maxHeight: 100)
+                            .padding(8)
+                            .background(WorkstationTheme.inputBg)
+                            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                                    .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                            )
+                    }
+
+                    // Acceptance Criteria
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("ACCEPTANCE CRITERIA")
+                            .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                            .tracking(0.8)
+                            .foregroundStyle(WorkstationTheme.textSubtle)
+                        
+                        TextEditor(text: draft.acceptanceCriteria)
+                            .font(WorkstationTheme.Fonts.body(12))
+                            .foregroundStyle(WorkstationTheme.textSecondary)
+                            .scrollContentBackground(.hidden)
+                            .frame(minHeight: 54, maxHeight: 100)
+                            .padding(8)
+                            .background(WorkstationTheme.inputBg)
+                            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                                    .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                            )
+                    }
+
+                    // Multi-field metadata rows
+                    HStack(alignment: .center, spacing: 12) {
+                        // Issue Type
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("TYPE")
+                                .font(WorkstationTheme.Fonts.body(9, weight: .semibold))
+                                .foregroundStyle(WorkstationTheme.textSubtle)
+                            
+                            TextField("type", text: draft.issueType)
+                                .font(WorkstationTheme.Fonts.body(11))
+                                .textFieldStyle(.plain)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(WorkstationTheme.inputBg)
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                                )
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        // Custom Capsule Stepper
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("PRIORITY")
+                                .font(WorkstationTheme.Fonts.body(9, weight: .semibold))
+                                .foregroundStyle(WorkstationTheme.textSubtle)
+                            
+                            CapsuleStepper(value: draft.priority, range: 0...4)
+                        }
+
+                        // Labels
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("LABELS")
+                                .font(WorkstationTheme.Fonts.body(9, weight: .semibold))
+                                .foregroundStyle(WorkstationTheme.textSubtle)
+                            
+                            TextField("labels", text: draft.labelsText)
+                                .font(WorkstationTheme.Fonts.body(11))
+                                .textFieldStyle(.plain)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(WorkstationTheme.inputBg)
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                                )
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+
+                    if !draft.wrappedValue.dependencySuggestions.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "link.badge.plus")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(WorkstationTheme.blue)
+                                Text("DEPENDENCY SUGGESTIONS")
+                                    .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                                    .tracking(0.7)
+                                    .foregroundStyle(WorkstationTheme.blue)
+                            }
+                            Text(draft.wrappedValue.dependencySuggestions.joined(separator: "\n"))
+                                .font(WorkstationTheme.Fonts.body(11))
+                                .foregroundStyle(WorkstationTheme.textMuted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(WorkstationTheme.blueBg)
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                                .stroke(WorkstationTheme.blueBorder, lineWidth: 1)
+                        )
+                    }
+                }
+                .padding(.top, 8)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(12)
         .background(WorkstationTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                .stroke(draft.wrappedValue.isSelected ? WorkstationTheme.accent.opacity(0.45) : WorkstationTheme.border, lineWidth: 1)
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous)
+                .stroke(draft.wrappedValue.isSelected ? WorkstationTheme.accent.opacity(0.5) : WorkstationTheme.borderSoft, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+        .shadow(color: Color.black.opacity(draft.wrappedValue.isSelected ? 0.03 : 0.01), radius: 4, x: 0, y: 2)
+    }
+
+    private func priorityColor(for priority: Int) -> Color {
+        switch priority {
+        case 0, 1:
+            return WorkstationTheme.accent
+        case 2:
+            return WorkstationTheme.blue
+        default:
+            return WorkstationTheme.textMuted
+        }
+    }
+
+    private struct CapsuleStepper: View {
+        @Binding var value: Int
+        let range: ClosedRange<Int>
+
+        var body: some View {
+            HStack(spacing: 0) {
+                Button {
+                    if value > range.lowerBound {
+                        value -= 1
+                    }
+                } label: {
+                    Image(systemName: "minus")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(value > range.lowerBound ? WorkstationTheme.textPrimary : WorkstationTheme.textDisabled)
+                        .frame(width: 24, height: 26)
+                        .background(WorkstationTheme.hover)
+                }
+                .buttonStyle(.plain)
+                .disabled(value <= range.lowerBound)
+
+                Text("P\(value)")
+                    .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+                    .frame(width: 32)
+                    .multilineTextAlignment(.center)
+
+                Button {
+                    if value < range.upperBound {
+                        value += 1
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(value < range.upperBound ? WorkstationTheme.textPrimary : WorkstationTheme.textDisabled)
+                        .frame(width: 24, height: 26)
+                        .background(WorkstationTheme.hover)
+                }
+                .buttonStyle(.plain)
+                .disabled(value >= range.upperBound)
+            }
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+            )
+        }
     }
 
     private func sendPrompt() {
@@ -864,7 +1043,7 @@ struct WorkflowCopilotPane: View {
     private func planCardView(message: Binding<CopilotConversationMessage>) -> some View {
         let msg = message.wrappedValue
         if let plan = msg.plan {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text(plan.summary)
                     .font(WorkstationTheme.Fonts.body(13, weight: .bold))
                     .foregroundStyle(WorkstationTheme.accent)
@@ -874,87 +1053,76 @@ struct WorkflowCopilotPane: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(plan.actions.indices, id: \.self) { idx in
-                        let action = plan.actions[idx]
-                        HStack(alignment: .top, spacing: 8) {
-                            if !msg.isExecuted {
-                                Toggle("", isOn: Binding(
-                                    get: { message.plan.wrappedValue?.actions[idx].isSelected ?? true },
-                                    set: { message.plan.wrappedValue?.actions[idx].isSelected = $0 }
-                                ))
-                                .toggleStyle(.checkbox)
-                                .labelsHidden()
-                                .padding(.top, 2)
-                            } else {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(WorkstationTheme.green)
-                                    .padding(.top, 2)
-                            }
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 4) {
-                                    actionIcon(for: action.kind)
-                                        .font(.system(size: 11, weight: .semibold))
-                                        .foregroundStyle(WorkstationTheme.textSubtle)
-
-                                    if let issueId = action.issueId {
-                                        Text(issueId)
-                                            .font(WorkstationTheme.Fonts.body(11, weight: .bold))
-                                            .foregroundStyle(WorkstationTheme.accent)
-                                    }
-                                    
-                                    Text(actionDescription(for: action))
-                                        .font(WorkstationTheme.Fonts.body(12, weight: .medium))
-                                        .foregroundStyle(WorkstationTheme.textPrimary)
-                                }
-
-                                if let reason = action.reason {
-                                    Text(reason)
-                                        .font(WorkstationTheme.Fonts.body(10))
-                                        .foregroundStyle(WorkstationTheme.textMuted)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                        }
-                        .padding(6)
-                        .background(WorkstationTheme.background.opacity(0.4))
-                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                        WorkflowActionRow(
+                            action: plan.actions[idx],
+                            isExecuted: msg.isExecuted,
+                            isSelected: Binding(
+                                get: { message.plan.wrappedValue?.actions[idx].isSelected ?? true },
+                                set: { message.plan.wrappedValue?.actions[idx].isSelected = $0 }
+                            )
+                        )
                     }
                 }
 
                 if let warnings = plan.warnings, !warnings.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(warnings, id: \.self) { warning in
-                            HStack(spacing: 4) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(WorkstationTheme.orange)
-                                Text(warning)
-                                    .font(WorkstationTheme.Fonts.body(10.5))
-                                    .foregroundStyle(WorkstationTheme.textSecondary)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(WorkstationTheme.orange)
+                            Text("Risks & Warnings")
+                                .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                                .foregroundStyle(WorkstationTheme.orange)
+                        }
+                        .padding(.bottom, 2)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(warnings, id: \.self) { warning in
+                                HStack(alignment: .top, spacing: 4) {
+                                    Text("•")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundStyle(WorkstationTheme.orange)
+                                    Text(warning)
+                                        .font(WorkstationTheme.Fonts.body(10.5))
+                                        .foregroundStyle(WorkstationTheme.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
                         }
                     }
-                    .padding(8)
-                    .background(WorkstationTheme.orange.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small))
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(WorkstationTheme.orangeBg)
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
-                            .stroke(WorkstationTheme.orange.opacity(0.2), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(WorkstationTheme.orangeBorder, lineWidth: 1)
                     )
                 }
 
                 Divider().overlay(WorkstationTheme.borderSoft)
 
-                HStack {
-                    if msg.isExecuted {
-                        HStack(spacing: 6) {
-                            Image(systemName: "checkmark.seal.fill")
-                                .foregroundStyle(WorkstationTheme.green)
-                            Text("Applied Successfully")
-                                .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
-                                .foregroundStyle(WorkstationTheme.green)
-                        }
-                    } else {
+                if msg.isExecuted {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.green)
+                        Text("Applied Successfully")
+                            .font(WorkstationTheme.Fonts.body(12.5, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.green)
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(WorkstationTheme.greenBg)
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(WorkstationTheme.greenBorder, lineWidth: 1)
+                    )
+                    .padding(.top, 4)
+                } else {
+                    HStack {
                         Button {
                             message.wrappedValue.plan = nil
                             message.wrappedValue.isPlan = false
@@ -983,48 +1151,142 @@ struct WorkflowCopilotPane: View {
                         .buttonStyle(WorkstationPrimaryButtonStyle())
                         .disabled(msg.isExecuting || !(plan.actions.contains { $0.isSelected ?? true }))
                     }
+                    .padding(.top, 4)
                 }
-                .padding(.top, 4)
             }
-            .padding(10)
+            .padding(12)
             .background(WorkstationTheme.card)
-            .cornerRadius(WorkstationTheme.Radius.medium)
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous)
+                    .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
         }
     }
 
-    private func actionIcon(for kind: String) -> Image {
-        switch kind {
-        case "close_with_reason":
-            return Image(systemName: "checkmark.circle")
-        case "update_field":
-            return Image(systemName: "pencil.circle")
-        case "create_issue":
-            return Image(systemName: "plus.circle")
-        case "skip":
-            return Image(systemName: "slash.circle")
-        default:
-            return Image(systemName: "gearshape")
-        }
-    }
+    private struct WorkflowActionRow: View {
+        let action: WorkflowAction
+        let isExecuted: Bool
+        @Binding var isSelected: Bool
+        @State private var isHovered = false
 
-    private func actionDescription(for action: WorkflowAction) -> String {
-        switch action.kind {
-        case "close_with_reason":
-            return "Close issue"
-        case "update_field":
-            if let field = action.field, let value = action.value {
-                return "Set \(field) to '\(value)'"
+        var body: some View {
+            let theme = actionTheme(for: action.kind, isSelected: isSelected)
+            HStack(alignment: .top, spacing: 8) {
+                if !isExecuted {
+                    Toggle("", isOn: $isSelected)
+                        .toggleStyle(.checkbox)
+                        .labelsHidden()
+                        .padding(.top, 2)
+                        .scaleEffect(isHovered ? 1.05 : 1.0)
+                        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isHovered)
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(WorkstationTheme.green)
+                        .padding(.top, 2)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        actionIcon(for: action.kind)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(theme.iconColor)
+
+                        if let issueId = action.issueId {
+                            Text(issueId)
+                                .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                                .foregroundStyle(isSelected ? WorkstationTheme.accent : WorkstationTheme.textMuted)
+                        }
+                        
+                        Text(actionDescription(for: action))
+                            .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                            .foregroundStyle(isSelected ? WorkstationTheme.textPrimary : WorkstationTheme.textDisabled)
+                    }
+
+                    if let reason = action.reason {
+                        Text(reason)
+                            .font(WorkstationTheme.Fonts.body(10))
+                            .foregroundStyle(isSelected ? WorkstationTheme.textSecondary : WorkstationTheme.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer()
             }
-            return "Update field"
-        case "create_issue":
-            if let title = action.title {
-                return "Create issue: \(title)"
+            .padding(8)
+            .background(theme.bg)
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(theme.border, lineWidth: 1)
+            )
+            .scaleEffect(isHovered && !isExecuted ? 1.015 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: isHovered)
+            .onHover { hovering in
+                isHovered = hovering
             }
-            return "Create issue"
-        case "skip":
-            return "Skip action"
-        default:
-            return "Modify issue"
+        }
+
+        private func actionIcon(for kind: String) -> Image {
+            switch kind {
+            case "close_with_reason":
+                return Image(systemName: "checkmark.circle")
+            case "update_field":
+                return Image(systemName: "pencil.circle")
+            case "create_issue":
+                return Image(systemName: "plus.circle")
+            case "skip":
+                return Image(systemName: "slash.circle")
+            default:
+                return Image(systemName: "gearshape")
+            }
+        }
+
+        private func actionDescription(for action: WorkflowAction) -> String {
+            switch action.kind {
+            case "close_with_reason":
+                return "Close issue"
+            case "update_field":
+                if let field = action.field, let value = action.value {
+                    return "Set \(field) to '\(value)'"
+                }
+                return "Update field"
+            case "create_issue":
+                if let title = action.title {
+                    return "Create issue: \(title)"
+                }
+                return "Create issue"
+            case "skip":
+                return "Skip action"
+            default:
+                return "Modify issue"
+            }
+        }
+
+        private struct ActionTheme {
+            let bg: Color
+            let border: Color
+            let iconColor: Color
+        }
+
+        private func actionTheme(for kind: String, isSelected: Bool) -> ActionTheme {
+            guard isSelected else {
+                return ActionTheme(
+                    bg: WorkstationTheme.cardAlt,
+                    border: WorkstationTheme.borderSoft,
+                    iconColor: WorkstationTheme.textDisabled
+                )
+            }
+            switch kind {
+            case "close_with_reason":
+                return ActionTheme(bg: WorkstationTheme.greenBg, border: WorkstationTheme.greenBorder, iconColor: WorkstationTheme.green)
+            case "update_field":
+                return ActionTheme(bg: WorkstationTheme.blueBg, border: WorkstationTheme.blueBorder, iconColor: WorkstationTheme.blue)
+            case "create_issue":
+                return ActionTheme(bg: WorkstationTheme.purpleBg, border: WorkstationTheme.purpleBorder, iconColor: WorkstationTheme.purple)
+            default:
+                return ActionTheme(bg: WorkstationTheme.accentBg, border: WorkstationTheme.accentBorder, iconColor: WorkstationTheme.accent)
+            }
         }
     }
 
@@ -1220,7 +1482,7 @@ struct WorkflowCopilotPane: View {
     private func agentLaunchCardView(message: Binding<CopilotConversationMessage>) -> some View {
         let msg = message.wrappedValue
         if let preflight = msg.agentLaunch {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 8) {
                     Image(systemName: "sparkles")
                         .font(.system(size: 13, weight: .bold))
@@ -1233,49 +1495,81 @@ struct WorkflowCopilotPane: View {
 
                 Divider().overlay(WorkstationTheme.borderSoft)
 
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Text("Target Issue:")
                         .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                         .foregroundStyle(WorkstationTheme.textMuted)
-                    Text(preflight.issueId.isEmpty ? "No issue selected" : preflight.issueId)
-                        .font(WorkstationTheme.Fonts.body(11, weight: .bold))
-                        .foregroundStyle(WorkstationTheme.accent)
+                    
+                    HStack(spacing: 6) {
+                        Image(systemName: "tag.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(WorkstationTheme.accent)
+                        Text(preflight.issueId.isEmpty ? "No issue selected" : preflight.issueId)
+                            .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.accent)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(WorkstationTheme.accentBg)
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(WorkstationTheme.accentBorder, lineWidth: 1)
+                    )
+                    
                     if let issueObj = store.issues.first(where: { $0.id == preflight.issueId }) {
-                        Text("- \(issueObj.title)")
-                            .font(WorkstationTheme.Fonts.body(11))
+                        Text(issueObj.title)
+                            .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                             .foregroundStyle(WorkstationTheme.textSecondary)
                             .lineLimit(1)
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Agent Profile")
-                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("AGENT PROFILE")
+                        .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                        .tracking(0.8)
                         .foregroundStyle(WorkstationTheme.textSubtle)
                     
-                    Picker("", selection: Binding(
-                        get: { preflight.selectedProfileId },
-                        set: { newId in
-                            message.wrappedValue.agentLaunch?.selectedProfileId = newId
-                            if let profile = appVM.agentProfileStore.profiles.first(where: { $0.id == newId }) {
-                                message.wrappedValue.agentLaunch?.autoClaim = profile.shouldClaimIssue
-                                message.wrappedValue.agentLaunch?.autoMerge = profile.shouldCloseIssue
-                                message.wrappedValue.agentLaunch?.requestReview = profile.shouldRequestHumanReview
+                    HStack {
+                        Image(systemName: "person.crop.square.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(WorkstationTheme.accent)
+                        
+                        Picker("", selection: Binding(
+                            get: { preflight.selectedProfileId },
+                            set: { newId in
+                                message.wrappedValue.agentLaunch?.selectedProfileId = newId
+                                if let profile = appVM.agentProfileStore.profiles.first(where: { $0.id == newId }) {
+                                    message.wrappedValue.agentLaunch?.autoClaim = profile.shouldClaimIssue
+                                    message.wrappedValue.agentLaunch?.autoMerge = profile.shouldCloseIssue
+                                    message.wrappedValue.agentLaunch?.requestReview = profile.shouldRequestHumanReview
+                                }
+                            }
+                        )) {
+                            ForEach(appVM.agentProfileStore.profiles) { profile in
+                                Text("\(profile.name) (\(profile.role.rawValue))")
+                                    .tag(profile.id)
                             }
                         }
-                    )) {
-                        ForEach(appVM.agentProfileStore.profiles) { profile in
-                            Text("\(profile.name) (\(profile.role.rawValue))")
-                                .tag(profile.id)
-                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(WorkstationTheme.cardAlt)
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                    )
                 }
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Model Selection")
-                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("MODEL SELECTION")
+                        .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                        .tracking(0.8)
                         .foregroundStyle(WorkstationTheme.textSubtle)
                     
                     Picker("", selection: Binding(
@@ -1287,56 +1581,58 @@ struct WorkflowCopilotPane: View {
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
+                    .padding(4)
+                    .background(WorkstationTheme.cardAlt)
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                    )
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Settings")
-                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                    Text("SETTINGS")
+                        .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                        .tracking(0.8)
                         .foregroundStyle(WorkstationTheme.textSubtle)
 
-                    Toggle(isOn: Binding(
-                        get: { preflight.autoClaim },
-                        set: { message.wrappedValue.agentLaunch?.autoClaim = $0 }
-                    )) {
-                        HStack {
-                            Text("Auto-Claim Issue")
-                                .font(WorkstationTheme.Fonts.body(12, weight: .medium))
-                            Spacer()
-                        }
+                    VStack(spacing: 8) {
+                        AgentSettingCard(
+                            systemImage: "person.badge.key.fill",
+                            title: "Auto-Claim Issue",
+                            description: "Assign issue to agent automatically on launch",
+                            isOn: Binding(
+                                get: { preflight.autoClaim },
+                                set: { message.wrappedValue.agentLaunch?.autoClaim = $0 }
+                            )
+                        )
+                        
+                        AgentSettingCard(
+                            systemImage: "arrow.triangle.merge",
+                            title: "Auto-Merge & Close",
+                            description: "Automatically merge worktree changes and close on success",
+                            isOn: Binding(
+                                get: { preflight.autoMerge },
+                                set: { message.wrappedValue.agentLaunch?.autoMerge = $0 }
+                            )
+                        )
+                        
+                        AgentSettingCard(
+                            systemImage: "checkmark.shield.fill",
+                            title: "Human Review Required",
+                            description: "Ask for authorization before merging or staging code changes",
+                            isOn: Binding(
+                                get: { preflight.requestReview },
+                                set: { message.wrappedValue.agentLaunch?.requestReview = $0 }
+                            )
+                        )
                     }
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-
-                    Toggle(isOn: Binding(
-                        get: { preflight.autoMerge },
-                        set: { message.wrappedValue.agentLaunch?.autoMerge = $0 }
-                    )) {
-                        HStack {
-                            Text("Auto-Merge / Close on Success")
-                                .font(WorkstationTheme.Fonts.body(12, weight: .medium))
-                            Spacer()
-                        }
-                    }
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-
-                    Toggle(isOn: Binding(
-                        get: { preflight.requestReview },
-                        set: { message.wrappedValue.agentLaunch?.requestReview = $0 }
-                    )) {
-                        HStack {
-                            Text("Request Human Review")
-                                .font(WorkstationTheme.Fonts.body(12, weight: .medium))
-                            Spacer()
-                        }
-                    }
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
                 }
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Additional Instructions")
-                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("ADDITIONAL INSTRUCTIONS")
+                        .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                        .tracking(0.8)
                         .foregroundStyle(WorkstationTheme.textSubtle)
 
                     TextEditor(text: Binding(
@@ -1347,11 +1643,11 @@ struct WorkflowCopilotPane: View {
                     .foregroundStyle(WorkstationTheme.textPrimary)
                     .scrollContentBackground(.hidden)
                     .frame(minHeight: 48, maxHeight: 80)
-                    .padding(6)
-                    .background(WorkstationTheme.background)
-                    .cornerRadius(WorkstationTheme.Radius.small)
+                    .padding(8)
+                    .background(WorkstationTheme.inputBg)
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
                             .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
                     )
                 }
@@ -1370,26 +1666,116 @@ struct WorkflowCopilotPane: View {
 
                     Spacer()
 
-                    Button {
-                        executeAgentLaunch(preflight: preflight, messageId: msg.id)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "paperplane.fill")
-                            Text("Luncurkan Agen di Git Worktree")
-                        }
-                    }
-                    .buttonStyle(WorkstationPrimaryButtonStyle())
-                    .disabled(preflight.issueId.isEmpty)
+                    AgentLaunchButton(
+                        action: {
+                            executeAgentLaunch(preflight: preflight, messageId: msg.id)
+                        },
+                        disabled: preflight.issueId.isEmpty
+                    )
                 }
                 .padding(.top, 4)
             }
-            .padding(12)
+            .padding(14)
             .background(WorkstationTheme.card)
-            .cornerRadius(WorkstationTheme.Radius.medium)
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium)
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous)
                     .stroke(WorkstationTheme.border, lineWidth: 1)
             )
+            .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+        }
+    }
+
+    private struct AgentSettingCard: View {
+        let systemImage: String
+        let title: String
+        let description: String
+        @Binding var isOn: Bool
+        @State private var isHovered = false
+
+        var body: some View {
+            Button {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                    isOn.toggle()
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .center, spacing: 6) {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(isOn ? WorkstationTheme.accent : WorkstationTheme.textMuted)
+                        
+                        Text(title)
+                            .font(WorkstationTheme.Fonts.body(11.5, weight: .bold))
+                            .foregroundStyle(isOn ? WorkstationTheme.textPrimary : WorkstationTheme.textSecondary)
+                        
+                        Spacer()
+                        
+                        Circle()
+                            .fill(isOn ? WorkstationTheme.accent : Color.clear)
+                            .frame(width: 8, height: 8)
+                            .overlay(
+                                Circle()
+                                    .stroke(isOn ? WorkstationTheme.accent : WorkstationTheme.borderStrong, lineWidth: 1)
+                            )
+                    }
+
+                    Text(description)
+                        .font(WorkstationTheme.Fonts.body(9.5))
+                        .foregroundStyle(isOn ? WorkstationTheme.textSecondary : WorkstationTheme.textMuted)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.leading)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(isOn ? WorkstationTheme.hover : WorkstationTheme.cardAlt)
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                        .stroke(isOn ? WorkstationTheme.accent.opacity(0.3) : WorkstationTheme.borderSoft, lineWidth: 1)
+                )
+                .scaleEffect(isHovered ? 1.015 : 1.0)
+                .animation(.easeOut(duration: 0.15), value: isHovered)
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                isHovered = hovering
+            }
+        }
+    }
+
+    private struct AgentLaunchButton: View {
+        let action: () -> Void
+        let disabled: Bool
+        @State private var isHovered = false
+
+        var body: some View {
+            Button(action: action) {
+                HStack(spacing: 8) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 12, weight: .bold))
+                    Text("Luncurkan Agen di Git Worktree")
+                        .font(WorkstationTheme.Fonts.body(12.5, weight: .bold))
+                }
+                .foregroundStyle(disabled ? WorkstationTheme.textDisabled : Color.black)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .background(disabled ? WorkstationTheme.hover : (isHovered ? WorkstationTheme.accentHover : WorkstationTheme.accent))
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                        .stroke(disabled ? WorkstationTheme.borderSoft : WorkstationTheme.accentBorder, lineWidth: 1)
+                )
+                .shadow(color: disabled ? Color.clear : WorkstationTheme.accent.opacity(isHovered ? 0.35 : 0.2), radius: isHovered ? 8 : 4, x: 0, y: 2)
+                .scaleEffect(isHovered && !disabled ? 1.025 : 1.0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovered)
+            }
+            .buttonStyle(.plain)
+            .disabled(disabled)
+            .onHover { hovering in
+                isHovered = hovering
+            }
         }
     }
 
@@ -1625,6 +2011,7 @@ private struct CopilotMenuPopover: View {
 private struct CopilotIssueDraft: Identifiable, Equatable {
     let id = UUID()
     var isSelected = true
+    var isExpanded = false
     var title: String
     var description: String
     var implementationNotes: String
