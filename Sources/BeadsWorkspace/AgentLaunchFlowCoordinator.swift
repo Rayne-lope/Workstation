@@ -67,8 +67,19 @@ public final class AgentLaunchFlowCoordinator {
 
         if profile.shouldClaimIssue {
             guard let issueStore else { return nil }
-            guard await issueStore.claim(id: issue.id, assignee: profile.claimAssigneeToken) else {
-                return nil
+            let claimed = await issueStore.claim(id: issue.id, assignee: profile.claimAssigneeToken)
+            if !claimed {
+                // `bd update --claim` rejects issues that are already in_progress.
+                // When re-assigning to a different agent, fall back to a plain
+                // assignee update so the launch is not blocked.
+                if issue.status == "in_progress" {
+                    await issueStore.update(
+                        id: issue.id,
+                        UpdateIssueInput(assignee: profile.claimAssigneeToken ?? "")
+                    )
+                } else {
+                    return nil
+                }
             }
             if clearHumanReviewLabel {
                 guard await issueStore.clearHumanReview(id: issue.id) else {

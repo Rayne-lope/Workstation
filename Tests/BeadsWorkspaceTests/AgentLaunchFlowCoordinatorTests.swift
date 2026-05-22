@@ -271,7 +271,7 @@ struct AgentLaunchFlowCoordinatorTests {
         #expect(launcher.calls.isEmpty)
     }
 
-    @Test("claim failure blocks label clearing and launch session")
+    @Test("claim failure blocks label clearing and launch session for open issues")
     func claimFailureBlocksTakeover() async throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("agent-claim-failure \(UUID().uuidString)", isDirectory: true)
@@ -292,18 +292,65 @@ struct AgentLaunchFlowCoordinatorTests {
             exitCode: 1
         )
 
+        // sampleIssue() is status=open, so claim failure should block launch.
+        let session = await coordinator.prepareLaunchSession(
+            for: sampleIssue(),
+            profile: sampleProfile(),
+            projectPath: folder.path,
+            issueStore: issueStore,
+            clearHumanReviewLabel: false
+        )
+
+        #expect(session == nil)
+        #expect(historyStore.records.isEmpty)
+        #expect(launcher.calls.isEmpty)
+    }
+
+    @Test("claim failure on in_progress issue falls back to assignee update and launches")
+    func claimFailureFallsBackToAssigneeUpdate() async throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("agent-reassign \(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let clock = MutableClock()
+        clock.now = Date(timeIntervalSince1970: 275)
+        let runner = StubCommandRunner()
+        let launcher = StubTerminalLauncher()
+        let (coordinator, historyStore, _, _, _) = makeCoordinator(clock: clock, runner: runner, launcher: launcher)
+        let issueStore = IssueStore(
+            service: BeadsService(commandRunner: runner),
+            workingDirectory: folder,
+            doneVisibilityWindow: 0,
+            now: { clock.now }
+        )
+
+        // Claim fails because the issue is already in_progress
+        runner.enqueue(
+            arguments: ["update", "bd-123", "--claim", "--assignee", "claude", "--json"],
+            stderr: "Error claiming bd-123: issue not claimable: status in_progress",
+            exitCode: 1
+        )
+        // Fallback: plain assignee update succeeds
+        runner.enqueue(
+            arguments: ["update", "bd-123", "--assignee", "claude", "--json"],
+            stdout: #"[{"id":"bd-123","title":"Warn before agent launch","status":"in_progress","assignee":"claude"}]"#
+        )
+        runner.enqueue(arguments: ["list", "--json"], stdout: AgentLaunchFlowCoordinatorTests.sampleListFixture())
+        runner.enqueue(arguments: ["ready", "--json"], stdout: "[]")
+
+        // sampleReviewIssue() has status=in_progress
         let session = await coordinator.prepareLaunchSession(
             for: sampleReviewIssue(),
             profile: sampleProfile(),
             projectPath: folder.path,
-            issueStore: issueStore,
-            clearHumanReviewLabel: true
+            issueStore: issueStore
         )
 
-        #expect(session == nil)
-        #expect(!runner.calls.contains { $0.arguments == ["update", "bd-123", "--remove-label", "human", "--json"] })
-        #expect(historyStore.records.isEmpty)
-        #expect(launcher.calls.isEmpty)
+        #expect(session != nil)
+        #expect(runner.calls.contains { $0.arguments == ["update", "bd-123", "--assignee", "claude", "--json"] })
+        #expect(historyStore.records.count == 1)
+        #expect(historyStore.records.first?.status == .prepared)
     }
 
     @Test("human label clear failure blocks launch session")
