@@ -138,7 +138,27 @@ struct BoardView: View {
                 .buttonStyle(WorkstationPrimaryButtonStyle())
                 .keyboardShortcut("n", modifiers: [.command])
 
-IssueFilterBarView(
+                if appVM.localAISettings.isEnabled {
+                    if appVM.detailPaneMode == .copilot {
+                        Button {
+                            appVM.resetDetailPaneToIssue()
+                        } label: {
+                            Label("Copilot", systemImage: "sparkles")
+                        }
+                        .buttonStyle(WorkstationPrimaryButtonStyle())
+                        .keyboardShortcut("k", modifiers: [.command])
+                    } else {
+                        Button {
+                            appVM.showCopilotPane()
+                        } label: {
+                            Label("Copilot", systemImage: "sparkles")
+                        }
+                        .buttonStyle(WorkstationGhostButtonStyle())
+                        .keyboardShortcut("k", modifiers: [.command])
+                    }
+                }
+
+                IssueFilterBarView(
                     store: store,
                     onClearAll: { store.clearFilters() }
                 )
