@@ -1,0 +1,15 @@
+{
+  "activeInterval" : {
+    "id" : "E5EFBF34-2372-4C9D-B6BA-1F43AA7A2044",
+    "startedAt" : "2026-05-22T07:01:06Z"
+  },
+  "completedIntervals" : [
+    {
+      "endedAt" : "2026-05-22T07:01:00Z",
+      "id" : "42B77976-0F99-43D1-A319-A82AA27D6E40",
+      "startedAt" : "2026-05-22T07:00:47Z"
+    }
+  ],
+  "issueID" : "Workstation-pyn",
+  "totalPauseMs" : 0
+}

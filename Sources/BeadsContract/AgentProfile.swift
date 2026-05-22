@@ -3,6 +3,11 @@ import Foundation
 public enum AgentAvatarKind: String, Codable, CaseIterable, Identifiable, Sendable, Hashable {
     case codex
     case claude
+    case kimi
+    case zhipu
+    case gemini
+    case deepseek
+    case minimax
     case other
     case initials
 
@@ -14,6 +19,16 @@ public enum AgentAvatarKind: String, Codable, CaseIterable, Identifiable, Sendab
             return "CX"
         case .claude:
             return "CL"
+        case .kimi:
+            return "KI"
+        case .zhipu:
+            return "ZH"
+        case .gemini:
+            return "GE"
+        case .deepseek:
+            return "DS"
+        case .minimax:
+            return "MM"
         case .other:
             return "AI"
         case .initials:
@@ -87,6 +102,11 @@ public extension AgentProfile {
     static let reviewerID = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
     static let testerID = UUID(uuidString: "44444444-4444-4444-4444-444444444444")!
     static let codexExecutorID = UUID(uuidString: "55555555-5555-5555-5555-555555555555")!
+    static let kimiExecutorID = UUID(uuidString: "66666666-6666-6666-6666-666666666666")!
+    static let zhipuExecutorID = UUID(uuidString: "77777777-7777-7777-7777-777777777777")!
+    static let geminiExecutorID = UUID(uuidString: "88888888-8888-8888-8888-888888888888")!
+    static let deepseekExecutorID = UUID(uuidString: "99999999-9999-9999-9999-999999999999")!
+    static let minimaxExecutorID = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!
 
     static let builtInProfiles: [AgentProfile] = [
         AgentProfile(
@@ -121,6 +141,71 @@ public extension AgentProfile {
             command: "codex",
             commandArgsTemplate: "--dangerously-bypass-approvals-and-sandbox \"{{prompt}}\"",
             avatarKind: .codex,
+            canExecuteCode: true,
+            shouldClaimIssue: true,
+            shouldCloseIssue: false,
+            shouldRequestHumanReview: true,
+            isBuiltIn: true
+        ),
+        AgentProfile(
+            id: kimiExecutorID,
+            name: "Kimi Code Executor",
+            role: .codingExecutor,
+            command: "opencode",
+            commandArgsTemplate: "run -m opencode-go/kimi-k2.5 \"{{prompt}}\"",
+            avatarKind: .kimi,
+            canExecuteCode: true,
+            shouldClaimIssue: true,
+            shouldCloseIssue: false,
+            shouldRequestHumanReview: true,
+            isBuiltIn: true
+        ),
+        AgentProfile(
+            id: zhipuExecutorID,
+            name: "Zhipu Code Executor",
+            role: .codingExecutor,
+            command: "opencode",
+            commandArgsTemplate: "run -m opencode-go/glm-5 \"{{prompt}}\"",
+            avatarKind: .zhipu,
+            canExecuteCode: true,
+            shouldClaimIssue: true,
+            shouldCloseIssue: false,
+            shouldRequestHumanReview: true,
+            isBuiltIn: true
+        ),
+        AgentProfile(
+            id: geminiExecutorID,
+            name: "Gemini Code Executor",
+            role: .codingExecutor,
+            command: "agy",
+            commandArgsTemplate: "-i --dangerously-skip-permissions \"{{prompt}}\"",
+            avatarKind: .gemini,
+            canExecuteCode: true,
+            shouldClaimIssue: true,
+            shouldCloseIssue: false,
+            shouldRequestHumanReview: true,
+            isBuiltIn: true
+        ),
+        AgentProfile(
+            id: deepseekExecutorID,
+            name: "DeepSeek Code Executor",
+            role: .codingExecutor,
+            command: "opencode",
+            commandArgsTemplate: "run -m opencode-go/deepseek-v4-flash \"{{prompt}}\"",
+            avatarKind: .deepseek,
+            canExecuteCode: true,
+            shouldClaimIssue: true,
+            shouldCloseIssue: false,
+            shouldRequestHumanReview: true,
+            isBuiltIn: true
+        ),
+        AgentProfile(
+            id: minimaxExecutorID,
+            name: "MiniMax Code Executor",
+            role: .codingExecutor,
+            command: "opencode",
+            commandArgsTemplate: "run -m opencode-go/minimax-m2.5 \"{{prompt}}\"",
+            avatarKind: .minimax,
             canExecuteCode: true,
             shouldClaimIssue: true,
             shouldCloseIssue: false,
@@ -167,7 +252,7 @@ public extension String {
 public extension AgentProfile {
     var avatarMonogram: String {
         switch avatarKind {
-        case .codex, .claude, .other:
+        case .codex, .claude, .kimi, .zhipu, .gemini, .deepseek, .minimax, .other:
             return avatarKind.fallbackMonogram
         case .initials:
             return name.beadsAvatarInitial
@@ -188,6 +273,16 @@ public extension AgentProfile {
             return builtInProfiles.first { $0.id == codingExecutorID }
         case .codex:
             return builtInProfiles.first { $0.id == codexExecutorID }
+        case .kimi:
+            return builtInProfiles.first { $0.id == kimiExecutorID }
+        case .zhipu:
+            return builtInProfiles.first { $0.id == zhipuExecutorID }
+        case .gemini:
+            return builtInProfiles.first { $0.id == geminiExecutorID }
+        case .deepseek:
+            return builtInProfiles.first { $0.id == deepseekExecutorID }
+        case .minimax:
+            return builtInProfiles.first { $0.id == minimaxExecutorID }
         case .other:
             return builtInProfiles.first { $0.canExecuteCode && $0.avatarKind == .other }
                 ?? builtInProfiles.first { $0.id == codingExecutorID }
@@ -204,6 +299,16 @@ public extension AgentAvatarKind {
             return "claude"
         case .codex:
             return "codex"
+        case .kimi:
+            return "kimi"
+        case .zhipu:
+            return "zhipu"
+        case .gemini:
+            return "gemini"
+        case .deepseek:
+            return "deepseek"
+        case .minimax:
+            return "minimax"
         case .other, .initials:
             return "other"
         }

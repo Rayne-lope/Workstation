@@ -48,11 +48,52 @@ struct AssigneeAvatarResolverTests {
             #expect(avatar?.label == token)
         }
 
-        for token in ["other", "Other", "gemini", "gpt", "llm", "bot", "agent"] {
+        for token in ["other", "Other", "gpt", "llm", "bot", "agent"] {
             let avatar = resolver.resolve(assignee: token, profiles: profiles)
             #expect(avatar?.kind == .other, "token=\(token)")
             #expect(avatar?.label == token)
             #expect(avatar?.monogram == "AI")
+        }
+    }
+
+    @Test("New brand tokens resolve to their respective avatar kinds")
+    func resolvesNewBrandTokens() {
+        let resolver = AssigneeAvatarResolver()
+        let profiles = AgentProfile.builtInProfiles
+
+        for token in ["kimi", "Kimi", "moonshot"] {
+            let avatar = resolver.resolve(assignee: token, profiles: profiles)
+            #expect(avatar?.kind == .kimi, "token=\(token)")
+            #expect(avatar?.label == token)
+            #expect(avatar?.monogram == "KI")
+        }
+
+        for token in ["zhipu", "Zhipu", "glm", "chatglm"] {
+            let avatar = resolver.resolve(assignee: token, profiles: profiles)
+            #expect(avatar?.kind == .zhipu, "token=\(token)")
+            #expect(avatar?.label == token)
+            #expect(avatar?.monogram == "ZH")
+        }
+
+        for token in ["gemini", "Gemini", "google"] {
+            let avatar = resolver.resolve(assignee: token, profiles: profiles)
+            #expect(avatar?.kind == .gemini, "token=\(token)")
+            #expect(avatar?.label == token)
+            #expect(avatar?.monogram == "GE")
+        }
+
+        for token in ["deepseek", "DeepSeek", "deep-seek"] {
+            let avatar = resolver.resolve(assignee: token, profiles: profiles)
+            #expect(avatar?.kind == .deepseek, "token=\(token)")
+            #expect(avatar?.label == token)
+            #expect(avatar?.monogram == "DS")
+        }
+
+        for token in ["minimax", "MiniMax", "mini-max"] {
+            let avatar = resolver.resolve(assignee: token, profiles: profiles)
+            #expect(avatar?.kind == .minimax, "token=\(token)")
+            #expect(avatar?.label == token)
+            #expect(avatar?.monogram == "MM")
         }
     }
 

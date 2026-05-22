@@ -200,14 +200,10 @@ struct IssueDetailView: View {
 
     private var assigneeMenuLabel: some View {
         Menu {
-            Button("Claude (assign + launch)") {
-                appVM.assignAndLaunchIfExecutor(for: issue, assignee: "claude")
-            }
-            Button("Codex (assign + launch)") {
-                appVM.assignAndLaunchIfExecutor(for: issue, assignee: "codex")
-            }
-            Button("Other AI (assign + launch)") {
-                appVM.assignAndLaunchIfExecutor(for: issue, assignee: "other")
+            ForEach(AgentProfile.builtInProfiles.filter { $0.role == .codingExecutor }, id: \.id) { profile in
+                Button("\(profile.name) (assign + launch)") {
+                    appVM.assignAndLaunchIfExecutor(for: issue, assignee: profile.claimAssigneeToken)
+                }
             }
             Divider()
             Button("Me") {

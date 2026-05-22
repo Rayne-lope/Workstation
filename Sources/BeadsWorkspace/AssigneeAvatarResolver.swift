@@ -59,12 +59,32 @@ public struct AssigneeAvatarResolver: Sendable {
         let token = staticNormalized(raw)
         let claudeAliases = ["claude", "claude-code", "claude_code", "anthropic"]
         let codexAliases = ["codex", "openai-codex", "openai"]
-        let otherAliases = ["other", "gemini", "gpt", "llm", "bot", "ai-other", "agent"]
+        let kimiAliases = ["kimi", "moonshot"]
+        let zhipuAliases = ["zhipu", "glm", "chatglm"]
+        let geminiAliases = ["gemini", "google"]
+        let deepseekAliases = ["deepseek", "deep-seek"]
+        let minimaxAliases = ["minimax", "mini-max"]
+        let otherAliases = ["other", "gpt", "llm", "bot", "ai-other", "agent"]
         if claudeAliases.contains(where: { token == $0 || token.contains($0) }) {
             return .claude
         }
         if codexAliases.contains(where: { token == $0 || token.contains($0) }) {
             return .codex
+        }
+        if kimiAliases.contains(where: { token == $0 || token.contains($0) }) {
+            return .kimi
+        }
+        if zhipuAliases.contains(where: { token == $0 || token.contains($0) }) {
+            return .zhipu
+        }
+        if geminiAliases.contains(where: { token == $0 || token.contains($0) }) {
+            return .gemini
+        }
+        if deepseekAliases.contains(where: { token == $0 || token.contains($0) }) {
+            return .deepseek
+        }
+        if minimaxAliases.contains(where: { token == $0 || token.contains($0) }) {
+            return .minimax
         }
         if otherAliases.contains(where: { token == $0 || token.contains($0) }) {
             return .other

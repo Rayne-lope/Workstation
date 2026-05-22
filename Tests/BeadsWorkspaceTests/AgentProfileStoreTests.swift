@@ -13,11 +13,11 @@ struct AgentProfileStoreTests {
         return (defaults, suiteName)
     }
 
-    @Test("Initial load exposes the five built-in profiles")
+    @Test("Initial load exposes all built-in profiles")
     func initialLoadExposesBuiltIns() {
         let (defaults, _) = makeDefaults()
         let store = AgentProfileStore(userDefaults: defaults)
-        #expect(store.profiles.count == 5)
+        #expect(store.profiles.count == 10)
         let allBuiltIn = store.profiles.allSatisfy { $0.isBuiltIn }
         #expect(allBuiltIn)
     }
@@ -35,11 +35,11 @@ struct AgentProfileStoreTests {
         )
         store.addProfile(custom)
 
-        #expect(store.profiles.count == 6)
+        #expect(store.profiles.count == 11)
         #expect(store.profiles.contains { $0.id == custom.id })
 
         let reloaded = AgentProfileStore(userDefaults: defaults)
-        #expect(reloaded.profiles.count == 6)
+        #expect(reloaded.profiles.count == 11)
         #expect(reloaded.profiles.contains { $0.id == custom.id && !$0.isBuiltIn })
     }
 
@@ -52,7 +52,7 @@ struct AgentProfileStoreTests {
         store.deleteProfile(id: builtIn.id)
 
         #expect(store.profiles.contains { $0.id == builtIn.id })
-        #expect(store.profiles.count == 5)
+        #expect(store.profiles.count == 10)
     }
 
     @Test("Deleting a custom profile removes it and clears persistence")
@@ -67,7 +67,7 @@ struct AgentProfileStoreTests {
 
         let reloaded = AgentProfileStore(userDefaults: defaults)
         #expect(!reloaded.profiles.contains { $0.id == custom.id })
-        #expect(reloaded.profiles.count == 5)
+        #expect(reloaded.profiles.count == 10)
     }
 
     @Test("Updating a built-in profile mutates in-memory but does not persist")
@@ -108,16 +108,16 @@ struct AgentProfileStoreTests {
         let store = AgentProfileStore(userDefaults: defaults)
         store.addProfile(AgentProfile(name: "C1", role: .custom, command: "x"))
         store.addProfile(AgentProfile(name: "C2", role: .custom, command: "y"))
-        #expect(store.profiles.count == 7)
+        #expect(store.profiles.count == 12)
 
         store.resetToDefaults()
 
-        #expect(store.profiles.count == 5)
+        #expect(store.profiles.count == 10)
         let allBuiltIn = store.profiles.allSatisfy { $0.isBuiltIn }
         #expect(allBuiltIn)
 
         let reloaded = AgentProfileStore(userDefaults: defaults)
-        #expect(reloaded.profiles.count == 5)
+        #expect(reloaded.profiles.count == 10)
     }
 
     @Test("loadProfiles dedupes persisted entries whose id collides with a built-in")
@@ -136,7 +136,7 @@ struct AgentProfileStoreTests {
 
         let store = AgentProfileStore(userDefaults: defaults)
 
-        #expect(store.profiles.count == 6)
+        #expect(store.profiles.count == 11)
         let withSpecWriterID = store.profiles.filter { $0.id == AgentProfile.specWriterID }
         #expect(withSpecWriterID.count == 1)
         #expect(withSpecWriterID.first?.isBuiltIn == true)
@@ -154,7 +154,7 @@ struct AgentProfileStoreTests {
 
         let store = AgentProfileStore(userDefaults: defaults)
 
-        #expect(store.profiles.count == 6)
+        #expect(store.profiles.count == 11)
         let withSharedID = store.profiles.filter { $0.id == sharedID }
         #expect(withSharedID.count == 1)
         #expect(withSharedID.first?.name == "First")
@@ -186,7 +186,7 @@ struct AgentProfileStoreTests {
 
         let store = AgentProfileStore(userDefaults: defaults)
 
-        #expect(store.profiles.count == 5)
+        #expect(store.profiles.count == 10)
         let allBuiltIn = store.profiles.allSatisfy { $0.isBuiltIn }
         #expect(allBuiltIn)
         #expect(store.errorMessage != nil)
@@ -293,7 +293,7 @@ struct AgentProfileStoreTests {
         #expect(store.errorMessage == nil)
     }
 
-    @Test("executorProfile resolves claude/codex tokens to built-in executors")
+    @Test("executorProfile resolves all AI tokens to built-in executors")
     func executorProfileResolvesAIAssignees() {
         let (defaults, _) = makeDefaults()
         let store = AgentProfileStore(userDefaults: defaults)
@@ -304,6 +304,21 @@ struct AgentProfileStoreTests {
 
         let codex = store.executorProfile(forAssignee: "Codex")
         #expect(codex?.id == AgentProfile.codexExecutorID)
+
+        let kimi = store.executorProfile(forAssignee: "kimi")
+        #expect(kimi?.id == AgentProfile.kimiExecutorID)
+
+        let zhipu = store.executorProfile(forAssignee: "zhipu")
+        #expect(zhipu?.id == AgentProfile.zhipuExecutorID)
+
+        let gemini = store.executorProfile(forAssignee: "gemini")
+        #expect(gemini?.id == AgentProfile.geminiExecutorID)
+
+        let deepseek = store.executorProfile(forAssignee: "deepseek")
+        #expect(deepseek?.id == AgentProfile.deepseekExecutorID)
+
+        let minimax = store.executorProfile(forAssignee: "minimax")
+        #expect(minimax?.id == AgentProfile.minimaxExecutorID)
 
         let other = store.executorProfile(forAssignee: "other")
         #expect(other?.canExecuteCode == true)
@@ -329,5 +344,13 @@ struct AgentProfileStoreTests {
         let claude = store.executorProfile(forAssignee: "claude")
         #expect(claude?.shouldClaimIssue == true)
         #expect(claude?.claimAssigneeToken == "claude")
+
+        let deepseek = store.executorProfile(forAssignee: "deepseek")
+        #expect(deepseek?.shouldClaimIssue == true)
+        #expect(deepseek?.claimAssigneeToken == "deepseek")
+
+        let gemini = store.executorProfile(forAssignee: "gemini")
+        #expect(gemini?.shouldClaimIssue == true)
+        #expect(gemini?.claimAssigneeToken == "gemini")
     }
 }

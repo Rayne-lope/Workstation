@@ -1,0 +1,11 @@
+{
+  "completedIntervals" : [
+    {
+      "endedAt" : "2026-05-22T07:01:06Z",
+      "id" : "AD45F69B-C84D-4FA9-8B6E-0047AA8A6805",
+      "startedAt" : "2026-05-22T07:01:00Z"
+    }
+  ],
+  "issueID" : "Workstation-m6n",
+  "totalPauseMs" : 0
+}

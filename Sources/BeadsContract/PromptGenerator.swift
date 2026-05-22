@@ -77,6 +77,11 @@ public struct PromptGenerator: Sendable {
         Constraints:
         - Stay scoped to the feedback above; do not introduce unrelated refactors.
         - If feedback is ambiguous, leave a `bd update \(issue.id) --notes=...` question and stop.
+        - Rules for completion `--notes` summary (MANDATORY):
+          * The notes MUST be written in Indonesian (Bahasa Indonesia).
+          * Do NOT just write a generic "implementation complete" or list files changed.
+          * You MUST explain exactly where the new/changed elements are located in the UI (e.g., which sidebar, button, screen, or menu item) so the user knows where to find them.
+          * You MUST provide a clear, step-by-step manual testing guide in the notes explaining how the user can test and verify the change in the app.
         """
     }
 
@@ -116,7 +121,11 @@ public struct PromptGenerator: Sendable {
 
         Assignee convention:
         - Use `claude` for Claude Code Executor.
-        - Use `codex` for Codex Code Executor.
+        - Use `kimi` for Kimi (Moonshot AI).
+        - Use `zhipu` for Zhipu (GLM).
+        - Use `gemini` for Gemini (Google).
+        - Use `deepseek` for DeepSeek.
+        - Use `minimax` for MiniMax.
         - Use `other` for any other AI executor so the robot badge appears in the UI.
         - Human assignees should keep their actual name or initials; do not relabel them as `other`.
         """
@@ -150,10 +159,19 @@ public struct PromptGenerator: Sendable {
         Constraints:
         - Follow project conventions; do not introduce unrelated refactors.
         - If a blocker appears, leave a note via `bd update \(issue.id) --notes=...` and stop instead of guessing.
+        - Rules for completion `--notes` / `--reason` summary (MANDATORY):
+          * The notes/reason MUST be written in Indonesian (Bahasa Indonesia).
+          * Do NOT just write a generic "implementation complete" or list files changed.
+          * You MUST explain exactly where the new/changed elements are located in the UI (e.g., which sidebar, button, screen, or menu item) so the user knows where to find them.
+          * You MUST provide a clear, step-by-step manual testing guide in the notes explaining how the user can test and verify the change in the app.
 
         Assignee convention:
         - Use `claude` for Claude Code Executor.
-        - Use `codex` for Codex Code Executor.
+        - Use `kimi` for Kimi (Moonshot AI).
+        - Use `zhipu` for Zhipu (GLM).
+        - Use `gemini` for Gemini (Google).
+        - Use `deepseek` for DeepSeek.
+        - Use `minimax` for MiniMax.
         - Use `other` for any other AI executor so the robot badge appears in the UI.
         - Human assignees should keep their actual name or initials; do not relabel them as `other`.
         """
@@ -180,7 +198,11 @@ public struct PromptGenerator: Sendable {
 
         Assignee convention:
         - Use `claude` for Claude Code Executor.
-        - Use `codex` for Codex Code Executor.
+        - Use `kimi` for Kimi (Moonshot AI).
+        - Use `zhipu` for Zhipu (GLM).
+        - Use `gemini` for Gemini (Google).
+        - Use `deepseek` for DeepSeek.
+        - Use `minimax` for MiniMax.
         - Use `other` for any other AI executor so the robot badge appears in the UI.
         - Human assignees should keep their actual name or initials; do not relabel them as `other`.
         """
@@ -207,7 +229,11 @@ public struct PromptGenerator: Sendable {
 
         Assignee convention:
         - Use `claude` for Claude Code Executor.
-        - Use `codex` for Codex Code Executor.
+        - Use `kimi` for Kimi (Moonshot AI).
+        - Use `zhipu` for Zhipu (GLM).
+        - Use `gemini` for Gemini (Google).
+        - Use `deepseek` for DeepSeek.
+        - Use `minimax` for MiniMax.
         - Use `other` for any other AI executor so the robot badge appears in the UI.
         - Human assignees should keep their actual name or initials; do not relabel them as `other`.
         """
@@ -227,7 +253,11 @@ public struct PromptGenerator: Sendable {
 
     Assignee convention:
     - Use `claude` for Claude Code Executor.
-    - Use `codex` for Codex Code Executor.
+    - Use `kimi` for Kimi (Moonshot AI).
+    - Use `zhipu` for Zhipu (GLM).
+    - Use `gemini` for Gemini (Google).
+    - Use `deepseek` for DeepSeek.
+    - Use `minimax` for MiniMax.
     - Use `other` for any other AI executor so the robot badge appears in the UI.
     - Human assignees should keep their actual name or initials; do not relabel them as `other`.
     """

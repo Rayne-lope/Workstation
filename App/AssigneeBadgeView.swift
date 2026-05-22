@@ -68,6 +68,51 @@ struct AssigneeBadgeView: View {
                 )
                 .clipped()
                 .accessibilityLabel("Claude")
+        case .kimi:
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(backgroundColor(for: descriptor.kind))
+                .frame(width: size, height: size)
+                .overlay(
+                    avatarImage(name: "kimi", fallbackSystemImage: "moon.stars.fill", kind: descriptor.kind, iconSize: iconSize)
+                )
+                .clipped()
+                .accessibilityLabel("Kimi")
+        case .zhipu:
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(backgroundColor(for: descriptor.kind))
+                .frame(width: size, height: size)
+                .overlay(
+                    avatarImage(name: "glm", fallbackSystemImage: "cube.fill", kind: descriptor.kind, iconSize: iconSize)
+                )
+                .clipped()
+                .accessibilityLabel("Zhipu")
+        case .gemini:
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(backgroundColor(for: descriptor.kind))
+                .frame(width: size, height: size)
+                .overlay(
+                    avatarImage(name: "gemini", fallbackSystemImage: "diamond.fill", kind: descriptor.kind, iconSize: iconSize)
+                )
+                .clipped()
+                .accessibilityLabel("Gemini")
+        case .deepseek:
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(backgroundColor(for: descriptor.kind))
+                .frame(width: size, height: size)
+                .overlay(
+                    avatarImage(name: "deepseek", fallbackSystemImage: "water.waves", kind: descriptor.kind, iconSize: iconSize)
+                )
+                .clipped()
+                .accessibilityLabel("DeepSeek")
+        case .minimax:
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(backgroundColor(for: descriptor.kind))
+                .frame(width: size, height: size)
+                .overlay(
+                    avatarImage(name: "minimax", fallbackSystemImage: "arrow.up.forward", kind: descriptor.kind, iconSize: iconSize)
+                )
+                .clipped()
+                .accessibilityLabel("MiniMax")
         case .other:
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(backgroundColor(for: descriptor.kind))
@@ -140,6 +185,21 @@ struct AssigneeBadgeView: View {
         case .claude:
             // dark: deep gold  |  light: soft amber
             return adaptive(light: "FEFCE8", dark: "1A1608")
+        case .kimi:
+            // dark: deep indigo  |  light: soft lavender
+            return adaptive(light: "F5F3FF", dark: "1A1030")
+        case .zhipu:
+            // dark: deep cyan  |  light: soft cyan
+            return adaptive(light: "ECFEFF", dark: "0A1A1F")
+        case .gemini:
+            // dark: deep blue  |  light: soft blue
+            return adaptive(light: "EFF6FF", dark: "0F172A")
+        case .deepseek:
+            // dark: deep ocean  |  light: soft teal
+            return adaptive(light: "F0FDFA", dark: "0A1F1A")
+        case .minimax:
+            // dark: deep rose  |  light: soft rose
+            return adaptive(light: "FFF1F2", dark: "1A0A0F")
         case .other:
             // dark: deep indigo  |  light: soft lavender
             return adaptive(light: "FAF5FF", dark: "1A0F1A")
@@ -154,6 +214,16 @@ struct AssigneeBadgeView: View {
             return adaptive(light: "BFDBFE", dark: "0F2535")
         case .claude:
             return adaptive(light: "FDE68A", dark: "3A2F0A")
+        case .kimi:
+            return adaptive(light: "DDD6FE", dark: "2E1A5C")
+        case .zhipu:
+            return adaptive(light: "A5F3FC", dark: "0F2E35")
+        case .gemini:
+            return adaptive(light: "BFDBFE", dark: "1E3A5F")
+        case .deepseek:
+            return adaptive(light: "99F6E4", dark: "0F3528")
+        case .minimax:
+            return adaptive(light: "FECDD3", dark: "3E1A1A")
         case .other:
             return adaptive(light: "E9D5FF", dark: "2E1A40")
         case .initials:
@@ -182,6 +252,16 @@ struct AssigneeBadgeView: View {
             return WorkstationTheme.blue
         case .claude:
             return WorkstationTheme.accent
+        case .kimi:
+            return adaptive(light: "7C3AED", dark: "A78BFA")
+        case .zhipu:
+            return adaptive(light: "0891B2", dark: "22D3EE")
+        case .gemini:
+            return adaptive(light: "3B82F6", dark: "60A5FA")
+        case .deepseek:
+            return adaptive(light: "14B8A6", dark: "2DD4BF")
+        case .minimax:
+            return adaptive(light: "F43F5E", dark: "FB7185")
         case .other:
             return WorkstationTheme.purple
         case .initials:
