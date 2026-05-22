@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		011C93431FCCA7053C284A94 /* AgentProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36B596B1328FF83B1D609B6 /* AgentProfile.swift */; };
 		05E8175A662EEB417358B87C /* WorkspaceCheckState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14069CE24B8C10020B9420B2 /* WorkspaceCheckState.swift */; };
+		06933AF50A581C769D22601F /* CopilotTranscriptStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3DD32D6387F9A782FF7253 /* CopilotTranscriptStore.swift */; };
 		08068BBDC8098F7EFB4922F1 /* KanbanColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9AE6DEA5AB2C1092356E825 /* KanbanColumn.swift */; };
 		09CA36970E9B9FC9CD27EB5F /* LocalAIConnectionTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = 288D0C65A25FE0A694A13C38 /* LocalAIConnectionTester.swift */; };
 		0B488A231AC33111C0EBAC0D /* IssueFilterBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 876B61BCEC422CC1BB78AA8A /* IssueFilterBarView.swift */; };
@@ -58,6 +59,7 @@
 		695395B3EBB5BFCB9F06BFAF /* GitStatusService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172FE67FF2659FDC69E0219B /* GitStatusService.swift */; };
 		6BD8C5767952D36C7B0389C1 /* WorkspaceSelectionError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 383BDACAF164837CF4EB3ADF /* WorkspaceSelectionError.swift */; };
 		6BFBF339D5AE113AFB0DA695 /* RecurringMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 412453999B9BCF926556D33A /* RecurringMetadata.swift */; };
+		6D6C3D77519F013AC2FA29C3 /* CopilotConversationMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13DC880F7A30532C29D6BA48 /* CopilotConversationMessage.swift */; };
 		70CA64E17C8D701EEFF4BDA8 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F90C5592382B08D28A3542C /* QuickCaptureView.swift */; };
 		7583EF6A6296E9AB3FA7B559 /* KanbanDropResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC94C6308D78DB176B7985FD /* KanbanDropResolver.swift */; };
 		76BD4EE012530E48A842154F /* kimi.png in Resources */ = {isa = PBXBuildFile; fileRef = 6E60E1C601C7A50525BBB2CF /* kimi.png */; };
@@ -139,6 +141,7 @@
 		0D10F2A90FA1A49C77E291F2 /* WorkspaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewModel.swift; sourceTree = "<group>"; };
 		0EB07A4DAE97C487B1BBB698 /* AgentRunTranscriptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunTranscriptStore.swift; sourceTree = "<group>"; };
 		0ECE704832A64B678F0BB590 /* DebugPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPanelView.swift; sourceTree = "<group>"; };
+		13DC880F7A30532C29D6BA48 /* CopilotConversationMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopilotConversationMessage.swift; sourceTree = "<group>"; };
 		14069CE24B8C10020B9420B2 /* WorkspaceCheckState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCheckState.swift; sourceTree = "<group>"; };
 		172FE67FF2659FDC69E0219B /* GitStatusService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusService.swift; sourceTree = "<group>"; };
 		19B349ADD57DB191D4A95184 /* Syne-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Syne-Variable.ttf"; sourceTree = "<group>"; };
@@ -208,6 +211,7 @@
 		A058CE86AB9D21A90D4AC4A4 /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
 		A426C3CF17A97D5D9A653E94 /* StatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarView.swift; sourceTree = "<group>"; };
 		A9D17E8ECAB8F8236106375E /* AgentRunPromptPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunPromptPreviewView.swift; sourceTree = "<group>"; };
+		AB3DD32D6387F9A782FF7253 /* CopilotTranscriptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopilotTranscriptStore.swift; sourceTree = "<group>"; };
 		ACB1EB4ED6437C458FE5DD39 /* BoardSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardSidebarView.swift; sourceTree = "<group>"; };
 		ADDBF01581D478F869789EFA /* RecentProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentProject.swift; sourceTree = "<group>"; };
 		B01758201DDED6F10E09FA31 /* BadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeView.swift; sourceTree = "<group>"; };
@@ -299,6 +303,8 @@
 				7B9D720E12CC0C5AB38C73A5 /* BeadsService.swift */,
 				01BCFB88A153DA46E90B604B /* CommandResult.swift */,
 				3AD22E8AD06D83B420E333A0 /* CommandRunning.swift */,
+				13DC880F7A30532C29D6BA48 /* CopilotConversationMessage.swift */,
+				AB3DD32D6387F9A782FF7253 /* CopilotTranscriptStore.swift */,
 				FBAA02860BC78ECF5A22D762 /* CreateIssueInput.swift */,
 				072B084321C41D7E7A900DF0 /* FocusSession.swift */,
 				29E75029744ADEBC7A72F65B /* FocusSessionStore.swift */,
@@ -541,6 +547,8 @@
 				90FCF8C268D3F27869C35625 /* CommandRunning.swift in Sources */,
 				E5362CA604F5B254AE646B6F /* CommandSnapshot.swift in Sources */,
 				0D93E1519EE3C02AC7C32036 /* ContentView.swift in Sources */,
+				6D6C3D77519F013AC2FA29C3 /* CopilotConversationMessage.swift in Sources */,
+				06933AF50A581C769D22601F /* CopilotTranscriptStore.swift in Sources */,
 				2EA7F5191EBFA5027636558A /* CreateIssueInput.swift in Sources */,
 				2E73D3EA428BEDD1D1F50226 /* CreateIssueSheet.swift in Sources */,
 				FEF2BD0CF88AD11189CC4372 /* DebugPanelView.swift in Sources */,

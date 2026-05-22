@@ -1,6 +1,9 @@
 import Combine
 import Foundation
 import Observation
+#if canImport(BeadsWorkspace)
+import BeadsWorkspace
+#endif
 
 enum BoardViewMode: String, CaseIterable, Identifiable, Hashable {
     case list
@@ -37,6 +40,7 @@ final class AppViewModel {
     let gitWorktreeService: GitWorktreeService
     let agentRunHistoryStore: AgentRunHistoryStore
     let agentRunTranscriptStore: AgentRunTranscriptStore
+    let copilotTranscriptStore: CopilotTranscriptStore
     let localAIConnectionTester: any LocalAIConnectionTesting
     let localAIService: LocalAIService
     private let terminalLauncher: any TerminalLaunching
@@ -90,6 +94,7 @@ final class AppViewModel {
         preferencesStore: PreferencesStore = PreferencesStore(),
         agentRunHistoryStore: AgentRunHistoryStore = AgentRunHistoryStore(),
         agentRunTranscriptStore: AgentRunTranscriptStore = AgentRunTranscriptStore(),
+        copilotTranscriptStore: CopilotTranscriptStore = CopilotTranscriptStore(),
         gitWorktreeService: GitWorktreeService? = nil,
         terminalLauncher: any TerminalLaunching = TerminalLauncherAdapter(),
         localAIConnectionTester: any LocalAIConnectionTesting = OpenCodeConnectionTester(),
@@ -102,6 +107,7 @@ final class AppViewModel {
         self.preferencesStore = preferencesStore
         self.agentRunHistoryStore = agentRunHistoryStore
         self.agentRunTranscriptStore = agentRunTranscriptStore
+        self.copilotTranscriptStore = copilotTranscriptStore
         self.localAIConnectionTester = localAIConnectionTester
         self.localAIService = localAIService
         self.terminalLauncher = terminalLauncher
