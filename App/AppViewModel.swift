@@ -5,12 +5,14 @@ import Observation
 enum BoardViewMode: String, CaseIterable, Identifiable, Hashable {
     case list
     case kanban
+    case workspaceDetail
 
     var id: String { rawValue }
     var label: String {
         switch self {
         case .list: return "List"
         case .kanban: return "Kanban"
+        case .workspaceDetail: return "Workspace"
         }
     }
 }

@@ -146,6 +146,7 @@ IssueFilterBarView(
             HStack(spacing: 26) {
                 viewModeTab(.kanban, systemName: "rectangle.grid.1x2")
                 viewModeTab(.list, systemName: "list.bullet")
+                viewModeTab(.workspaceDetail, systemName: "building.2")
 
                 Spacer()
 
@@ -205,6 +206,8 @@ IssueFilterBarView(
                 profiles: appVM.agentProfileStore.profiles,
                 onRequestClose: { appVM.presentCloseSheet(for: $0) }
             )
+        case .workspaceDetail:
+            WorkspaceDetailView(appVM: appVM, store: store)
         }
     }
 

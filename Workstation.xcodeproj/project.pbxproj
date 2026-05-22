@@ -110,7 +110,9 @@
 		F75F5048B5508E9CF98EACCC /* GitDirtyLaunchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 318566DC37E0E0C6C999E40A /* GitDirtyLaunchSheet.swift */; };
 		FD95960F5160696403B26C3F /* LocalAISuggestionPreviewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F061841017E55D4A9256432 /* LocalAISuggestionPreviewState.swift */; };
 		FEF2BD0CF88AD11189CC4372 /* DebugPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECE704832A64B678F0BB590 /* DebugPanelView.swift */; };
+		DF146769A83148B6AF750728 /* WorkspaceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081DF510D07740A49DB50F46 /* WorkspaceDetailView.swift */; };
 /* End PBXBuildFile section */
+
 
 /* Begin PBXFileReference section */
 		005A86C1888FE4CB8379B2BA /* GitWorktreeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitWorktreeService.swift; sourceTree = "<group>"; };
@@ -217,7 +219,9 @@
 		FBAA02860BC78ECF5A22D762 /* CreateIssueInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateIssueInput.swift; sourceTree = "<group>"; };
 		FE5282CF1F6FD222BC46AD2D /* robot_logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = robot_logo.png; sourceTree = "<group>"; };
 		FE6B7461351447EB9564CA77 /* GitStatusSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusSummary.swift; sourceTree = "<group>"; };
+		081DF510D07740A49DB50F46 /* WorkspaceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
 
 /* Begin PBXGroup section */
 		0495B83BEB7AF08FD78D0708 /* assets */ = {
@@ -375,8 +379,10 @@
 				BBDC927B1628B5CBBFE9E81D /* TerminalLauncher.swift */,
 				2A774C9D9CA5BFF52912BC2A /* WelcomeView.swift */,
 				0D10F2A90FA1A49C77E291F2 /* WorkspaceViewModel.swift */,
+				081DF510D07740A49DB50F46 /* WorkspaceDetailView.swift */,
 				BFE3A89F931C955C66A7FF25 /* WorkstationApp.swift */,
 			);
+
 			path = App;
 			sourceTree = "<group>";
 		};
@@ -551,6 +557,7 @@
 				D5F51CBD8693D12D523F1820 /* WorkspaceValidationState.swift in Sources */,
 				55A9D8A81FFE4BC80B1FF525 /* WorkspaceValidator.swift in Sources */,
 				C213EF1586BDC5E6CFA53574 /* WorkspaceViewModel.swift in Sources */,
+				DF146769A83148B6AF750728 /* WorkspaceDetailView.swift in Sources */,
 				7CACC40A360D066A86F3E575 /* WorkstationApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

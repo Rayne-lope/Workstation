@@ -164,6 +164,18 @@ struct BoardSidebarView: View {
             }
             .buttonStyle(SidebarNavButtonStyle(isActive: true))
             .keyboardShortcut("n", modifiers: [.command])
+
+            Divider()
+                .padding(.vertical, 2)
+                .overlay(WorkstationTheme.borderSoft)
+
+            Button {
+                appVM.viewMode = appVM.viewMode == .workspaceDetail ? .list : .workspaceDetail
+            } label: {
+                Label("Workspace Detail", systemImage: "building.2")
+            }
+            .buttonStyle(SidebarNavButtonStyle(isActive: appVM.viewMode == .workspaceDetail))
+            .help("View workspace statistics and overview")
         }
     }
 
