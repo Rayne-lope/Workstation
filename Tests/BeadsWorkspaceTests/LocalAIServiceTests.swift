@@ -200,6 +200,33 @@ struct LocalAIServiceTests {
             )
         }
     }
+
+    @Test("OpenCodeChatCompletionRequestBody strips opencode-go/ and opencode/ prefixes")
+    func requestBodyStripsPrefixes() throws {
+        let request1 = LocalAIRequest(
+            baseURL: URL(string: "https://opencode.ai/zen/go/v1")!,
+            model: "opencode-go/deepseek-v4-flash",
+            prompt: "test"
+        )
+        let body1 = OpenCodeChatCompletionRequestBody(from: request1)
+        #expect(body1.model == "deepseek-v4-flash")
+
+        let request2 = LocalAIRequest(
+            baseURL: URL(string: "https://opencode.ai/zen/go/v1")!,
+            model: "opencode/deepseek-v4-flash-free",
+            prompt: "test"
+        )
+        let body2 = OpenCodeChatCompletionRequestBody(from: request2)
+        #expect(body2.model == "deepseek-v4-flash-free")
+
+        let request3 = LocalAIRequest(
+            baseURL: URL(string: "https://opencode.ai/zen/go/v1")!,
+            model: "custom-model",
+            prompt: "test"
+        )
+        let body3 = OpenCodeChatCompletionRequestBody(from: request3)
+        #expect(body3.model == "custom-model")
+    }
 }
 
 private struct RecordingProvider: LocalAIProviding {

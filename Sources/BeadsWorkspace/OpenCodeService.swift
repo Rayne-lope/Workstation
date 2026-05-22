@@ -111,7 +111,13 @@ public struct OpenCodeChatCompletionRequestBody: Codable {
     public let stream: Bool
 
     public init(from request: LocalAIRequest) {
-        self.model = request.model
+        var cleanModel = request.model
+        if cleanModel.hasPrefix("opencode-go/") {
+            cleanModel = String(cleanModel.dropFirst("opencode-go/".count))
+        } else if cleanModel.hasPrefix("opencode/") {
+            cleanModel = String(cleanModel.dropFirst("opencode/".count))
+        }
+        self.model = cleanModel
         self.stream = false
         var msgs: [OpenCodeMessage] = []
         if let system = request.system?.trimmingCharacters(in: .whitespacesAndNewlines), !system.isEmpty {
