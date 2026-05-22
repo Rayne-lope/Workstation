@@ -10,6 +10,11 @@
       "completedAt" : "2026-05-21T07:47:20Z",
       "completedBy" : "claude",
       "id" : "6A6D0BCF-52F4-4396-B06C-3F9F6D657C88"
+    },
+    {
+      "completedAt" : "2026-05-22T12:28:00Z",
+      "completedBy" : "gemini",
+      "id" : "165E387B-E8A2-4A34-95C2-5818BE00CECF"
     }
   ],
   "isRecurring" : true,

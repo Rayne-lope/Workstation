@@ -223,3 +223,4 @@
 {"id":"int-5776ccac","kind":"field_change","created_at":"2026-05-22T12:14:48.216597Z","actor":"Rayne-lope","issue_id":"Workstation-jgv","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
 {"id":"int-e59e852a","kind":"field_change","created_at":"2026-05-22T12:14:50.549165Z","actor":"Rayne-lope","issue_id":"Workstation-r9s","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
 {"id":"int-6b93eb01","kind":"field_change","created_at":"2026-05-22T12:23:25.026594Z","actor":"Rayne-lope","issue_id":"Workstation-m9a","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
+{"id":"int-361fe01e","kind":"field_change","created_at":"2026-05-22T12:26:00.893013Z","actor":"Rayne-lope","issue_id":"Workstation-tuj","extra":{"field":"assignee","new_value":"gemini","old_value":"kimi"}}
