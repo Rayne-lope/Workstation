@@ -98,13 +98,17 @@ struct KanbanBoardView: View {
             store.selectRange(to: issue.id, within: items.map(\.id))
         } else {
             if store.hasMultiSelection && store.selectedIssueIDs.contains(issue.id) {
-                appVM.showBulkActionPane()
+                if appVM.detailPaneMode != .copilot {
+                    appVM.showBulkActionPane()
+                }
                 return
             }
             store.selectIssue(id: issue.id)
         }
         if store.hasMultiSelection {
-            appVM.showBulkActionPane()
+            if appVM.detailPaneMode != .copilot {
+                appVM.showBulkActionPane()
+            }
         } else if appVM.detailPaneMode == .bulkAction {
             appVM.resetDetailPaneToIssue()
         }

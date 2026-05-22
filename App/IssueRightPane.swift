@@ -218,6 +218,8 @@ struct WorkflowCopilotPane: View {
     @State private var hoveredMessageID: UUID?
     @State private var showingCopilotMenu = false
     @State private var inputHeight: CGFloat = 38
+    @State private var isPlusHovered = false
+    @State private var isSendHovered = false
 
     private var selected: [BeadIssue] {
         store.selectedIssues()
@@ -498,17 +500,23 @@ struct WorkflowCopilotPane: View {
                     showingCopilotMenu.toggle()
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(WorkstationTheme.textMuted)
-                        .frame(width: 28, height: 28)
-                        .background(WorkstationTheme.card)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(isPlusHovered || showingCopilotMenu ? WorkstationTheme.accent : WorkstationTheme.textSecondary)
+                        .frame(width: 30, height: 30)
+                        .background(isPlusHovered || showingCopilotMenu ? WorkstationTheme.active : WorkstationTheme.inputBg)
                         .clipShape(Circle())
                         .overlay(
                             Circle()
-                                .stroke(WorkstationTheme.border, lineWidth: 1)
+                                .stroke(isPlusHovered || showingCopilotMenu ? WorkstationTheme.accent.opacity(0.5) : WorkstationTheme.border, lineWidth: 1)
                         )
+                        .scaleEffect(isPlusHovered ? 1.05 : 1.0)
+                        .animation(.easeOut(duration: 0.15), value: isPlusHovered)
+                        .animation(.easeOut(duration: 0.15), value: showingCopilotMenu)
                 }
                 .buttonStyle(.plain)
+                .onHover { hovering in
+                    isPlusHovered = hovering
+                }
                 .popover(isPresented: $showingCopilotMenu, arrowEdge: .top) {
                     CopilotMenuPopover(
                         hasPRDText: !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -536,14 +544,23 @@ struct WorkflowCopilotPane: View {
                     sendPrompt()
                 } label: {
                     Image(systemName: "arrow.up")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(canSend ? WorkstationTheme.background : WorkstationTheme.textDisabled)
                         .frame(width: 30, height: 30)
-                        .background(canSend ? WorkstationTheme.accent : WorkstationTheme.card)
+                        .background(canSend ? (isSendHovered ? WorkstationTheme.accentHover : WorkstationTheme.accent) : WorkstationTheme.inputBg)
                         .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(canSend ? Color.clear : WorkstationTheme.border, lineWidth: 1)
+                        )
+                        .scaleEffect(isSendHovered && canSend ? 1.05 : 1.0)
+                        .animation(.easeOut(duration: 0.15), value: isSendHovered)
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSend)
+                .onHover { hovering in
+                    isSendHovered = hovering
+                }
                 .help("Send to Copilot (Enter)")
             }
             .padding(.horizontal, 12)
@@ -567,10 +584,6 @@ struct WorkflowCopilotPane: View {
                         Text(issue.id)
                             .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
                             .foregroundStyle(WorkstationTheme.accent)
-                        Text(issue.title)
-                            .font(WorkstationTheme.Fonts.body(10))
-                            .foregroundStyle(WorkstationTheme.textSecondary)
-                            .lineLimit(1)
                         Button {
                             excludedContextIDs.insert(issue.id)
                         } label: {
@@ -588,6 +601,7 @@ struct WorkflowCopilotPane: View {
                         RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
                             .stroke(WorkstationTheme.borderStrong, lineWidth: 0.5)
                     )
+                    .help(issue.title)
                 }
             }
         }
