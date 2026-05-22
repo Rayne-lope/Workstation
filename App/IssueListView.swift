@@ -267,68 +267,90 @@ private struct IssueListRowView: View {
         Button {
             store.selectIssue(id: issue.id)
         } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .center, spacing: 0) {
-                    // Left: Title + badges
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(alignment: .center, spacing: 8) {
-                            Text(issue.title)
-                                .font(WorkstationTheme.Fonts.display(13, weight: .semibold))
-                                .foregroundStyle(WorkstationTheme.textPrimary)
-                                .lineLimit(1)
-                                .layoutPriority(1)
+            HStack(alignment: .center, spacing: 12) {
+                // Status dot
+                Circle()
+                    .fill(columnColor)
+                    .frame(width: 6, height: 6)
 
-                            badgeRow
-                                .layoutPriority(-1)
-                        }
-
-                        if let desc = issue.description, !desc.isEmpty {
-                            Text(desc)
-                                .font(WorkstationTheme.Fonts.body(12))
-                                .foregroundStyle(WorkstationTheme.textMuted)
-                                .lineLimit(1)
-                        }
-                    }
-
-                    Spacer(minLength: 16)
-
-                    // Right: metadata
-                    HStack(alignment: .center, spacing: 12) {
-                        // Assignee
-                        if issue.assignee?.isEmpty == false {
-                            AssigneeBadgeView(assignee: issue.assignee, profiles: profiles, compact: true)
-                                .frame(maxWidth: 140, alignment: .leading)
-                        }
-
-                        // Updated date
-                        if let updated = issue.updatedAt, !updated.isEmpty {
-                            HStack(spacing: 4) {
-                                Image(systemName: "calendar")
-                                    .font(.system(size: 10, weight: .medium))
-                                Text(shortDate(updated))
-                                    .font(WorkstationTheme.Fonts.body(10, weight: .medium))
-                            }
+                // Title + ID
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .center, spacing: 8) {
+                        Text(issue.title)
+                            .font(WorkstationTheme.Fonts.display(13, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.textPrimary)
+                            .lineLimit(1)
+                        
+                        Text(issue.id)
+                            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
                             .foregroundStyle(WorkstationTheme.textDisabled)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(WorkstationTheme.borderSoft)
-                            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
-                        }
-
-                        // Ready indicator
-                        if store.readyIssueIDs.contains(issue.id) {
-                            Circle()
-                                .fill(WorkstationTheme.green)
-                                .frame(width: 6, height: 6)
-                                .help("Ready to work")
-                        }
+                    }
+                    
+                    if let desc = issue.description, !desc.isEmpty {
+                        Text(desc)
+                            .font(WorkstationTheme.Fonts.body(11))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                            .lineLimit(1)
                     }
                 }
+                
+                Spacer(minLength: 16)
 
-                // Progress bar (subtle, under the row)
-                if issue.status == "in_progress" || issue.status == "review" {
-                    progressIndicator
-                        .padding(.top, 8)
+                // Row metadata / badges
+                HStack(spacing: 12) {
+                    // Priority tag
+                    if let priority = issue.priority,
+                       let difficulty = PriorityDifficulty.from(priority: priority) {
+                        priorityBadge(difficulty.displayName, priority: priority)
+                    }
+
+                    // Type badge
+                    if let type = issue.issueType, !type.isEmpty {
+                        typeBadge(type)
+                    }
+
+                    // Blocked badge
+                    if isBlocked {
+                        blockedBadge
+                    }
+
+                    // Unknown status badge
+                    if hasUnknownStatus, let status = issue.status {
+                        unknownStatusBadge(status)
+                    }
+
+                    // Thin progress bar for Active statuses
+                    if issue.status == "in_progress" || issue.status == "review" {
+                        thinProgressBar(for: issue.status)
+                    }
+
+                    // Assignee avatar
+                    if issue.assignee?.isEmpty == false {
+                        AssigneeBadgeView(assignee: issue.assignee, profiles: profiles, compact: true, showName: false)
+                    }
+
+                    // Calendar date
+                    if let updated = issue.updatedAt, !updated.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 9.5, weight: .medium))
+                            Text(shortDate(updated))
+                                .font(WorkstationTheme.Fonts.body(9.5, weight: .medium))
+                        }
+                        .foregroundStyle(WorkstationTheme.textDisabled)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(WorkstationTheme.borderSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                    }
+
+                    // Ready indicator
+                    if store.readyIssueIDs.contains(issue.id) {
+                        Circle()
+                            .fill(WorkstationTheme.green)
+                            .frame(width: 6, height: 6)
+                            .help("Ready to work")
+                    }
                 }
             }
             .padding(.horizontal, 28)
@@ -365,52 +387,20 @@ private struct IssueListRowView: View {
         .animation(.easeOut(duration: 0.15), value: isSelected)
     }
 
-    // MARK: - Badges
-
-    private var badgeRow: some View {
-        HStack(spacing: 6) {
-            BadgeView(style: .id, horizontalPadding: 6, verticalPadding: 2) {
-                Text(issue.id)
-                    .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-
-            // Priority badge
-            if let priority = issue.priority,
-               let difficulty = PriorityDifficulty.from(priority: priority) {
-                priorityBadge(difficulty.displayName, priority: priority)
-            }
-
-            // Type badge
-            if let type = issue.issueType, !type.isEmpty {
-                typeBadge(type)
-            }
-
-            // Blocked badge
-            if isBlocked {
-                blockedBadge
-            }
-
-            // Unknown status
-            if hasUnknownStatus, let status = issue.status {
-                unknownStatusBadge(status)
-            }
-        }
-    }
+    // MARK: - Row Helpers
 
     private func priorityBadge(_ label: String, priority: Int) -> some View {
         let color = WorkstationTheme.difficultyColor(priority)
         return BadgeView(style: .priority(priority)) {
-            HStack(spacing: 4) {
+            HStack(spacing: 3) {
                 if priority <= 1 {
                     Circle()
                         .fill(color)
-                        .frame(width: 5, height: 5)
+                        .frame(width: 4.5, height: 4.5)
                 }
                 Text(label)
             }
-            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+            .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
             .lineLimit(1)
         }
     }
@@ -418,7 +408,7 @@ private struct IssueListRowView: View {
     private func typeBadge(_ label: String) -> some View {
         BadgeView(style: .info) {
             Text(label)
-                .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                .font(WorkstationTheme.Fonts.body(9.5, weight: .semibold))
                 .lineLimit(1)
         }
     }
@@ -444,7 +434,7 @@ private struct IssueListRowView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
-            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+            .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
         }
     }
 
@@ -457,32 +447,28 @@ private struct IssueListRowView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+            .font(WorkstationTheme.Fonts.body(9.5, weight: .semibold))
         }
     }
 
-    // MARK: - Progress Indicator
-
-    private var progressIndicator: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(WorkstationTheme.border)
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [WorkstationTheme.accent, WorkstationTheme.accentHover],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+    private func thinProgressBar(for status: String?) -> some View {
+        let progress: Double = status == "review" ? 0.8 : 0.4
+        
+        return ZStack(alignment: .leading) {
+            Capsule()
+                .fill(WorkstationTheme.border)
+                .frame(width: 36, height: 3)
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        colors: [WorkstationTheme.accent, WorkstationTheme.accentHover],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
-                    .frame(width: max(0, proxy.size.width * 0.5))
-            }
+                )
+                .frame(width: 36 * progress, height: 3)
         }
-        .frame(height: 2)
     }
-
-    // MARK: - Helpers
 
     private func shortDate(_ raw: String) -> String {
         raw.split(separator: "T").first.map(String.init) ?? raw
