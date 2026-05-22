@@ -155,4 +155,30 @@ struct PreferencesStoreTests {
         #expect(localAI.fastModel == LocalAISettings.defaultFastModel)
         #expect(localAI.strongModel == LocalAISettings.defaultStrongModel)
     }
+
+    @Test("Legacy models with updated base URL auto-migrate to OpenCode defaults")
+    func legacyModelsWithUpdatedURLAutoMigrate() throws {
+        let (defaults, _) = makeDefaults()
+        let legacyJSON = """
+        {
+            "localAI": {
+                "isEnabled": true,
+                "provider": "opencode",
+                "baseURL": "https://opencode.ai/zen/go/v1",
+                "fastModel": "gemini-2.0-flash",
+                "strongModel": "gemini-2.0-flash",
+                "apiKey": "some-key"
+            }
+        }
+        """
+        defaults.set(Data(legacyJSON.utf8), forKey: "com.beads.app.preferences")
+        
+        let store = PreferencesStore(userDefaults: defaults)
+        let localAI = store.preferences.localAI
+        
+        #expect(localAI.provider == .opencode)
+        #expect(localAI.baseURL == LocalAISettings.defaultBaseURL)
+        #expect(localAI.fastModel == LocalAISettings.defaultFastModel)
+        #expect(localAI.strongModel == LocalAISettings.defaultStrongModel)
+    }
 }

@@ -85,7 +85,11 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
         let decodedStrong = try c.decodeIfPresent(String.self, forKey: .strongModel) ?? LocalAISettings.defaultStrongModel
         
         // Auto-migrate legacy Google Gemini and Ollama base URLs / models to OpenCode defaults
-        if decodedURL.contains("googleapis.com") || decodedURL.contains("localhost:11434") || decodedURL.contains("127.0.0.1:11434") {
+        let urlIsLegacy = decodedURL.contains("googleapis.com") || decodedURL.contains("localhost:11434") || decodedURL.contains("127.0.0.1:11434")
+        let fastModelIsLegacy = decodedFast.localizedCaseInsensitiveContains("gemini") || decodedFast.localizedCaseInsensitiveContains("ollama") || decodedFast.localizedCaseInsensitiveContains("llama")
+        let strongModelIsLegacy = decodedStrong.localizedCaseInsensitiveContains("gemini") || decodedStrong.localizedCaseInsensitiveContains("ollama") || decodedStrong.localizedCaseInsensitiveContains("llama")
+        
+        if urlIsLegacy || fastModelIsLegacy || strongModelIsLegacy {
             baseURL = LocalAISettings.defaultBaseURL
             fastModel = LocalAISettings.defaultFastModel
             strongModel = LocalAISettings.defaultStrongModel
