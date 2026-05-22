@@ -288,7 +288,8 @@ final class AppViewModel {
             await performWorktreeAgentLaunch(
                 for: pending.issue,
                 profile: pending.profile,
-                workspace: pending.workspace
+                workspace: pending.workspace,
+                preflight: pending.preflight
             )
         }
     }
@@ -308,6 +309,18 @@ final class AppViewModel {
             terminalErrorMessage = nil
         } catch {
             terminalErrorMessage = error.localizedDescription
+        }
+    }
+
+    func cleanupAndRetryWorktreeLaunch() {
+        guard let pending = pendingWorktreeLaunch else { return }
+        let issue = pending.issue
+        let profile = pending.profile
+        let workspace = pending.workspace
+        pendingWorktreeLaunch = nil
+        Task {
+            await gitWorktreeService.cleanupOrphanWorktree(for: issue, in: workspace)
+            await beginWorktreeAgentLaunch(for: issue, profile: profile)
         }
     }
 
@@ -894,7 +907,7 @@ final class AppViewModel {
         worktreeMessage = nil
 
         let preflight = await gitWorktreeService.preflightLaunch(for: issue, in: workspace)
-        if preflight.isBlocked || preflight.requiresConfirmation {
+        if preflight.isBlocked || preflight.requiresConfirmation || preflight.canReuseExistingWorktree {
             pendingWorktreeLaunch = PendingWorktreeLaunch(
                 issue: issue,
                 profile: profile,
@@ -914,11 +927,20 @@ final class AppViewModel {
     private func performWorktreeAgentLaunch(
         for issue: BeadIssue,
         profile: AgentProfile,
-        workspace: ProjectWorkspace
+        workspace: ProjectWorkspace,
+        preflight: GitWorktreeLaunchPreflight? = nil
     ) async {
         do {
             let sourceRunID = activeConsoleRunID
-            let worktree = try await gitWorktreeService.createWorktree(for: issue, in: workspace)
+            let worktree: GitWorktreeLocation
+            if let reusablePath = preflight?.reusableWorktreePath {
+                worktree = preflight!.location
+                worktreeMessage = "Reusing existing worktree at \(reusablePath)"
+            } else {
+                let created = try await gitWorktreeService.createWorktree(for: issue, in: workspace)
+                worktree = created
+                worktreeMessage = "Worktree created at \(created.worktreeURL.path)"
+            }
             let session = await agentLaunchFlowCoordinator.prepareLaunchSession(
                 for: issue,
                 profile: profile,
@@ -934,7 +956,6 @@ final class AppViewModel {
 
             guard let session else { return }
 
-            worktreeMessage = "Worktree created at \(worktree.worktreeURL.path)"
             activeConsoleRunID = session.id
             detailPaneMode = .console
             Clipboard.copy(session.payload.prompt)

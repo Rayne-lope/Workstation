@@ -52,6 +52,7 @@ public struct GitWorktreeLaunchPreflight: Hashable, Sendable {
     public let statusError: String?
     public let existingWorktreePath: String?
     public let branchConflictName: String?
+    public let reusableWorktreePath: String?
 
     public init(
         location: GitWorktreeLocation,
@@ -59,7 +60,8 @@ public struct GitWorktreeLaunchPreflight: Hashable, Sendable {
         statusSummary: GitStatusSummary?,
         statusError: String?,
         existingWorktreePath: String?,
-        branchConflictName: String?
+        branchConflictName: String?,
+        reusableWorktreePath: String? = nil
     ) {
         self.location = location
         self.workspaceSetupHints = workspaceSetupHints
@@ -67,13 +69,23 @@ public struct GitWorktreeLaunchPreflight: Hashable, Sendable {
         self.statusError = statusError
         self.existingWorktreePath = existingWorktreePath
         self.branchConflictName = branchConflictName
+        self.reusableWorktreePath = reusableWorktreePath
     }
 
+    /// True when the worktree cannot be created due to orphan conflicts
+    /// (folder-only or branch-only), setup issues, or status errors.
+    /// A matching folder+branch pair (reusable) is NOT blocked.
     public var isBlocked: Bool {
         !workspaceSetupHints.isEmpty
             || statusError != nil
             || existingWorktreePath != nil
             || branchConflictName != nil
+    }
+
+    /// True when both folder and branch already exist for this issue's worktree,
+    /// meaning we can relaunch Terminal there without running `git worktree add`.
+    public var canReuseExistingWorktree: Bool {
+        reusableWorktreePath != nil
     }
 
     public var requiresConfirmation: Bool {
@@ -122,15 +134,33 @@ public struct GitWorktreeService: @unchecked Sendable {
             statusError = error.localizedDescription
         }
 
-        let existingWorktreePath = fileManager.fileExists(atPath: location.worktreeURL.path) ? location.worktreeURL.path : nil
-        var branchConflictName: String?
+        let folderExists = fileManager.fileExists(atPath: location.worktreeURL.path)
+        var branchConflictDetected = false
         do {
-            branchConflictName = try await branchExists(named: location.branchName, in: workspace.inspectionURL) ? location.branchName : nil
+            branchConflictDetected = try await branchExists(named: location.branchName, in: workspace.inspectionURL)
         } catch {
-            branchConflictName = nil
+            branchConflictDetected = false
             if statusError == nil {
                 statusError = error.localizedDescription
             }
+        }
+
+        // Distinguish three mutually-exclusive states:
+        //  • folder+branch → reusable (same-issue worktree, NOT blocked)
+        //  • folder only   → orphan folder (blocked)
+        //  • branch only   → orphan branch (blocked)
+        let reusableWorktreePath: String?
+        let existingWorktreePath: String?
+        let branchConflictName: String?
+
+        if folderExists && branchConflictDetected {
+            reusableWorktreePath = location.worktreeURL.path
+            existingWorktreePath = nil
+            branchConflictName = nil
+        } else {
+            reusableWorktreePath = nil
+            existingWorktreePath = folderExists ? location.worktreeURL.path : nil
+            branchConflictName = branchConflictDetected ? location.branchName : nil
         }
 
         return GitWorktreeLaunchPreflight(
@@ -139,7 +169,8 @@ public struct GitWorktreeService: @unchecked Sendable {
             statusSummary: statusSummary,
             statusError: statusError,
             existingWorktreePath: existingWorktreePath,
-            branchConflictName: branchConflictName
+            branchConflictName: branchConflictName,
+            reusableWorktreePath: reusableWorktreePath
         )
     }
 
@@ -200,6 +231,16 @@ public struct GitWorktreeService: @unchecked Sendable {
             throw error
         }
         return location
+    }
+
+    /// Remove an orphan or stale worktree folder + branch so a fresh
+    /// `createWorktree` can succeed on the next attempt.
+    public func cleanupOrphanWorktree(
+        for issue: BeadIssue,
+        in workspace: ProjectWorkspace
+    ) async {
+        let location = worktreeLocation(for: workspace, issueID: issue.id)
+        await rollbackWorktree(at: location, in: workspace.inspectionURL)
     }
 
     private func rollbackWorktree(at location: GitWorktreeLocation, in workingDirectory: URL) async {

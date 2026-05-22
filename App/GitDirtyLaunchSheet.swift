@@ -255,6 +255,7 @@ struct GitWorktreeLaunchSheet: View {
     let onRetry: () -> Void
     let onContinue: () -> Void
     let onLaunchSetup: (WorkspaceSetupHint) -> Void
+    let onCleanup: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -264,6 +265,7 @@ struct GitWorktreeLaunchSheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     contextCard
                     setupCard
+                    reuseCard
                     statusCard
                     conflictCard
                 }
@@ -287,7 +289,9 @@ struct GitWorktreeLaunchSheet: View {
                 )
                 .frame(width: 44, height: 44)
                 .overlay(
-                    Image(systemName: pendingLaunch.preflight.isBlocked ? "exclamationmark.triangle.fill" : "folder.badge.gearshape")
+                    Image(systemName: pendingLaunch.preflight.canReuseExistingWorktree
+                    ? "arrow.triangle.2.circlepath"
+                    : pendingLaunch.preflight.isBlocked ? "exclamationmark.triangle.fill" : "folder.badge.gearshape")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(headerTint)
                 )
@@ -306,6 +310,9 @@ struct GitWorktreeLaunchSheet: View {
     }
 
     private var headerTitle: String {
+        if pendingLaunch.preflight.canReuseExistingWorktree {
+            return "Existing worktree found"
+        }
         if pendingLaunch.preflight.isBlocked {
             return "Worktree launch needs attention"
         }
@@ -319,6 +326,9 @@ struct GitWorktreeLaunchSheet: View {
         if let statusError = pendingLaunch.preflight.statusError {
             return statusError
         }
+        if pendingLaunch.preflight.canReuseExistingWorktree {
+            return "A worktree for this issue already exists. You can relaunch directly, or clean up and create a fresh one."
+        }
         if pendingLaunch.preflight.isBlocked {
             return "Resolve the items below before the safe terminal launch runs."
         }
@@ -329,6 +339,9 @@ struct GitWorktreeLaunchSheet: View {
     }
 
     private var headerTint: Color {
+        if pendingLaunch.preflight.canReuseExistingWorktree {
+            return WorkstationTheme.blue
+        }
         if pendingLaunch.preflight.isBlocked {
             return WorkstationTheme.red
         }
@@ -339,6 +352,9 @@ struct GitWorktreeLaunchSheet: View {
     }
 
     private var headerFill: Color {
+        if pendingLaunch.preflight.canReuseExistingWorktree {
+            return WorkstationTheme.blueBg
+        }
         if pendingLaunch.preflight.isBlocked {
             return WorkstationTheme.redBg
         }
@@ -349,6 +365,9 @@ struct GitWorktreeLaunchSheet: View {
     }
 
     private var headerBorder: Color {
+        if pendingLaunch.preflight.canReuseExistingWorktree {
+            return WorkstationTheme.blueBorder
+        }
         if pendingLaunch.preflight.isBlocked {
             return WorkstationTheme.redBorder
         }
@@ -506,6 +525,32 @@ struct GitWorktreeLaunchSheet: View {
     }
 
     @ViewBuilder
+    private var reuseCard: some View {
+        if let reusablePath = pendingLaunch.preflight.reusableWorktreePath {
+            card(title: "Existing Worktree") {
+                VStack(alignment: .leading, spacing: 12) {
+                    recoveryRow(
+                        title: "Worktree and branch match this issue",
+                        detail: reusablePath,
+                        tone: WorkstationTheme.blue
+                    ) {
+                        Button {
+                            NSWorkspace.shared.open(URL(fileURLWithPath: reusablePath, isDirectory: true))
+                        } label: {
+                            Label("Open in Finder", systemImage: "folder")
+                        }
+                        .buttonStyle(WorkstationGhostButtonStyle(compact: true))
+                    }
+
+                    Text("You can launch directly from this worktree, or clean up and create a fresh one.")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
     private var conflictCard: some View {
         if pendingLaunch.preflight.existingWorktreePath != nil || pendingLaunch.preflight.branchConflictName != nil || pendingLaunch.preflight.statusError != nil {
             card(title: "Recovery") {
@@ -520,7 +565,7 @@ struct GitWorktreeLaunchSheet: View {
 
                     if let existingWorktreePath = pendingLaunch.preflight.existingWorktreePath {
                         recoveryRow(
-                            title: "Worktree already exists",
+                            title: "Worktree folder exists (orphan)",
                             detail: existingWorktreePath,
                             tone: WorkstationTheme.orange
                         ) {
@@ -535,7 +580,7 @@ struct GitWorktreeLaunchSheet: View {
 
                     if let branchConflictName = pendingLaunch.preflight.branchConflictName {
                         recoveryRow(
-                            title: "Branch already exists",
+                            title: "Branch exists (orphan)",
                             detail: branchConflictName,
                             tone: WorkstationTheme.red
                         ) {
@@ -548,7 +593,7 @@ struct GitWorktreeLaunchSheet: View {
                         }
                     }
 
-                    Text("Use Retry Check after you fix the underlying state.")
+                    Text("Use Clean Up \u{0026} Retry to remove the stale state, or Retry Check after manual cleanup.")
                         .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                         .foregroundStyle(WorkstationTheme.textMuted)
                 }
@@ -563,10 +608,25 @@ struct GitWorktreeLaunchSheet: View {
 
             Spacer()
 
-            Button("Retry Check", action: onRetry)
-                .buttonStyle(WorkstationGhostButtonStyle())
+            if pendingLaunch.preflight.canReuseExistingWorktree {
+                // Reuse case: Cancel | Clean Up & Retry | Launch Worktree
+                Button("Clean Up \u{0026} Retry", action: onCleanup)
+                    .buttonStyle(WorkstationGhostButtonStyle())
 
-            if !pendingLaunch.preflight.isBlocked {
+                Button("Launch Worktree", action: onContinue)
+                    .buttonStyle(WorkstationPrimaryButtonStyle())
+            } else if pendingLaunch.preflight.isBlocked {
+                // Blocked (orphan) case: Cancel | Clean Up & Retry | Retry Check
+                Button("Clean Up \u{0026} Retry", action: onCleanup)
+                    .buttonStyle(WorkstationGhostButtonStyle())
+
+                Button("Retry Check", action: onRetry)
+                    .buttonStyle(WorkstationGhostButtonStyle())
+            } else {
+                // Clean / dirty case: Cancel | Retry Check | Launch Worktree
+                Button("Retry Check", action: onRetry)
+                    .buttonStyle(WorkstationGhostButtonStyle())
+
                 Button("Launch Worktree", action: onContinue)
                     .buttonStyle(WorkstationPrimaryButtonStyle())
             }

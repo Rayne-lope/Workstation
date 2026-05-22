@@ -410,15 +410,15 @@ struct GitWorktreeServiceTests {
         #expect(preflight.statusSummary?.changedFiles.contains(where: { $0.path == "notes.txt" }) == true)
     }
 
-    @Test("preflightLaunch surfaces existing worktree and branch conflicts")
-    func preflightLaunchSurfacesConflicts() async throws {
-        let (workspace, baseURL) = try makeGitRepoWithAgents(name: "Conflict Preflight")
+    @Test("preflightLaunch detects reusable worktree when both folder and branch exist")
+    func preflightLaunchDetectsReusableWorktree() async throws {
+        let (workspace, baseURL) = try makeGitRepoWithAgents(name: "Reuse Preflight")
         defer { try? FileManager.default.removeItem(at: baseURL) }
 
         let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
         let issue = BeadIssue(
-            id: "bd-conflict",
-            title: "Conflict preflight",
+            id: "bd-reuse",
+            title: "Reuse preflight",
             status: "open",
             priority: 2,
             issueType: "feature"
@@ -429,9 +429,92 @@ struct GitWorktreeServiceTests {
 
         let preflight = await service.preflightLaunch(for: issue, in: workspace)
 
-        #expect(preflight.existingWorktreePath == location.worktreeURL.path)
-        #expect(preflight.branchConflictName == location.branchName)
+        #expect(preflight.isBlocked == false)
+        #expect(preflight.canReuseExistingWorktree == true)
+        #expect(preflight.reusableWorktreePath == location.worktreeURL.path)
+        #expect(preflight.existingWorktreePath == nil)
+        #expect(preflight.branchConflictName == nil)
+    }
+
+    @Test("preflightLaunch blocks on orphan folder (no matching branch)")
+    func preflightLaunchBlocksOnOrphanFolder() async throws {
+        let (workspace, baseURL) = try makeGitRepoWithAgents(name: "Orphan Folder")
+        defer { try? FileManager.default.removeItem(at: baseURL) }
+
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
+        let issue = BeadIssue(
+            id: "bd-orphan-folder",
+            title: "Orphan folder",
+            status: "open",
+            priority: 2,
+            issueType: "feature"
+        )
+        let location = service.worktreeLocation(for: workspace, issueID: issue.id)
+        try FileManager.default.createDirectory(at: location.worktreeURL, withIntermediateDirectories: true)
+
+        let preflight = await service.preflightLaunch(for: issue, in: workspace)
+
         #expect(preflight.isBlocked == true)
+        #expect(preflight.existingWorktreePath == location.worktreeURL.path)
+        #expect(preflight.branchConflictName == nil)
+        #expect(preflight.reusableWorktreePath == nil)
+        #expect(preflight.canReuseExistingWorktree == false)
+    }
+
+    @Test("preflightLaunch blocks on orphan branch (no matching folder)")
+    func preflightLaunchBlocksOnOrphanBranch() async throws {
+        let (workspace, baseURL) = try makeGitRepoWithAgents(name: "Orphan Branch")
+        defer { try? FileManager.default.removeItem(at: baseURL) }
+
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
+        let issue = BeadIssue(
+            id: "bd-orphan-branch",
+            title: "Orphan branch",
+            status: "open",
+            priority: 2,
+            issueType: "feature"
+        )
+        let location = service.worktreeLocation(for: workspace, issueID: issue.id)
+        try runGit(arguments: ["branch", location.branchName], in: workspace.inspectionURL)
+
+        let preflight = await service.preflightLaunch(for: issue, in: workspace)
+
+        #expect(preflight.isBlocked == true)
+        #expect(preflight.branchConflictName == location.branchName)
+        #expect(preflight.existingWorktreePath == nil)
+        #expect(preflight.reusableWorktreePath == nil)
+        #expect(preflight.canReuseExistingWorktree == false)
+    }
+
+    @Test("cleanupOrphanWorktree removes folder and branch, allowing clean preflight")
+    func cleanupOrphanWorktreeAllowsFreshLaunch() async throws {
+        let (workspace, baseURL) = try makeGitRepoWithAgents(name: "Cleanup Test")
+        defer { try? FileManager.default.removeItem(at: baseURL) }
+
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
+        let issue = BeadIssue(
+            id: "bd-cleanup",
+            title: "Cleanup test",
+            status: "open",
+            priority: 2,
+            issueType: "feature"
+        )
+        let location = service.worktreeLocation(for: workspace, issueID: issue.id)
+
+        // Create a real worktree first so git tracks it
+        let created = try await service.createWorktree(for: issue, in: workspace)
+        #expect(FileManager.default.fileExists(atPath: created.worktreeURL.path))
+
+        // Now clean it up
+        await service.cleanupOrphanWorktree(for: issue, in: workspace)
+
+        // Preflight should be clean
+        let preflight = await service.preflightLaunch(for: issue, in: workspace)
+        #expect(preflight.isBlocked == false)
+        #expect(preflight.canReuseExistingWorktree == false)
+        #expect(preflight.existingWorktreePath == nil)
+        #expect(preflight.branchConflictName == nil)
+        #expect(preflight.reusableWorktreePath == nil)
     }
 
 }

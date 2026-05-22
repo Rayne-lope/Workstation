@@ -77,7 +77,8 @@ struct BoardView: View {
                 onCancel: { appVM.cancelPendingWorktreeLaunch() },
                 onRetry: { appVM.retryPendingWorktreeLaunch() },
                 onContinue: { appVM.continuePendingWorktreeLaunch() },
-                onLaunchSetup: { hint in appVM.launchWorktreeSetup(for: hint) }
+                onLaunchSetup: { hint in appVM.launchWorktreeSetup(for: hint) },
+                onCleanup: { appVM.cleanupAndRetryWorktreeLaunch() }
             )
         }
         .sheet(isPresented: $appVM.isBulkClosePresented, onDismiss: { appVM.dismissBulkCloseSheet() }) {
