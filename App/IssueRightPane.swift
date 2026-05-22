@@ -403,6 +403,8 @@ struct WorkflowCopilotPane: View {
                 } else if msg.role == .assistant {
                     if msg.isPlan {
                         planCardView(message: message)
+                    } else if msg.isAgentLaunch {
+                        agentLaunchCardView(message: message)
                     } else if let planError = msg.planError {
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 4) {
@@ -780,6 +782,32 @@ struct WorkflowCopilotPane: View {
     }
 
     private func streamCopilotResponse(prompt request: String, contextIssues: [BeadIssue]) {
+        if looksLikeAgentLaunchRequest(request) {
+            let targetIssue = contextIssues.first ?? store.issues.first
+            let matchedProfile = detectProfile(matching: request)
+            let defaultProfile = appVM.agentProfileStore.profiles.first ?? AgentProfile.builtInProfiles[0]
+            let chosenProfile = matchedProfile ?? defaultProfile
+
+            let preflight = AgentLaunchPreflight(
+                issueId: targetIssue?.id ?? "",
+                selectedProfileId: chosenProfile.id,
+                useFastModel: false,
+                extraPrompt: "",
+                autoClaim: chosenProfile.shouldClaimIssue,
+                autoMerge: chosenProfile.shouldCloseIssue,
+                requestReview: chosenProfile.shouldRequestHumanReview
+            )
+            let msg = CopilotConversationMessage(
+                role: .assistant,
+                text: "I've prepared the pre-flight configuration for running the agent:",
+                isAgentLaunch: true,
+                agentLaunch: preflight
+            )
+            messages.append(msg)
+            isSending = false
+            return
+        }
+
         isSending = true
         streamingStartTime = Date()
         Task {
@@ -1116,6 +1144,282 @@ struct WorkflowCopilotPane: View {
             proxy.scrollTo(CopilotScrollTarget.bottom, anchor: .bottom)
         }
     }
+
+    private func looksLikeAgentLaunchRequest(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        let keywords = [
+            "launch", "jalankan", "jalanin", "kerjakan", "run agent", 
+            "executor", "spec writer", "reviewer", "tester", "pre-flight"
+        ]
+        return keywords.contains { lower.contains($0) }
+    }
+
+    private func detectProfile(matching request: String) -> AgentProfile? {
+        let lower = request.lowercased()
+        let profiles = appVM.agentProfileStore.profiles
+        
+        if lower.contains("spec writer") || lower.contains("spec") {
+            if let p = profiles.first(where: { $0.role == .specWriter }) {
+                return p
+            }
+        }
+        if lower.contains("reviewer") || lower.contains("review") {
+            if let p = profiles.first(where: { $0.role == .reviewer }) {
+                return p
+            }
+        }
+        if lower.contains("tester") || lower.contains("test") {
+            if let p = profiles.first(where: { $0.role == .tester }) {
+                return p
+            }
+        }
+        
+        if lower.contains("claude") {
+            if let p = profiles.first(where: { $0.name.lowercased().contains("claude") }) {
+                return p
+            }
+        }
+        if lower.contains("codex") {
+            if let p = profiles.first(where: { $0.name.lowercased().contains("codex") }) {
+                return p
+            }
+        }
+        if lower.contains("kimi") {
+            if let p = profiles.first(where: { $0.name.lowercased().contains("kimi") }) {
+                return p
+            }
+        }
+        if lower.contains("zhipu") {
+            if let p = profiles.first(where: { $0.name.lowercased().contains("zhipu") }) {
+                return p
+            }
+        }
+        if lower.contains("deepseek") {
+            if let p = profiles.first(where: { $0.name.lowercased().contains("deepseek") }) {
+                return p
+            }
+        }
+        if lower.contains("gemini") {
+            if let p = profiles.first(where: { $0.name.lowercased().contains("gemini") }) {
+                return p
+            }
+        }
+        if lower.contains("minimax") {
+            if let p = profiles.first(where: { $0.name.lowercased().contains("minimax") }) {
+                return p
+            }
+        }
+
+        if let p = profiles.first(where: { $0.role == .codingExecutor }) {
+            return p
+        }
+        return profiles.first
+    }
+
+    @ViewBuilder
+    private func agentLaunchCardView(message: Binding<CopilotConversationMessage>) -> some View {
+        let msg = message.wrappedValue
+        if let preflight = msg.agentLaunch {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.accent)
+                    Text("🚀 Agent Pre-flight Launch Setup")
+                        .font(WorkstationTheme.Fonts.body(13, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                }
+                .padding(.bottom, 2)
+
+                Divider().overlay(WorkstationTheme.borderSoft)
+
+                HStack(spacing: 6) {
+                    Text("Target Issue:")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                    Text(preflight.issueId.isEmpty ? "No issue selected" : preflight.issueId)
+                        .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.accent)
+                    if let issueObj = store.issues.first(where: { $0.id == preflight.issueId }) {
+                        Text("- \(issueObj.title)")
+                            .font(WorkstationTheme.Fonts.body(11))
+                            .foregroundStyle(WorkstationTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Agent Profile")
+                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.textSubtle)
+                    
+                    Picker("", selection: Binding(
+                        get: { preflight.selectedProfileId },
+                        set: { newId in
+                            message.wrappedValue.agentLaunch?.selectedProfileId = newId
+                            if let profile = appVM.agentProfileStore.profiles.first(where: { $0.id == newId }) {
+                                message.wrappedValue.agentLaunch?.autoClaim = profile.shouldClaimIssue
+                                message.wrappedValue.agentLaunch?.autoMerge = profile.shouldCloseIssue
+                                message.wrappedValue.agentLaunch?.requestReview = profile.shouldRequestHumanReview
+                            }
+                        }
+                    )) {
+                        ForEach(appVM.agentProfileStore.profiles) { profile in
+                            Text("\(profile.name) (\(profile.role.rawValue))")
+                                .tag(profile.id)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Model Selection")
+                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.textSubtle)
+                    
+                    Picker("", selection: Binding(
+                        get: { preflight.useFastModel ? 1 : 0 },
+                        set: { message.wrappedValue.agentLaunch?.useFastModel = ($0 == 1) }
+                    )) {
+                        Text("Strong Model").tag(0)
+                        Text("Fast Model").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Settings")
+                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.textSubtle)
+
+                    Toggle(isOn: Binding(
+                        get: { preflight.autoClaim },
+                        set: { message.wrappedValue.agentLaunch?.autoClaim = $0 }
+                    )) {
+                        HStack {
+                            Text("Auto-Claim Issue")
+                                .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                            Spacer()
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+
+                    Toggle(isOn: Binding(
+                        get: { preflight.autoMerge },
+                        set: { message.wrappedValue.agentLaunch?.autoMerge = $0 }
+                    )) {
+                        HStack {
+                            Text("Auto-Merge / Close on Success")
+                                .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                            Spacer()
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+
+                    Toggle(isOn: Binding(
+                        get: { preflight.requestReview },
+                        set: { message.wrappedValue.agentLaunch?.requestReview = $0 }
+                    )) {
+                        HStack {
+                            Text("Request Human Review")
+                                .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                            Spacer()
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Additional Instructions")
+                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.textSubtle)
+
+                    TextEditor(text: Binding(
+                        get: { preflight.extraPrompt },
+                        set: { message.wrappedValue.agentLaunch?.extraPrompt = $0 }
+                    ))
+                    .font(WorkstationTheme.Fonts.body(12))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 48, maxHeight: 80)
+                    .padding(6)
+                    .background(WorkstationTheme.background)
+                    .cornerRadius(WorkstationTheme.Radius.small)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
+                            .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                    )
+                }
+
+                Divider().overlay(WorkstationTheme.borderSoft)
+
+                HStack {
+                    Button {
+                        if let index = messages.firstIndex(where: { $0.id == msg.id }) {
+                            messages.remove(at: index)
+                        }
+                    } label: {
+                        Text("Cancel")
+                    }
+                    .buttonStyle(WorkstationGhostButtonStyle(compact: true))
+
+                    Spacer()
+
+                    Button {
+                        executeAgentLaunch(preflight: preflight, messageId: msg.id)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "paperplane.fill")
+                            Text("Luncurkan Agen di Git Worktree")
+                        }
+                    }
+                    .buttonStyle(WorkstationPrimaryButtonStyle())
+                    .disabled(preflight.issueId.isEmpty)
+                }
+                .padding(.top, 4)
+            }
+            .padding(12)
+            .background(WorkstationTheme.card)
+            .cornerRadius(WorkstationTheme.Radius.medium)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium)
+                    .stroke(WorkstationTheme.border, lineWidth: 1)
+            )
+        }
+    }
+
+    private func executeAgentLaunch(preflight: AgentLaunchPreflight, messageId: UUID) {
+        guard let targetIssue = store.issues.first(where: { $0.id == preflight.issueId }) else { return }
+        guard let originalProfile = appVM.agentProfileStore.profiles.first(where: { $0.id == preflight.selectedProfileId }) else { return }
+        
+        var configuredProfile = originalProfile
+        configuredProfile.shouldClaimIssue = preflight.autoClaim
+        configuredProfile.shouldCloseIssue = preflight.autoMerge
+        configuredProfile.shouldRequestHumanReview = preflight.requestReview
+        
+        if preflight.useFastModel {
+            configuredProfile.defaultPromptTemplate += "\n[Preference: Use Fast Model]"
+        }
+        
+        if !preflight.extraPrompt.isEmpty {
+            configuredProfile.defaultPromptTemplate += "\n\nAdditional Instructions:\n\(preflight.extraPrompt)"
+        }
+        
+        appVM.launchAgentInWorktree(for: targetIssue, profile: configuredProfile)
+        
+        if let index = messages.firstIndex(where: { $0.id == messageId }) {
+            messages[index].text = "Agent launch initiated in Git Worktree for \(targetIssue.id) using \(configuredProfile.name)."
+            messages[index].isAgentLaunch = false
+            messages[index].agentLaunch = nil
+        }
+        
+        messages.append(.init(role: .assistant, text: "🚀 Launched agent successfully! You can monitor progress in the Agent Console panel."))
+    }
 }
 
 private struct PulsingDotModifier: ViewModifier {
@@ -1127,6 +1431,16 @@ private struct PulsingDotModifier: ViewModifier {
             .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPulsing)
             .onAppear { isPulsing = true }
     }
+}
+
+private struct AgentLaunchPreflight: Codable, Equatable, Sendable {
+    var issueId: String
+    var selectedProfileId: UUID
+    var useFastModel: Bool
+    var extraPrompt: String
+    var autoClaim: Bool
+    var autoMerge: Bool
+    var requestReview: Bool
 }
 
 private struct CopilotConversationMessage: Identifiable, Equatable {
@@ -1150,6 +1464,10 @@ private struct CopilotConversationMessage: Identifiable, Equatable {
     var isExecuted: Bool = false
     var isExecuting: Bool = false
 
+    // Agent launch pre-flight fields
+    var isAgentLaunch: Bool = false
+    var agentLaunch: AgentLaunchPreflight? = nil
+
     init(
         role: Role,
         text: String,
@@ -1159,7 +1477,9 @@ private struct CopilotConversationMessage: Identifiable, Equatable {
         isPlan: Bool = false,
         planError: String? = nil,
         isExecuted: Bool = false,
-        isExecuting: Bool = false
+        isExecuting: Bool = false,
+        isAgentLaunch: Bool = false,
+        agentLaunch: AgentLaunchPreflight? = nil
     ) {
         self.role = role
         self.text = text
@@ -1170,6 +1490,8 @@ private struct CopilotConversationMessage: Identifiable, Equatable {
         self.planError = planError
         self.isExecuted = isExecuted
         self.isExecuting = isExecuting
+        self.isAgentLaunch = isAgentLaunch
+        self.agentLaunch = agentLaunch
     }
 
     var roleLabel: String {
