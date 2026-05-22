@@ -60,6 +60,7 @@ private final class CopilotTextView: NSTextView {
     }
 }
 
+@MainActor
 private struct EnterToSendTextEditor: NSViewRepresentable {
     @Binding var text: String
     var fontSize: CGFloat = 13
@@ -108,7 +109,7 @@ private struct EnterToSendTextEditor: NSViewRepresentable {
 
         // Disable scroll view autoresizing to allow SwiftUI to control height
         scrollView.autoresizingMask = []
-        scrollView.isVerticalScrollElasticityAllowed = false
+        scrollView.verticalScrollElasticity = .none
 
         // Set initial frame
         let initialHeight: CGFloat = 38
@@ -131,6 +132,7 @@ private struct EnterToSendTextEditor: NSViewRepresentable {
         context.coordinator.updateHeight()
     }
 
+    @MainActor
     class Coordinator: NSObject, NSTextViewDelegate {
         var text: Binding<String>
         var onSend: () -> Void
@@ -173,8 +175,9 @@ private struct EnterToSendTextEditor: NSViewRepresentable {
             // Force layout if needed
             layoutManager.ensureLayout(for: textContainer)
 
+            let glyphRange = layoutManager.glyphRange(forCharacterRange: NSRange(location: 0, length: textStorage.length), actualCharacterRange: nil)
             let boundingRect = layoutManager.boundingRect(
-                forGlyphRange: layoutManager.characterRange(forLineRange: NSRange(location: 0, length: textStorage.length)),
+                forGlyphRange: glyphRange,
                 in: textContainer
             )
 
