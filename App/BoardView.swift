@@ -19,8 +19,9 @@ struct BoardView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if store.selectedIssue != nil || appVM.detailPaneMode == .bulkAction || appVM.detailPaneMode == .copilot {
+                    PanelResizer(width: $appVM.rightPaneWidth)
                     IssueRightPane(appVM: appVM, store: store, issue: store.selectedIssue)
-                        .frame(width: 440)
+                        .frame(width: appVM.rightPaneWidth)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -438,5 +439,57 @@ struct WorkstationGhostButtonStyle: ButtonStyle {
                     .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+    }
+}
+
+struct PanelResizer: View {
+    @Binding var width: CGFloat
+    let minWidth: CGFloat = 300
+    let maxWidth: CGFloat = 800
+
+    @State private var isHovering = false
+    @State private var dragStartWidth: CGFloat = 0
+    @State private var hasPushedCursor = false
+
+    var body: some View {
+        Rectangle()
+            .fill(isHovering ? WorkstationTheme.accent : WorkstationTheme.borderSoft)
+            .frame(width: 1)
+            .frame(maxHeight: .infinity)
+            .background(Color.clear.frame(width: 8))
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                isHovering = hovering
+                if hovering {
+                    if !hasPushedCursor {
+                        NSCursor.resizeLeftRight.push()
+                        hasPushedCursor = true
+                    }
+                } else {
+                    if hasPushedCursor {
+                        NSCursor.pop()
+                        hasPushedCursor = false
+                    }
+                }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        if dragStartWidth == 0 {
+                            dragStartWidth = width
+                        }
+                        let newWidth = dragStartWidth - value.translation.width
+                        width = min(max(newWidth, minWidth), maxWidth)
+                    }
+                    .onEnded { _ in
+                        dragStartWidth = 0
+                    }
+            )
+            .onDisappear {
+                if hasPushedCursor {
+                    NSCursor.pop()
+                    hasPushedCursor = false
+                }
+            }
     }
 }

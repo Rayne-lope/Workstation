@@ -74,6 +74,7 @@ final class AppViewModel {
     var worktreeMessage: String?
     var activeConsoleRunID: UUID?
     var detailPaneMode: DetailPaneMode = .issue
+    var rightPaneWidth: CGFloat = 440
     var localAIConnectionMessage: String?
     var localAIConnectionMessageIsError = false
     var isTestingLocalAIConnection = false
