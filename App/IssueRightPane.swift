@@ -221,6 +221,10 @@ struct WorkflowCopilotPane: View {
     @State private var isPlusHovered = false
     @State private var isSendHovered = false
 
+    private var currentIssueID: String {
+        store.selectedIssue?.id ?? "global"
+    }
+
     private var selected: [BeadIssue] {
         store.selectedIssues()
     }
@@ -293,6 +297,21 @@ struct WorkflowCopilotPane: View {
         }
         .frame(maxHeight: .infinity)
         .background(WorkstationTheme.surface)
+        .onAppear {
+            loadHistory()
+        }
+        .onChange(of: currentIssueID) { _, _ in
+            loadHistory()
+        }
+        .onChange(of: messages) { _, newMessages in
+            if !newMessages.contains(where: { $0.isStreaming }) {
+                appVM.copilotTranscriptStore.save(messages: newMessages, forIssueID: currentIssueID)
+            }
+        }
+    }
+
+    private func loadHistory() {
+        self.messages = appVM.copilotTranscriptStore.messages(forIssueID: currentIssueID)
     }
 
     private var header: some View {
@@ -309,6 +328,24 @@ struct WorkflowCopilotPane: View {
                     .controlSize(.small)
                     .tint(WorkstationTheme.accent)
             }
+            if !messages.isEmpty {
+                Button {
+                    appVM.copilotTranscriptStore.clear(forIssueID: currentIssueID)
+                    self.messages = []
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 11))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                        .frame(width: 26, height: 26)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small)
+                                .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("Clear Chat")
+            }
+
             Button {
                 appVM.resetDetailPaneToIssue()
             } label: {
@@ -379,71 +416,82 @@ struct WorkflowCopilotPane: View {
                 .foregroundStyle(WorkstationTheme.textSubtle)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    Text(msg.roleLabel)
-                        .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
-                        .foregroundStyle(msg.roleLabelColor)
-                    Spacer(minLength: 0)
-                    Text(msg.createdAt.formatted(date: .omitted, time: .shortened))
-                        .font(WorkstationTheme.Fonts.body(9))
-                        .foregroundStyle(WorkstationTheme.textDisabled)
+            if msg.role == .error && msg.isNetworkOffline {
+                OfflineErrorCard(message: msg) {
+                    retryResponse(for: msg)
                 }
-
-                if msg.isStreaming && msg.text.isEmpty {
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
-                        Circle()
-                            .fill(WorkstationTheme.accent)
-                            .frame(width: 6, height: 6)
-                            .modifier(PulsingDotModifier())
-                        Text("Thinking...")
-                            .font(WorkstationTheme.Fonts.body(12))
-                            .foregroundStyle(WorkstationTheme.textMuted)
+                        Text(msg.roleLabel)
+                            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                            .foregroundStyle(msg.roleLabelColor)
+                        Spacer(minLength: 0)
+                        Text(msg.createdAt.formatted(date: .omitted, time: .shortened))
+                            .font(WorkstationTheme.Fonts.body(9))
+                            .foregroundStyle(WorkstationTheme.textDisabled)
                     }
-                } else if msg.role == .assistant {
-                    if msg.isPlan {
-                        planCardView(message: message)
-                    } else if msg.isAgentLaunch {
-                        agentLaunchCardView(message: message)
-                    } else if let planError = msg.planError {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundStyle(WorkstationTheme.red)
-                                Text("Could not parse plan: \(planError). Falling back to response text:")
-                                    .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
-                                    .foregroundStyle(WorkstationTheme.red)
+
+                    if msg.isStreaming && msg.text.isEmpty {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(WorkstationTheme.accent)
+                                .frame(width: 6, height: 6)
+                                .modifier(PulsingDotModifier())
+                            Text("Thinking...")
+                                .font(WorkstationTheme.Fonts.body(12))
+                                .foregroundStyle(WorkstationTheme.textMuted)
+                        }
+                    } else if msg.role == .assistant {
+                        if msg.isPlan {
+                            planCardView(message: message)
+                        } else if msg.isAgentLaunch {
+                            agentLaunchCardView(message: message)
+                        } else if let planError = msg.planError {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundStyle(WorkstationTheme.red)
+                                    Text("Could not parse plan: \(planError). Falling back to response text:")
+                                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                                        .foregroundStyle(WorkstationTheme.red)
+                                }
+                                
+                                formattedMessageText(for: msg.text)
                             }
-                            
+                        } else {
                             formattedMessageText(for: msg.text)
                         }
                     } else {
-                        formattedMessageText(for: msg.text)
+                        Text(msg.text)
+                            .font(WorkstationTheme.Fonts.body(13))
+                            .foregroundStyle(msg.foregroundColor)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
                     }
-                } else {
-                    Text(msg.text)
-                        .font(WorkstationTheme.Fonts.body(13))
-                        .foregroundStyle(msg.foregroundColor)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
                 }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(maxWidth: msg.role == .user ? 320 : .infinity, alignment: .leading)
-            .background(msg.bubbleBackground)
-            .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
-                    .stroke(msg.bubbleBorderColor, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .frame(maxWidth: msg.role == .user ? 320 : .infinity, alignment: .leading)
+                .background(msg.bubbleBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                        .stroke(msg.bubbleBorderColor, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
 
-            if msg.role == .assistant && !msg.isStreaming && !msg.text.isEmpty && !msg.isPlan {
-                responseActions(for: msg)
-                    .padding(.top, 2)
+                if msg.role == .assistant && !msg.isStreaming && !msg.text.isEmpty && !msg.isPlan {
+                    responseActions(for: msg)
+                        .padding(.top, 2)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: msg.role == .user ? .trailing : .leading)
+    }
+
+    private func retryResponse(for message: CopilotConversationMessage) {
+        messages.removeAll { $0.id == message.id }
+        regenerateLastResponse()
     }
 
     private func responseActions(for message: CopilotConversationMessage) -> some View {
@@ -1075,7 +1123,33 @@ struct WorkflowCopilotPane: View {
                 }
             } catch {
                 await MainActor.run {
-                    messages.append(.init(role: .error, text: error.localizedDescription))
+                    var isOffline = false
+                    let errStr = error.localizedDescription
+                    
+                    if let serviceErr = error as? OpenCodeServiceError {
+                        switch serviceErr {
+                        case .unreachable:
+                            isOffline = true
+                        default:
+                            break
+                        }
+                    } else if let connErr = error as? LocalAIConnectionError {
+                        switch connErr {
+                        case .unreachable:
+                            isOffline = true
+                        default:
+                            break
+                        }
+                    } else if error is URLError {
+                        isOffline = true
+                    } else {
+                        let lower = errStr.lowercased()
+                        if lower.contains("offline") || lower.contains("unreachable") || lower.contains("connection") || lower.contains("timed out") || lower.contains("network") {
+                            isOffline = true
+                        }
+                    }
+                    
+                    messages.append(.init(role: .error, text: errStr, isNetworkOffline: isOffline))
                     isSending = false
                     streamingStartTime = nil
                 }
@@ -1882,67 +1956,7 @@ private struct PulsingDotModifier: ViewModifier {
     }
 }
 
-private struct AgentLaunchPreflight: Codable, Equatable, Sendable {
-    var issueId: String
-    var selectedProfileId: UUID
-    var useFastModel: Bool
-    var extraPrompt: String
-    var autoClaim: Bool
-    var autoMerge: Bool
-    var requestReview: Bool
-}
-
-private struct CopilotConversationMessage: Identifiable, Equatable {
-    enum Role: Equatable {
-        case user
-        case assistant
-        case error
-    }
-
-    let id = UUID()
-    let createdAt = Date()
-    let role: Role
-    var text: String
-    var isStreaming: Bool = false
-    var thinkingDuration: TimeInterval?
-    
-    // Action plan fields
-    var plan: WorkflowPlan? = nil
-    var isPlan: Bool = false
-    var planError: String? = nil
-    var isExecuted: Bool = false
-    var isExecuting: Bool = false
-
-    // Agent launch pre-flight fields
-    var isAgentLaunch: Bool = false
-    var agentLaunch: AgentLaunchPreflight? = nil
-
-    init(
-        role: Role,
-        text: String,
-        isStreaming: Bool = false,
-        thinkingDuration: TimeInterval? = nil,
-        plan: WorkflowPlan? = nil,
-        isPlan: Bool = false,
-        planError: String? = nil,
-        isExecuted: Bool = false,
-        isExecuting: Bool = false,
-        isAgentLaunch: Bool = false,
-        agentLaunch: AgentLaunchPreflight? = nil
-    ) {
-        self.role = role
-        self.text = text
-        self.isStreaming = isStreaming
-        self.thinkingDuration = thinkingDuration
-        self.plan = plan
-        self.isPlan = isPlan
-        self.planError = planError
-        self.isExecuted = isExecuted
-        self.isExecuting = isExecuting
-        self.isAgentLaunch = isAgentLaunch
-        self.agentLaunch = agentLaunch
-    }
-
+extension CopilotConversationMessage {
     var roleLabel: String {
         switch role {
         case .user:
@@ -1994,6 +2008,92 @@ private struct CopilotConversationMessage: Identifiable, Equatable {
         case .error:
             return WorkstationTheme.redBorder
         }
+    }
+}
+
+struct OfflineErrorCard: View {
+    let message: CopilotConversationMessage
+    let onRetry: () -> Void
+    
+    @State private var showDetails = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "wifi.slash")
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.red)
+                    .padding(.top, 2)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Network Connection Offline")
+                        .font(WorkstationTheme.Fonts.body(13, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                    
+                    Text("Unable to connect to the local AI service. Please verify that your local model server is running and accessible.")
+                        .font(WorkstationTheme.Fonts.body(12))
+                        .foregroundStyle(WorkstationTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            
+            if !message.text.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            showDetails.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: showDetails ? "chevron.down" : "chevron.right")
+                                .font(.system(size: 8, weight: .bold))
+                            Text("Show Technical Details")
+                                .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                        }
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    if showDetails {
+                        Text(message.text)
+                            .font(WorkstationTheme.Fonts.body(11))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(WorkstationTheme.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                                    .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                            )
+                            .textSelection(.enabled)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+            }
+            
+            HStack {
+                Spacer()
+                Button {
+                    onRetry()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Retry Connection")
+                    }
+                }
+                .buttonStyle(WorkstationPrimaryButtonStyle())
+            }
+            .padding(.top, 4)
+        }
+        .padding(14)
+        .background(WorkstationTheme.redBg.opacity(0.15))
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(WorkstationTheme.redBorder.opacity(0.3), lineWidth: 1)
+        )
     }
 }
 
