@@ -202,7 +202,7 @@ struct WorkspaceDetailView: View {
         case .overview:
             WorkspaceOverviewPlaceholder(store: store)
         case .issues:
-            WorkspaceIssuesPlaceholder(store: store)
+            WorkspaceIssuesView(appVM: appVM, store: store)
         case .team:
             WorkspaceTeamPlaceholder(store: store)
         case .activity:
@@ -324,25 +324,239 @@ private struct WorkspaceOverviewPlaceholder: View {
     }
 }
 
-private struct WorkspaceIssuesPlaceholder: View {
+struct WorkspaceIssuesView: View {
+    @Bindable var appVM: AppViewModel
     let store: IssueStore
 
+    private var profiles: [AgentProfile] {
+        appVM.agentProfileStore.profiles
+    }
+
     var body: some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            VStack(alignment: .leading, spacing: 20) {
+                let columnsWithIssues = KanbanColumn.allCases.filter { column in
+                    !store.issues(in: column).isEmpty
+                }
+
+                if columnsWithIssues.isEmpty {
+                    emptyState
+                } else {
+                    ForEach(columnsWithIssues) { column in
+                        let columnIssues = store.issues(in: column)
+                        issuesSection(column: column, issues: columnIssues)
+                    }
+                }
+            }
+            .padding(24)
+        }
+        .background(WorkstationTheme.background)
+    }
+
+    // MARK: - Empty State
+    private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "list.bullet.rectangle")
                 .font(.system(size: 40, weight: .light))
                 .foregroundStyle(WorkstationTheme.textDisabled)
             VStack(spacing: 6) {
-                Text("Issues Tab")
-                    .font(WorkstationTheme.Fonts.display(20, weight: .bold))
+                Text("No issues in this workspace")
+                    .font(WorkstationTheme.Fonts.display(18, weight: .bold))
                     .foregroundStyle(WorkstationTheme.textPrimary)
-                Text("Grouped by status — coming in Workstation-0pf")
+                Text("Get started by creating your first issue.")
                     .font(WorkstationTheme.Fonts.body(13))
                     .foregroundStyle(WorkstationTheme.textMuted)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(WorkstationTheme.background)
+        .frame(maxWidth: .infinity, minHeight: 250, alignment: .center)
+    }
+
+    // MARK: - Section View
+    private func issuesSection(column: KanbanColumn, issues: [BeadIssue]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header: dot warna + label + count badge
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(WorkstationTheme.accent(for: column))
+                    .frame(width: 8, height: 8)
+
+                Text(column.rawValue.uppercased())
+                    .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                    .tracking(0.8)
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+
+                Text("\(issues.count)")
+                    .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(WorkstationTheme.borderSoft)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+
+                Spacer()
+            }
+            .padding(.horizontal, 6)
+            .padding(.bottom, 4)
+
+            // Issues list under the header
+            VStack(spacing: 0) {
+                ForEach(issues) { issue in
+                    WorkspaceIssueRowView(
+                        issue: issue,
+                        column: column,
+                        profiles: profiles,
+                        onSelect: {
+                            store.selectIssue(id: issue.id)
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                appVM.viewMode = .kanban
+                            }
+                        }
+                    )
+                    
+                    if issue.id != issues.last?.id {
+                        Divider()
+                            .overlay(WorkstationTheme.borderSoft)
+                            .padding(.horizontal, 14)
+                    }
+                }
+            }
+            .background(WorkstationTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                    .stroke(WorkstationTheme.border, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+        }
+    }
+}
+
+struct WorkspaceIssueRowView: View {
+    let issue: BeadIssue
+    let column: KanbanColumn
+    let profiles: [AgentProfile]
+    let onSelect: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(alignment: .center, spacing: 12) {
+                // Status dot
+                Circle()
+                    .fill(WorkstationTheme.accent(for: column))
+                    .frame(width: 6, height: 6)
+
+                // Title (Syne bold/semibold) + ID
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .center, spacing: 8) {
+                        Text(issue.title)
+                            .font(WorkstationTheme.Fonts.display(13, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.textPrimary)
+                            .lineLimit(1)
+                        
+                        Text(issue.id)
+                            .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                            .foregroundStyle(WorkstationTheme.textDisabled)
+                    }
+                    
+                    if let desc = issue.description, !desc.isEmpty {
+                        Text(desc)
+                            .font(WorkstationTheme.Fonts.body(11))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                            .lineLimit(1)
+                    }
+                }
+                
+                Spacer(minLength: 16)
+
+                // Row metadata / badges
+                HStack(spacing: 12) {
+                    // Priority tag
+                    if let priority = issue.priority,
+                       let difficulty = PriorityDifficulty.from(priority: priority) {
+                        priorityBadge(difficulty.displayName, priority: priority)
+                    }
+
+                    // Thin progress bar for Active statuses
+                    if issue.status == "in_progress" || issue.status == "review" {
+                        thinProgressBar(for: issue.status)
+                    }
+
+                    // Assignee avatar (showName: false makes it only render the glyph/avatar)
+                    if issue.assignee?.isEmpty == false {
+                        AssigneeBadgeView(assignee: issue.assignee, profiles: profiles, compact: true, showName: false)
+                    }
+
+                    // Due/updated date
+                    if let updated = issue.updatedAt, !updated.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 9.5, weight: .medium))
+                            Text(shortDate(updated))
+                                .font(WorkstationTheme.Fonts.body(9.5, weight: .medium))
+                        }
+                        .foregroundStyle(WorkstationTheme.textDisabled)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(WorkstationTheme.borderSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(isHovering ? WorkstationTheme.hover : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        #if os(macOS)
+        .onHover { isHovering = $0 }
+        #endif
+        .animation(.easeOut(duration: 0.1), value: isHovering)
+    }
+
+    // MARK: - Row Helpers
+    private func priorityBadge(_ label: String, priority: Int) -> some View {
+        let color = WorkstationTheme.difficultyColor(priority)
+        return BadgeView(style: .priority(priority)) {
+            HStack(spacing: 3) {
+                if priority <= 1 {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 4.5, height: 4.5)
+                }
+                Text(label)
+            }
+            .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+            .lineLimit(1)
+        }
+    }
+
+    private func thinProgressBar(for status: String?) -> some View {
+        let progress: Double = status == "review" ? 0.8 : 0.4
+        
+        return ZStack(alignment: .leading) {
+            Capsule()
+                .fill(WorkstationTheme.border)
+                .frame(width: 36, height: 3)
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        colors: [WorkstationTheme.accent, WorkstationTheme.accentHover],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: 36 * progress, height: 3)
+        }
+    }
+
+    private func shortDate(_ raw: String) -> String {
+        raw.split(separator: "T").first.map(String.init) ?? raw
     }
 }
 

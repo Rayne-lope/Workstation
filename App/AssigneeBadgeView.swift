@@ -5,6 +5,7 @@ struct AssigneeBadgeView: View {
     let assignee: String?
     let profiles: [AgentProfile]
     var compact: Bool = false
+    var showName: Bool = true
 
     private let resolver = AssigneeAvatarResolver()
 
@@ -13,21 +14,31 @@ struct AssigneeBadgeView: View {
             HStack(spacing: compact ? 6 : 8) {
                 avatarGlyph(for: descriptor)
 
-                Text(descriptor.label)
-                    .font(WorkstationTheme.Fonts.body(compact ? 11 : 12, weight: .semibold))
-                    .foregroundStyle(WorkstationTheme.textSecondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                if showName {
+                    Text(descriptor.label)
+                        .font(WorkstationTheme.Fonts.body(compact ? 11 : 12, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
             }
-            .padding(.horizontal, compact ? 7 : 8)
-            .padding(.vertical, compact ? 3 : 5)
+            .padding(.horizontal, showName ? (compact ? 7 : 8) : 0)
+            .padding(.vertical, showName ? (compact ? 3 : 5) : 0)
             .background(
-                RoundedRectangle(cornerRadius: compact ? WorkstationTheme.Radius.medium : WorkstationTheme.Radius.large, style: .continuous)
-                    .fill(WorkstationTheme.cardAlt)
+                Group {
+                    if showName {
+                        RoundedRectangle(cornerRadius: compact ? WorkstationTheme.Radius.medium : WorkstationTheme.Radius.large, style: .continuous)
+                            .fill(WorkstationTheme.cardAlt)
+                    }
+                }
             )
             .overlay(
-                RoundedRectangle(cornerRadius: compact ? WorkstationTheme.Radius.medium : WorkstationTheme.Radius.large, style: .continuous)
-                    .stroke(borderColor(for: descriptor.kind), lineWidth: 1)
+                Group {
+                    if showName {
+                        RoundedRectangle(cornerRadius: compact ? WorkstationTheme.Radius.medium : WorkstationTheme.Radius.large, style: .continuous)
+                            .stroke(borderColor(for: descriptor.kind), lineWidth: 1)
+                    }
+                }
             )
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Assignee \(descriptor.label)")
