@@ -36,24 +36,3 @@ struct SettingsShellView: View {
         }
     }
 }
-
-struct AgentProfilesSettingsPanelView: View {
-    let appVM: AppViewModel
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Text("Agent Profiles")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundColor(Color(hex: "#F0ECE4"))
-
-            Text("Configure developer agent profiles and their capabilities.")
-                .font(.system(size: 13))
-                .foregroundColor(Color(hex: "#888888"))
-
-            Spacer()
-        }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(hex: "#0F0F0F"))
-    }
-}

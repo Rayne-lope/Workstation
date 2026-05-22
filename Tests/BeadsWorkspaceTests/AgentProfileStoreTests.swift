@@ -287,6 +287,8 @@ struct AgentProfileStoreTests {
         let custom = store.profiles.first { !$0.isBuiltIn }
         #expect(custom?.name == "Legacy Custom")
         #expect(custom?.commandArgsTemplate == "")
+        #expect(custom?.systemInstructions == "")
+        #expect(custom?.cadenceDays == nil)
         #expect(custom?.canExecuteCode == false)
         #expect(custom?.shouldClaimIssue == false)
         #expect(custom?.shouldCloseIssue == false)

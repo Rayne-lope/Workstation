@@ -45,6 +45,7 @@
 		46E73A4A41ED848CC03964FC /* Clipboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB65FC1E71D27AB7752E18C /* Clipboard.swift */; };
 		475D8F4CC21C9CB86EA72AAF /* SettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B169E4EDA542277E1D174137 /* SettingsTab.swift */; };
 		4D89A396E437E3AB3E46EEAA /* SettingsShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBDFB2F92EA5F5964227D36 /* SettingsShellView.swift */; };
+		53D85D5BAD4AEFE9593A1DF1 /* AgentProfilesSettingsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67E9C7529CD6ABE8CBBEF6A5 /* AgentProfilesSettingsPanelView.swift */; };
 		54B35A68E81900B2F00204EB /* deepseek.png in Resources */ = {isa = PBXBuildFile; fileRef = 9A30CDDE4D146850577F7904 /* deepseek.png */; };
 		55A9D8A81FFE4BC80B1FF525 /* WorkspaceValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDF7E4DE788E6AD0637B4CF /* WorkspaceValidator.swift */; };
 		587B34E6249E0E622746E0F9 /* gemini.png in Resources */ = {isa = PBXBuildFile; fileRef = CA301A442744BBAE193C5A97 /* gemini.png */; };
@@ -175,6 +176,7 @@
 		5F33C251A2CDC821C3E898D7 /* CreateIssueSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateIssueSheet.swift; sourceTree = "<group>"; };
 		6224D67B91244DA59C02E583 /* ProjectRootDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRootDiscovery.swift; sourceTree = "<group>"; };
 		66B054C739B30C65BA3CEECA /* AgentRunActionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunActionsView.swift; sourceTree = "<group>"; };
+		67E9C7529CD6ABE8CBBEF6A5 /* AgentProfilesSettingsPanelView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AgentProfilesSettingsPanelView.swift; sourceTree = "<group>"; };
 		6BFA2C08A9675E292DDC3463 /* AgentProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProfileStore.swift; sourceTree = "<group>"; };
 		6C11A2CEA9744AED76B10DCF /* ShellCommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommandRunner.swift; sourceTree = "<group>"; };
 		6D6C6686F1BEF68085058BBE /* qwen.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = qwen.png; sourceTree = "<group>"; };
@@ -412,6 +414,7 @@
 				911B6D15106586722D5B61D2 /* WorkspaceDetailView.swift */,
 				0D10F2A90FA1A49C77E291F2 /* WorkspaceViewModel.swift */,
 				BFE3A89F931C955C66A7FF25 /* WorkstationApp.swift */,
+				67E9C7529CD6ABE8CBBEF6A5 /* AgentProfilesSettingsPanelView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -431,8 +434,6 @@
 			dependencies = (
 			);
 			name = Workstation;
-			packageProductDependencies = (
-			);
 			productName = Workstation;
 			productReference = 71C494D7BB7A5EC851154318 /* Workstation.app */;
 			productType = "com.apple.product-type.application";
@@ -600,6 +601,7 @@
 				55A9D8A81FFE4BC80B1FF525 /* WorkspaceValidator.swift in Sources */,
 				C213EF1586BDC5E6CFA53574 /* WorkspaceViewModel.swift in Sources */,
 				7CACC40A360D066A86F3E575 /* WorkstationApp.swift in Sources */,
+				53D85D5BAD4AEFE9593A1DF1 /* AgentProfilesSettingsPanelView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

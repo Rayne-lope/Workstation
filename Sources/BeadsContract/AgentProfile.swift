@@ -44,6 +44,8 @@ public struct AgentProfile: Identifiable, Codable, Hashable, Sendable {
     public var command: String
     public var defaultPromptTemplate: String
     public var commandArgsTemplate: String
+    public var systemInstructions: String
+    public var cadenceDays: Int?
     public var avatarKind: AgentAvatarKind
     public var canExecuteCode: Bool
     public var shouldClaimIssue: Bool
@@ -58,6 +60,8 @@ public struct AgentProfile: Identifiable, Codable, Hashable, Sendable {
         command: String,
         defaultPromptTemplate: String = "",
         commandArgsTemplate: String = "",
+        systemInstructions: String = "",
+        cadenceDays: Int? = nil,
         avatarKind: AgentAvatarKind = .initials,
         canExecuteCode: Bool = false,
         shouldClaimIssue: Bool = false,
@@ -71,6 +75,8 @@ public struct AgentProfile: Identifiable, Codable, Hashable, Sendable {
         self.command = command
         self.defaultPromptTemplate = defaultPromptTemplate
         self.commandArgsTemplate = commandArgsTemplate
+        self.systemInstructions = systemInstructions
+        self.cadenceDays = cadenceDays
         self.avatarKind = avatarKind
         self.canExecuteCode = canExecuteCode
         self.shouldClaimIssue = shouldClaimIssue
@@ -87,6 +93,8 @@ public struct AgentProfile: Identifiable, Codable, Hashable, Sendable {
         self.command = try container.decode(String.self, forKey: .command)
         self.defaultPromptTemplate = try container.decodeIfPresent(String.self, forKey: .defaultPromptTemplate) ?? ""
         self.commandArgsTemplate = try container.decodeIfPresent(String.self, forKey: .commandArgsTemplate) ?? ""
+        self.systemInstructions = try container.decodeIfPresent(String.self, forKey: .systemInstructions) ?? ""
+        self.cadenceDays = try container.decodeIfPresent(Int.self, forKey: .cadenceDays)
         self.avatarKind = try container.decodeIfPresent(AgentAvatarKind.self, forKey: .avatarKind) ?? .initials
         self.canExecuteCode = try container.decodeIfPresent(Bool.self, forKey: .canExecuteCode) ?? false
         self.shouldClaimIssue = try container.decodeIfPresent(Bool.self, forKey: .shouldClaimIssue) ?? false

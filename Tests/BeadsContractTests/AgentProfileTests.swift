@@ -152,6 +152,8 @@ struct AgentProfileTests {
         let decoded = try JSONDecoder().decode(AgentProfile.self, from: Data(legacy.utf8))
         #expect(decoded.name == "Old Custom")
         #expect(decoded.commandArgsTemplate == "")
+        #expect(decoded.systemInstructions == "")
+        #expect(decoded.cadenceDays == nil)
         #expect(decoded.avatarKind == .initials)
         #expect(decoded.canExecuteCode == false)
         #expect(decoded.shouldClaimIssue == false)
@@ -174,6 +176,8 @@ struct AgentProfileTests {
             role: .custom,
             command: "my-cli",
             defaultPromptTemplate: "hello {{issue_id}}",
+            systemInstructions: "You are a helpful assistant.",
+            cadenceDays: 7,
             avatarKind: .claude,
             isBuiltIn: false
         )
