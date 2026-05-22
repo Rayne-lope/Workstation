@@ -15,7 +15,14 @@ public enum MarkdownTextRenderer {
             return nil
         }
 
-        let parsed = (try? AttributedString(markdown: raw)) ?? AttributedString(raw)
+        let parsed: AttributedString
+        if mode == .copilot {
+            var options = AttributedString.MarkdownParsingOptions()
+            options.interpretedSyntax = .inlineOnlyPreservingWhitespace
+            parsed = (try? AttributedString(markdown: raw, options: options)) ?? AttributedString(raw)
+        } else {
+            parsed = (try? AttributedString(markdown: raw)) ?? AttributedString(raw)
+        }
 
         switch mode {
         case .detail:
@@ -72,7 +79,9 @@ public enum MarkdownTextRenderer {
         }
 
         // Use AttributedString for markdown rendering, then convert to SwiftUI Text
-        if let attributed = try? AttributedString(markdown: trimmed) {
+        var options = AttributedString.MarkdownParsingOptions()
+        options.interpretedSyntax = .inlineOnlyPreservingWhitespace
+        if let attributed = try? AttributedString(markdown: trimmed, options: options) {
             return Text(attributed)
         }
 

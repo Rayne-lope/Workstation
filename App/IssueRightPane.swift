@@ -217,6 +217,7 @@ struct WorkflowCopilotPane: View {
     @State private var excludedContextIDs: Set<String> = []
     @State private var hoveredMessageID: UUID?
     @State private var showingCopilotMenu = false
+    @State private var inputHeight: CGFloat = 38
 
     private var selected: [BeadIssue] {
         store.selectedIssues()
@@ -463,9 +464,11 @@ struct WorkflowCopilotPane: View {
                     .padding(.top, 10)
             }
 
-            EnterToSendTextEditor(text: $prompt, onSend: sendPrompt)
-                .frame(minHeight: 38, maxHeight: 120)
-                .padding(.horizontal, 4)
+            EnterToSendTextEditor(text: $prompt, onSend: sendPrompt, onHeightChange: { height in
+                self.inputHeight = height
+            })
+            .frame(height: inputHeight)
+            .padding(.horizontal, 4)
                 .padding(.vertical, visibleContextIssues.isEmpty ? 10 : 4)
 
             HStack(spacing: 8) {
