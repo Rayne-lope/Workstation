@@ -929,14 +929,60 @@ struct WorkflowCopilotPane: View {
 
     private func looksLikeMutationRequest(_ text: String) -> Bool {
         let lower = text.lowercased()
-        let keywords = [
-            "close", "tutup", "selesai", "sudah",
-            "priority", "prio", "p1", "p2", "p3", "p4", "p0", "penting",
-            "status", "progress", "pindah", "geser", "kolom", "ready", "backlog", "in progress", "review", "done", "blocked",
-            "assign", "tunjuk", "tugaskan", "launch", "kerjakan",
-            "create", "buat", "tambah", "issue baru"
+        
+        // Specific mutation phrases / commands
+        let actionPhrases = [
+            // Close / Tutup
+            "close issue", "tutup issue", "selesaikan issue", "close ini", "tutup ini", "selesaikan ini",
+            "tutup bead", "close bead",
+            
+            // Priority
+            "ubah priority", "ganti priority", "set priority", "priority jd", "priority jadi",
+            "ubah prio", "ganti prio", "set prio", "prio jd", "prio jadi",
+            "set p0", "set p1", "set p2", "set p3", "set p4",
+            "jadikan p0", "jadikan p1", "jadikan p2", "jadikan p3", "jadikan p4",
+            
+            // Status / Progress
+            "ubah status", "ganti status", "set status", "status jadi", "status jd",
+            "ubah progress", "ganti progress", "set progress", "progress jadi", "progress jd",
+            "pindahkan ke", "pindah ke", "geser ke", "pindah kolom", "geser kolom",
+            
+            // Assign / Tugaskan
+            "assign ke", "tugaskan ke", "tunjuk ke", "assign me", "assign saya", "tugaskan saya",
+            
+            // Create / Buat Issue
+            "buat issue", "tambah issue", "create issue", "bikin issue", "buat task", "tambah task",
+            "create task", "bikin task", "buat bead", "tambah bead", "create bead", "bikin bead"
         ]
-        return keywords.contains { lower.contains($0) }
+        
+        if actionPhrases.contains(where: { lower.contains($0) }) {
+            return true
+        }
+        
+        // Single strong action words, but only when accompanied by "issue", "bead", or "task", OR if they are exact command words.
+        let strongVerbs = ["close", "tutup", "selesaikan", "assign", "tugaskan", "create", "pindahkan"]
+        let contextWords = ["issue", "bead", "task", "tiket", "ini", "itu"]
+        
+        for verb in strongVerbs {
+            if lower.contains(verb) {
+                // If it's used with issue/task/bead context
+                if contextWords.contains(where: { lower.contains($0) }) {
+                    return true
+                }
+            }
+        }
+        
+        // Direct issue ID + state changes or close
+        // E.g., "close workstation-123" or "workstation-123 to in progress"
+        if let regex = try? NSRegularExpression(pattern: "workstation-\\w+"),
+           regex.firstMatch(in: lower, options: [], range: NSRange(location: 0, length: lower.utf16.count)) != nil {
+            let actionWords = ["close", "tutup", "selesai", "pindah", "geser", "status", "priority", "prio", "assign", "tugaskan"]
+            if actionWords.contains(where: { lower.contains($0) }) {
+                return true
+            }
+        }
+        
+        return false
     }
 
     private func cleanJSONString(_ raw: String) -> String {
@@ -1010,8 +1056,14 @@ struct WorkflowCopilotPane: View {
                         if let data = cleaned.data(using: .utf8) {
                             do {
                                 let plan = try JSONDecoder().decode(WorkflowPlan.self, from: data)
-                                messages[streamingIdx].plan = plan
-                                messages[streamingIdx].isPlan = true
+                                let activeActions = plan.actions.filter { $0.kind != "skip" }
+                                if activeActions.isEmpty {
+                                    messages[streamingIdx].isPlan = false
+                                    messages[streamingIdx].text = plan.summary
+                                } else {
+                                    messages[streamingIdx].plan = plan
+                                    messages[streamingIdx].isPlan = true
+                                }
                             } catch {
                                 messages[streamingIdx].planError = error.localizedDescription
                             }
