@@ -222,4 +222,25 @@ struct PromptGeneratorTests {
         let cmd = generator.generateCommand(for: custom, issue: issue, projectPath: nil)
         #expect(cmd == "mycli")
     }
+
+    @Test("executor and review followup prompts contain mandatory git merge and push protocol")
+    func promptsContainGitMergeAndPushProtocol() {
+        let executorPrompt = generator.generatePrompt(
+            for: profile(for: .codingExecutor),
+            issue: issue,
+            projectPath: projectPath
+        )
+        #expect(executorPrompt.contains("MANDATORY Git Worktree Merge & Push Protocol"))
+        #expect(executorPrompt.contains("git merge <your-branch-name> --no-edit"))
+        #expect(executorPrompt.contains("git push origin master"))
+
+        let followupPrompt = generator.generateReviewFollowupPrompt(
+            issue: issue,
+            projectPath: projectPath,
+            userNotes: "re-test"
+        )
+        #expect(followupPrompt.contains("MANDATORY Git Worktree Merge & Push Protocol"))
+        #expect(followupPrompt.contains("git merge <your-branch-name> --no-edit"))
+        #expect(followupPrompt.contains("git push origin master"))
+    }
 }

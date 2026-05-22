@@ -82,6 +82,23 @@ public struct PromptGenerator: Sendable {
           * Do NOT just write a generic "implementation complete" or list files changed.
           * You MUST explain exactly where the new/changed elements are located in the UI (e.g., which sidebar, button, screen, or menu item) so the user knows where to find them.
           * You MUST provide a clear, step-by-step manual testing guide in the notes explaining how the user can test and verify the change in the app.
+        
+        \(Self.gitMergeProtocol(projectPath: path))
+        """
+    }
+
+    private static func gitMergeProtocol(projectPath: String) -> String {
+        guard !projectPath.isEmpty else { return "" }
+        return """
+        
+        MANDATORY Git Worktree Merge & Push Protocol (MUST DO at session end if build succeeds and tests pass):
+        Since you are running in a dedicated local git worktree, once all tests pass and the build succeeds, you MUST commit your changes, merge them back into the main `master` branch in the root workspace directory, and push `master` to origin so the changes are immediately live. Follow these exact steps:
+        1. Identify your current agent worktree branch name (e.g. by running `git branch --show-current` or checking `git status`).
+        2. Stage and commit your changes in the current worktree: `git add . && git commit -m "feat/fix: <summary of changes>"`
+        3. Push your worktree branch to remote: `git push origin <your-branch-name>`
+        4. Navigate to the root workspace directory: `cd \(projectPath)`
+        5. Merge your worktree branch into the `master` branch: `git merge <your-branch-name> --no-edit`
+        6. Push the updated `master` branch to the remote repository: `git push origin master`
         """
     }
 
@@ -164,6 +181,8 @@ public struct PromptGenerator: Sendable {
           * Do NOT just write a generic "implementation complete" or list files changed.
           * You MUST explain exactly where the new/changed elements are located in the UI (e.g., which sidebar, button, screen, or menu item) so the user knows where to find them.
           * You MUST provide a clear, step-by-step manual testing guide in the notes explaining how the user can test and verify the change in the app.
+
+        \(Self.gitMergeProtocol(projectPath: projectPath))
 
         Assignee convention:
         - Use `claude` for Claude Code Executor.
