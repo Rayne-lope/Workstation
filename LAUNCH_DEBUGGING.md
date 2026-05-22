@@ -118,7 +118,35 @@ if profile.shouldClaimIssue {
 
 ---
 
-## 3. Best Practices for Future Work
+## 3. Shell Command Substitution & Injection in Agent Launching
+
+### The Problem
+When launching an agent in the terminal, the app constructs a shell launch command wrapping the prompt content in a double-quoted string (e.g. `claude --dangerously-skip-permissions "<prompt>"`).
+If the prompt contains special characters that are active inside shell double quotes:
+* **Backticks** (`` ` ``) are evaluated by the shell as *command substitutions* (e.g. `` `GUIDE.md` `` tries to run `GUIDE.md` as an executable).
+* **Redirection symbols** (e.g. `<your-branch-name>`) trigger zsh syntax parsing errors.
+* **Dollar signs** (`$`) are interpreted as variable expansions.
+
+This causes the agent launch to fail inside the terminal window with shell errors like `zsh: command not found` or `zsh: parse error`.
+
+### The Solution
+We implemented a robust shell double-quote escaping mechanism in [PromptGenerator.swift](file:///Users/apple/Programming/Projects/Personal/Workstation/Sources/BeadsContract/PromptGenerator.swift):
+
+```swift
+public static func escapeForShellDoubleQuotes(_ string: String) -> String {
+    string.replacingOccurrences(of: "\\", with: "\\\\")
+        .replacingOccurrences(of: "\"", with: "\\\"")
+        .replacingOccurrences(of: "$", with: "\\$")
+        .replacingOccurrences(of: "`", with: "\\`")
+}
+```
+
+This method is called prior to embedding the prompt in the shell arguments, ensuring all active shell special characters are robustly escaped.
+
+---
+
+## 4. Best Practices for Future Work
+* **Always escape prompt strings for double-quoted shell templates**: If you pass prompt strings directly into shell templates, you **MUST** escape backslashes, double-quotes, dollar signs, and backticks first.
 * **Always run AppleScript with synchronous exit codes**: Never run `osascript` in a completely fire-and-forget asynchronous process without checking the error stream. Always capture exit codes.
 * **Keep Database Updates Fail-Soft**: App workflow states should be tolerant. If a metadata update on `bd` fails but the issue is already assigned correctly, do not halt the user's workflow.
 * **Verify with Quality Gates**: Before completing your work session, run quality gates from the active workspace directory:
