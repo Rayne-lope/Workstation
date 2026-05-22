@@ -200,7 +200,7 @@ struct IssueDetailView: View {
 
     private var assigneeMenuLabel: some View {
         Menu {
-            ForEach(AgentProfile.builtInProfiles.filter { $0.role == .codingExecutor }, id: \.id) { profile in
+            ForEach(appVM.agentProfileStore.profiles.filter { $0.role == .codingExecutor && $0.canExecuteCode }, id: \.id) { profile in
                 Button("\(profile.name) (assign + launch)") {
                     appVM.assignAndLaunchIfExecutor(for: issue, assignee: profile.claimAssigneeToken)
                 }

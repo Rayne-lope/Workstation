@@ -323,7 +323,8 @@ public final class IssueStore {
         }
     }
 
-    public func clearHumanReview(id: String) async {
+    @discardableResult
+    public func clearHumanReview(id: String) async -> Bool {
         await runMutation { [self] in
             _ = try await service.removeLabel(
                 id: id,
@@ -331,6 +332,7 @@ public final class IssueStore {
                 in: workingDirectory
             )
         }
+        return errorMessage == nil
     }
 
     public func claimSelected() async {

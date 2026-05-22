@@ -39,6 +39,18 @@ struct AgentLaunchFlowCoordinatorTests {
         )
     }
 
+    private func sampleReviewIssue() -> BeadIssue {
+        BeadIssue(
+            id: "bd-123",
+            title: "Warn before agent launch",
+            status: "in_progress",
+            priority: 2,
+            issueType: "feature",
+            description: "Add a git dirty check.",
+            labels: [KanbanStateMapper.humanReviewLabel]
+        )
+    }
+
     private func sampleProfile() -> AgentProfile {
         AgentProfile.builtInProfiles.first { $0.id == AgentProfile.codingExecutorID }!
     }
@@ -200,9 +212,138 @@ struct AgentLaunchFlowCoordinatorTests {
 
         #expect(session != nil)
         #expect(runner.calls.first?.arguments == ["update", "bd-123", "--claim", "--assignee", "claude", "--json"])
+        #expect(!runner.calls.contains { $0.arguments == ["update", "bd-123", "--remove-label", "human", "--json"] })
         #expect(historyStore.records.count == 1)
         #expect(historyStore.records.first?.status == .prepared)
         #expect(historyStore.records.first?.projectPath == folder.path)
+        #expect(launcher.calls.isEmpty)
+    }
+
+    @Test("claimable review issue clears human label before launch session is prepared")
+    func claimableReviewIssueClearsHumanLabelBeforeLaunch() async throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("agent-review-takeover \(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let clock = MutableClock()
+        clock.now = Date(timeIntervalSince1970: 225)
+        let runner = StubCommandRunner()
+        let launcher = StubTerminalLauncher()
+        let (coordinator, historyStore, _, _, _) = makeCoordinator(clock: clock, runner: runner, launcher: launcher)
+        let issueStore = IssueStore(
+            service: BeadsService(commandRunner: runner),
+            workingDirectory: folder,
+            doneVisibilityWindow: 0,
+            now: { clock.now }
+        )
+        runner.enqueue(
+            arguments: ["update", "bd-123", "--claim", "--assignee", "claude", "--json"],
+            stdout: #"[{"id":"bd-123","title":"Warn before agent launch","status":"in_progress","assignee":"claude","labels":["human"]}]"#
+        )
+        runner.enqueue(arguments: ["list", "--json"], stdout: AgentLaunchFlowCoordinatorTests.sampleListFixture(labels: ["human"]))
+        runner.enqueue(arguments: ["ready", "--json"], stdout: "[]")
+        runner.enqueue(
+            arguments: ["update", "bd-123", "--remove-label", "human", "--json"],
+            stdout: #"[{"id":"bd-123","title":"Warn before agent launch","status":"in_progress","assignee":"claude","labels":[]}]"#
+        )
+        runner.enqueue(arguments: ["list", "--json"], stdout: AgentLaunchFlowCoordinatorTests.sampleListFixture(labels: []))
+        runner.enqueue(arguments: ["ready", "--json"], stdout: "[]")
+
+        let session = await coordinator.prepareLaunchSession(
+            for: sampleReviewIssue(),
+            profile: sampleProfile(),
+            projectPath: folder.path,
+            issueStore: issueStore,
+            clearHumanReviewLabel: true
+        )
+
+        #expect(session != nil)
+        let claimIndex = runner.calls.firstIndex { $0.arguments == ["update", "bd-123", "--claim", "--assignee", "claude", "--json"] }
+        let clearIndex = runner.calls.firstIndex { $0.arguments == ["update", "bd-123", "--remove-label", "human", "--json"] }
+        #expect(claimIndex != nil)
+        #expect(clearIndex != nil)
+        if let claimIndex, let clearIndex {
+            #expect(claimIndex < clearIndex)
+        }
+        #expect(historyStore.records.count == 1)
+        #expect(historyStore.records.first?.status == .prepared)
+        #expect(launcher.calls.isEmpty)
+    }
+
+    @Test("claim failure blocks label clearing and launch session")
+    func claimFailureBlocksTakeover() async throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("agent-claim-failure \(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let runner = StubCommandRunner()
+        let launcher = StubTerminalLauncher()
+        let (coordinator, historyStore, _, _, _) = makeCoordinator(runner: runner, launcher: launcher)
+        let issueStore = IssueStore(
+            service: BeadsService(commandRunner: runner),
+            workingDirectory: folder,
+            doneVisibilityWindow: 0
+        )
+        runner.enqueue(
+            arguments: ["update", "bd-123", "--claim", "--assignee", "claude", "--json"],
+            stderr: "claim failed",
+            exitCode: 1
+        )
+
+        let session = await coordinator.prepareLaunchSession(
+            for: sampleReviewIssue(),
+            profile: sampleProfile(),
+            projectPath: folder.path,
+            issueStore: issueStore,
+            clearHumanReviewLabel: true
+        )
+
+        #expect(session == nil)
+        #expect(!runner.calls.contains { $0.arguments == ["update", "bd-123", "--remove-label", "human", "--json"] })
+        #expect(historyStore.records.isEmpty)
+        #expect(launcher.calls.isEmpty)
+    }
+
+    @Test("human label clear failure blocks launch session")
+    func clearHumanReviewFailureBlocksLaunch() async throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("agent-clear-human-failure \(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let runner = StubCommandRunner()
+        let launcher = StubTerminalLauncher()
+        let (coordinator, historyStore, _, _, _) = makeCoordinator(runner: runner, launcher: launcher)
+        let issueStore = IssueStore(
+            service: BeadsService(commandRunner: runner),
+            workingDirectory: folder,
+            doneVisibilityWindow: 0
+        )
+        runner.enqueue(
+            arguments: ["update", "bd-123", "--claim", "--assignee", "claude", "--json"],
+            stdout: #"[{"id":"bd-123","title":"Warn before agent launch","status":"in_progress","assignee":"claude","labels":["human"]}]"#
+        )
+        runner.enqueue(arguments: ["list", "--json"], stdout: AgentLaunchFlowCoordinatorTests.sampleListFixture(labels: ["human"]))
+        runner.enqueue(arguments: ["ready", "--json"], stdout: "[]")
+        runner.enqueue(
+            arguments: ["update", "bd-123", "--remove-label", "human", "--json"],
+            stderr: "remove failed",
+            exitCode: 1
+        )
+
+        let session = await coordinator.prepareLaunchSession(
+            for: sampleReviewIssue(),
+            profile: sampleProfile(),
+            projectPath: folder.path,
+            issueStore: issueStore,
+            clearHumanReviewLabel: true
+        )
+
+        #expect(session == nil)
+        #expect(runner.calls.contains { $0.arguments == ["update", "bd-123", "--remove-label", "human", "--json"] })
+        #expect(historyStore.records.isEmpty)
         #expect(launcher.calls.isEmpty)
     }
 
@@ -306,10 +447,11 @@ struct AgentLaunchFlowCoordinatorTests {
 }
 
 private extension AgentLaunchFlowCoordinatorTests {
-    static func sampleListFixture() -> String {
-        """
+    static func sampleListFixture(labels: [String] = []) -> String {
+        let labelsJSON = labels.map { "\"\($0)\"" }.joined(separator: ",")
+        return """
         [
-          {"id":"bd-123","title":"Warn before agent launch","status":"in_progress","priority":2,"assignee":"claude"}
+          {"id":"bd-123","title":"Warn before agent launch","status":"in_progress","priority":2,"assignee":"claude","labels":[\(labelsJSON)]}
         ]
         """
     }

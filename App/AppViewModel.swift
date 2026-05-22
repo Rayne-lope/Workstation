@@ -89,13 +89,13 @@ final class AppViewModel {
         preferencesStore: PreferencesStore = PreferencesStore(),
         agentRunHistoryStore: AgentRunHistoryStore = AgentRunHistoryStore(),
         agentRunTranscriptStore: AgentRunTranscriptStore = AgentRunTranscriptStore(),
-        gitWorktreeService: GitWorktreeService = GitWorktreeService(),
+        gitWorktreeService: GitWorktreeService? = nil,
         terminalLauncher: any TerminalLaunching = TerminalLauncherAdapter(),
         localAIConnectionTester: any LocalAIConnectionTesting = OllamaConnectionTester(),
         localAIService: LocalAIService = LocalAIService()
     ) {
         self.shellRunner = shellRunner
-        self.gitWorktreeService = gitWorktreeService
+        self.gitWorktreeService = gitWorktreeService ?? GitWorktreeService(commandRunner: shellRunner)
         self.agentProfileStore = AgentProfileStore()
         self.recentProjectsStore = recentProjectsStore
         self.preferencesStore = preferencesStore
@@ -928,7 +928,8 @@ final class AppViewModel {
                     branchName: worktree.branchName,
                     sourceRunID: sourceRunID
                 ),
-                issueStore: issueStore
+                issueStore: issueStore,
+                clearHumanReviewLabel: issue.labels?.contains(KanbanStateMapper.humanReviewLabel) == true
             )
 
             guard let session else { return }
@@ -961,7 +962,8 @@ final class AppViewModel {
             for: issue,
             profile: profile,
             projectPath: workspace.inspectionURL.path,
-            issueStore: issueStore
+            issueStore: issueStore,
+            clearHumanReviewLabel: issue.labels?.contains(KanbanStateMapper.humanReviewLabel) == true
         ) else {
             return
         }

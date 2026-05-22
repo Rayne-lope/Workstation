@@ -160,6 +160,15 @@ struct PromptGeneratorTests {
         #expect(cmd.contains("bd-42"))
     }
 
+    @Test("generateCommand for DeepSeek executor keeps opencode model")
+    func generateCommandDeepSeekExecutor() {
+        let deepseek = AgentProfile.builtInProfiles.first { $0.id == AgentProfile.deepseekExecutorID }!
+        let cmd = generator.generateCommand(for: deepseek, issue: issue, projectPath: projectPath)
+        #expect(cmd.hasPrefix("opencode run -m opencode-go/deepseek-v4-flash \""))
+        #expect(cmd.contains("bd-42"))
+        #expect(cmd.hasSuffix("\""))
+    }
+
     @Test("generateCommand escapes inner double-quotes")
     func generateCommandEscapesQuotes() {
         let trickyIssue = BeadIssue(id: "bd-1", title: "She said \"hi\"")

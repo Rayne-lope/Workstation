@@ -60,7 +60,8 @@ public final class AgentLaunchFlowCoordinator {
         profile: AgentProfile,
         projectPath: String?,
         worktree: AgentRunWorktreeMetadata? = nil,
-        issueStore: IssueStore?
+        issueStore: IssueStore?,
+        clearHumanReviewLabel: Bool = false
     ) async -> AgentRunLaunchSession? {
         guard profile.canExecuteCode else { return nil }
 
@@ -68,6 +69,11 @@ public final class AgentLaunchFlowCoordinator {
             guard let issueStore else { return nil }
             guard await issueStore.claim(id: issue.id, assignee: profile.claimAssigneeToken) else {
                 return nil
+            }
+            if clearHumanReviewLabel {
+                guard await issueStore.clearHumanReview(id: issue.id) else {
+                    return nil
+                }
             }
         }
 
