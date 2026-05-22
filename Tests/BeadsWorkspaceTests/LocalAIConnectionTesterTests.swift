@@ -68,7 +68,7 @@ struct LocalAIConnectionTesterTests {
             apiKey: "secret-key"
         )
         let tester = OllamaConnectionTester(session: StubURLSession { request in
-            #expect(request.url?.absoluteString == "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent")
+            #expect(request.url?.absoluteString == "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent")
             #expect(request.value(forHTTPHeaderField: "x-goog-api-key") == "secret-key")
 
             let response = HTTPURLResponse(

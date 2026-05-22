@@ -32,12 +32,6 @@ struct BoardSidebarView: View {
             }
             .buttonStyle(WorkstationGhostButtonStyle())
 
-            Button {
-                appVM.presentLocalAISettings()
-            } label: {
-                Label("Local AI", systemImage: "cpu")
-            }
-            .buttonStyle(WorkstationGhostButtonStyle())
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 20)
@@ -170,14 +164,6 @@ struct BoardSidebarView: View {
             }
             .buttonStyle(SidebarNavButtonStyle(isActive: true))
             .keyboardShortcut("n", modifiers: [.command])
-
-            Button {
-                appVM.analyzeBacklog()
-            } label: {
-                Label("Analyze Backlog", systemImage: "sparkles")
-            }
-            .buttonStyle(SidebarNavButtonStyle())
-            .help("Analisis backlog dengan AI · Tersedia juga di Copilot ⌘K")
         }
     }
 

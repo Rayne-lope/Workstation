@@ -27,6 +27,7 @@ public struct FilterState: Codable, Equatable, Sendable {
     public var issueTypes: Set<String>
     public var assignees: Set<IssueFilterAssignee>
     public var labels: Set<String>
+    public var statuses: Set<String>
     public var recurringOnly: Bool
 
     public init(
@@ -34,17 +35,19 @@ public struct FilterState: Codable, Equatable, Sendable {
         issueTypes: Set<String> = [],
         assignees: Set<IssueFilterAssignee> = [],
         labels: Set<String> = [],
+        statuses: Set<String> = [],
         recurringOnly: Bool = false
     ) {
         self.priorities = priorities
         self.issueTypes = Self.normalize(issueTypes)
         self.assignees = assignees
         self.labels = Self.normalize(labels)
+        self.statuses = statuses
         self.recurringOnly = recurringOnly
     }
 
     public var isEmpty: Bool {
-        priorities.isEmpty && issueTypes.isEmpty && assignees.isEmpty && labels.isEmpty && !recurringOnly
+        priorities.isEmpty && issueTypes.isEmpty && assignees.isEmpty && labels.isEmpty && statuses.isEmpty && !recurringOnly
     }
 
     public mutating func clear() {
@@ -52,6 +55,7 @@ public struct FilterState: Codable, Equatable, Sendable {
         issueTypes.removeAll()
         assignees.removeAll()
         labels.removeAll()
+        statuses.removeAll()
         recurringOnly = false
     }
 
@@ -93,12 +97,21 @@ public struct FilterState: Codable, Equatable, Sendable {
         }
     }
 
+    public mutating func toggleStatus(_ status: String) {
+        if statuses.contains(status) {
+            statuses.remove(status)
+        } else {
+            statuses.insert(status)
+        }
+    }
+
     public func normalizedCopy() -> FilterState {
         FilterState(
             priorities: priorities,
             issueTypes: issueTypes,
             assignees: assignees,
             labels: labels,
+            statuses: statuses,
             recurringOnly: recurringOnly
         )
     }
@@ -108,6 +121,7 @@ public struct FilterState: Codable, Equatable, Sendable {
         case issueTypes
         case assignees
         case labels
+        case statuses
         case recurringOnly
     }
 
@@ -117,12 +131,14 @@ public struct FilterState: Codable, Equatable, Sendable {
         let issueTypes = try container.decodeIfPresent(Set<String>.self, forKey: .issueTypes) ?? []
         let assignees = try container.decodeIfPresent(Set<IssueFilterAssignee>.self, forKey: .assignees) ?? []
         let labels = try container.decodeIfPresent(Set<String>.self, forKey: .labels) ?? []
+        let statuses = try container.decodeIfPresent(Set<String>.self, forKey: .statuses) ?? []
         let recurringOnly = try container.decodeIfPresent(Bool.self, forKey: .recurringOnly) ?? false
         self.init(
             priorities: priorities,
             issueTypes: issueTypes,
             assignees: assignees,
             labels: labels,
+            statuses: statuses,
             recurringOnly: recurringOnly
         )
     }

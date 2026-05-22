@@ -102,6 +102,10 @@ struct IssueCardView: View {
                 recurringBadge(for: recurringMeta)
             }
 
+            if appVM.activeFocusIssueID == issue.id {
+                focusBadge()
+            }
+
             Spacer(minLength: 0)
         }
     }
@@ -139,6 +143,19 @@ struct IssueCardView: View {
             parts.append("overdue \(overdue)d")
         }
         return parts.joined(separator: " · ")
+    }
+
+    private func focusBadge() -> some View {
+        BadgeView(style: .focus, horizontalPadding: 5, verticalPadding: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "eye.fill")
+                    .font(.system(size: 9, weight: .bold))
+                Text("Focus")
+            }
+            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+            .lineLimit(1)
+        }
+        .help("Currently in focus mode")
     }
 
     private var blockerBadge: some View {
@@ -340,6 +357,13 @@ private struct IssueActionsContextMenu: View {
                     await store.update(id: issue.id, UpdateIssueInput(assignee: ""))
                 }
             }
+        }
+
+        Divider()
+
+        let isFocused = appVM.activeFocusIssueID == issue.id
+        Button(isFocused ? "End Focus" : "Focus") {
+            appVM.focusToggle(for: issue.id)
         }
     }
 }

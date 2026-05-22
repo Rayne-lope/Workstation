@@ -107,6 +107,16 @@ struct BulkActionPanel: View {
     private var actions: some View {
         VStack(spacing: 8) {
             Button {
+                appVM.showCopilotPane()
+            } label: {
+                Label("Ask Copilot…", systemImage: "sparkles")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(WorkstationPrimaryButtonStyle())
+            .disabled(selected.isEmpty)
+            .help("Ask Copilot with the selected issues as context")
+
+            Button {
                 appVM.bulkClaim()
             } label: {
                 Label("Claim All", systemImage: "person.crop.circle.badge.checkmark")

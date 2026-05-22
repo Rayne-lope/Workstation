@@ -27,6 +27,7 @@ enum DetailPaneMode: String, Hashable {
 final class AppViewModel {
     var issueStore: IssueStore?
     var recurringStore: RecurringStore?
+    var focusSessionStore: FocusSessionStore?
     let agentProfileStore: AgentProfileStore
     let recentProjectsStore: RecentProjectsStore
     let preferencesStore: PreferencesStore
@@ -54,6 +55,11 @@ final class AppViewModel {
     var isDebugPresented = false
     var isLocalAISettingsPresented = false
     var localAISuggestionPreview: LocalAISuggestionPreviewState?
+    var commandPaletteStore: CommandPaletteStore?
+    var isQuickCapturePresented = false
+    var activeFocusIssueID: String?
+    var isFocusPaused: Bool = false
+    var focusElapsedMs: Int64 = 0
     var localAIStatusMessage: String?
     var localAIStatusMessageIsError = false
 
@@ -120,9 +126,11 @@ final class AppViewModel {
                 fileWatcher = nil
                 issueStore = nil
                 recurringStore = nil
+                focusSessionStore = nil
                 activeWorkspace = nil
                 activeWorkspaceStorageKey = nil
                 worktreeMessage = nil
+                clearFocusState()
             }
             return
         }
@@ -145,6 +153,9 @@ final class AppViewModel {
         recurring.load()
         recurringStore = recurring
         store.recurringIDs = recurring.recurringIDs
+        let focusStore = FocusSessionStore(workingDirectory: workspace.inspectionURL)
+        focusStore.load()
+        focusSessionStore = focusStore
         Task { await store.reload() }
         startFileWatcher(for: workspace)
     }
@@ -163,7 +174,6 @@ final class AppViewModel {
         let watcher = IssueFileWatcher(path: target) { [weak self] in
             Task { @MainActor in
                 guard let self else { return }
-                guard self.preferencesStore.preferences.autoReloadEnabled else { return }
                 self.reloadIssues()
             }
         }
@@ -422,9 +432,39 @@ final class AppViewModel {
         isLocalAISettingsPresented = false
     }
 
+    func presentCommandPalette() {
+        guard let store = issueStore else { return }
+        commandPaletteStore = CommandPaletteStore(store: store, appVM: self)
+    }
+
+    func dismissCommandPalette() {
+        commandPaletteStore = nil
+    }
+
+    func presentQuickCapture() {
+        _quickCaptureStore = nil
+        guard issueStore != nil else { return }
+        isQuickCapturePresented = true
+    }
+
+    func dismissQuickCapture() {
+        _quickCaptureStore = nil
+        isQuickCapturePresented = false
+    }
+
     var localAISettings: LocalAISettings {
         preferencesStore.preferences.localAI
     }
+
+    var quickCaptureStore: QuickCaptureStore? {
+        guard let store = issueStore else { return nil }
+        if _quickCaptureStore == nil || _quickCaptureStore?.store !== store {
+            _quickCaptureStore = QuickCaptureStore(store: store, appVM: self)
+        }
+        return _quickCaptureStore
+    }
+
+    private var _quickCaptureStore: QuickCaptureStore?
 
     func setLocalAIEnabled(_ isEnabled: Bool) {
         preferencesStore.update { $0.localAI.isEnabled = isEnabled }
@@ -438,20 +478,20 @@ final class AppViewModel {
                 if $0.localAI.baseURL == LocalAISettings.defaultBaseURL {
                     $0.localAI.baseURL = LocalAISettings.defaultGeminiBaseURL
                 }
-                if $0.localAI.fastModel == LocalAISettings.defaultFastModel {
+                if !$0.localAI.fastModel.hasPrefix("gemini") {
                     $0.localAI.fastModel = LocalAISettings.defaultGeminiModel
                 }
-                if $0.localAI.strongModel == LocalAISettings.defaultStrongModel {
+                if !$0.localAI.strongModel.hasPrefix("gemini") {
                     $0.localAI.strongModel = LocalAISettings.defaultGeminiModel
                 }
             } else if provider == .ollama {
                 if $0.localAI.baseURL == LocalAISettings.defaultGeminiBaseURL {
                     $0.localAI.baseURL = LocalAISettings.defaultBaseURL
                 }
-                if $0.localAI.fastModel == LocalAISettings.defaultGeminiModel {
+                if $0.localAI.fastModel.hasPrefix("gemini") {
                     $0.localAI.fastModel = LocalAISettings.defaultFastModel
                 }
-                if $0.localAI.strongModel == LocalAISettings.defaultGeminiModel {
+                if $0.localAI.strongModel.hasPrefix("gemini") {
                     $0.localAI.strongModel = LocalAISettings.defaultStrongModel
                 }
             }
@@ -895,6 +935,82 @@ final class AppViewModel {
             terminalErrorMessage = nil
         } catch {
             terminalErrorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Focus Mode
+
+    func focusElapsedMs(for issueID: String) -> Int64 {
+        guard let session = focusSessionStore?.session(for: issueID) else { return 0 }
+        return session.totalActiveMs
+    }
+
+    func focusToggle(for issueID: String) {
+        if activeFocusIssueID == issueID {
+            // End focus
+            focusSessionStore?.endFocus(issueID: issueID)
+            clearFocusState()
+        } else {
+            // End any existing
+            if let currentID = activeFocusIssueID {
+                focusSessionStore?.endFocus(issueID: currentID)
+            }
+            // Start new
+            activeFocusIssueID = issueID
+            isFocusPaused = false
+            focusSessionStore?.startFocus(issueID: issueID)
+            startFocusTimer()
+        }
+    }
+
+    func pauseFocus() {
+        guard let id = activeFocusIssueID else { return }
+        focusSessionStore?.pauseFocus(issueID: id)
+        isFocusPaused = true
+        stopFocusTimer()
+    }
+
+    func resumeFocus() {
+        guard let id = activeFocusIssueID else { return }
+        focusSessionStore?.resumeFocus(issueID: id)
+        isFocusPaused = false
+        startFocusTimer()
+    }
+
+    func endFocus() {
+        if let id = activeFocusIssueID {
+            focusSessionStore?.endFocus(issueID: id)
+        }
+        clearFocusState()
+    }
+
+    private func clearFocusState() {
+        activeFocusIssueID = nil
+        isFocusPaused = false
+        focusElapsedMs = 0
+        stopFocusTimer()
+    }
+
+    private var focusTimer: Timer?
+
+    private func startFocusTimer() {
+        stopFocusTimer()
+        focusTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.tickFocusTimer()
+            }
+        }
+    }
+
+    private func stopFocusTimer() {
+        focusTimer?.invalidate()
+        focusTimer = nil
+    }
+
+    private func tickFocusTimer() {
+        guard let id = activeFocusIssueID, !isFocusPaused else { return }
+        if let session = focusSessionStore?.session(for: id) {
+            focusElapsedMs = session.currentElapsedMs(pausedMs: 0)
         }
     }
 }

@@ -75,6 +75,14 @@ public struct BeadsService: Sendable {
         if let description = input.description, !description.isEmpty {
             arguments.append(contentsOf: ["-d", description])
         }
+        if let designNotes = input.designNotes, !designNotes.isEmpty {
+            arguments.append(contentsOf: ["--design", designNotes])
+        }
+        if let labels = input.labels?
+            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
+            .filter({ !$0.isEmpty }), !labels.isEmpty {
+            arguments.append(contentsOf: ["--labels", labels.joined(separator: ",")])
+        }
         if let acceptance = input.acceptanceCriteria, !acceptance.isEmpty {
             arguments.append(contentsOf: ["--acceptance", acceptance])
         }

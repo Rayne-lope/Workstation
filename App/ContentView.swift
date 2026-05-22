@@ -24,5 +24,18 @@ struct ContentView: View {
                 onDismiss: { appVM.dismissLocalAISuggestionPreview() }
             )
         }
+        .sheet(isPresented: Binding(
+            get: { appVM.commandPaletteStore != nil },
+            set: { if !$0 { appVM.dismissCommandPalette() } }
+        )) {
+            if let store = appVM.commandPaletteStore {
+                CommandPaletteSheet(store: store)
+            }
+        }
+        .sheet(isPresented: $appVM.isQuickCapturePresented) {
+            if let store = appVM.quickCaptureStore {
+                QuickCaptureSheet(store: store)
+            }
+        }
     }
 }

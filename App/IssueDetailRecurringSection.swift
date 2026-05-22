@@ -4,21 +4,39 @@ struct IssueDetailRecurringSection: View {
     @Bindable var appVM: AppViewModel
     let issue: BeadIssue
     let isLoading: Bool
+    var displayMode: IssueDetailRecurringDisplayMode = .full
 
     @State private var recurringNotesDraft: String = ""
     @State private var recurringActionFlash: String?
 
+    @ViewBuilder
     var body: some View {
         let metadata = appVM.recurringMetadata(for: issue.id)
         let isRecurring = metadata?.isRecurring == true
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                uppercaseLabel("Recurring")
-                Spacer()
-                if isRecurring {
-                    recurringCounterPill(metadata!)
-                }
+        switch displayMode {
+        case .full:
+            recurringFull(metadata: metadata, isRecurring: isRecurring)
+        case .controls:
+            recurringControls(metadata: metadata, isRecurring: isRecurring)
+        case .history:
+            if isRecurring, let metadata {
+                recurringHistorySummary(metadata: metadata)
             }
+        }
+    }
+
+    private func recurringFull(metadata: RecurringMetadata?, isRecurring: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            recurringControls(metadata: metadata, isRecurring: isRecurring)
+            if isRecurring, let metadata, !metadata.history.isEmpty {
+                recurringHistorySummary(metadata: metadata)
+            }
+        }
+    }
+
+    private func recurringControls(metadata: RecurringMetadata?, isRecurring: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(metadata: metadata, isRecurring: isRecurring)
 
             HStack(spacing: 8) {
                 Toggle(isOn: Binding(
@@ -38,9 +56,6 @@ struct IssueDetailRecurringSection: View {
             if isRecurring, let metadata {
                 cadencePickerView(currentDays: metadata.cadenceDays)
                 runCompletionInput()
-                if !metadata.history.isEmpty {
-                    runHistoryView(metadata: metadata)
-                }
             }
 
             if let flash = recurringActionFlash {
@@ -48,6 +63,46 @@ struct IssueDetailRecurringSection: View {
                     .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
                     .foregroundStyle(WorkstationTheme.green)
                     .transition(.opacity)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func recurringHistorySummary(metadata: RecurringMetadata) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(metadata: metadata, isRecurring: true)
+            if metadata.history.isEmpty {
+                Text("No recurring runs logged yet")
+                    .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+            } else {
+                runHistoryView(metadata: metadata)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+    }
+
+    private func sectionHeader(metadata: RecurringMetadata?, isRecurring: Bool) -> some View {
+        HStack(spacing: 8) {
+            uppercaseLabel("Recurring")
+            Spacer()
+            if isRecurring, let metadata {
+                recurringCounterPill(metadata)
             }
         }
     }
@@ -70,18 +125,10 @@ struct IssueDetailRecurringSection: View {
         } else {
             label = "No runs yet"
         }
-        let color = overdue > 0 ? WorkstationTheme.orange : WorkstationTheme.purple
-        return Text(label)
-            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-            .foregroundStyle(color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(color.opacity(0.10))
-            .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                    .stroke(color.opacity(0.35), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+        return BadgeView(style: .recurring(isOverdue: overdue > 0), verticalPadding: 3) {
+            Text(label)
+                .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+        }
     }
 
     @ViewBuilder
@@ -104,17 +151,10 @@ struct IssueDetailRecurringSection: View {
         Button {
             appVM.setCadence(for: issue.id, days: option.days)
         } label: {
-            Text(cadenceShortLabel(option))
-                .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
-                .foregroundStyle(isSelected ? WorkstationTheme.background : WorkstationTheme.textSecondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(isSelected ? WorkstationTheme.accent : WorkstationTheme.cardAlt)
-                .overlay(
-                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                        .stroke(isSelected ? WorkstationTheme.accent : WorkstationTheme.borderStrong, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+            BadgeView(style: isSelected ? .accent : .surface, horizontalPadding: 10, verticalPadding: 5) {
+                Text(cadenceShortLabel(option))
+                    .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+            }
         }
         .buttonStyle(.plain)
     }
@@ -235,4 +275,10 @@ struct IssueDetailRecurringSection: View {
             }
         }
     }
+}
+
+enum IssueDetailRecurringDisplayMode {
+    case full
+    case controls
+    case history
 }

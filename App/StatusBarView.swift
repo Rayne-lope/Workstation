@@ -15,6 +15,11 @@ struct StatusBarView: View {
         let localAIMessageIsError = appVM.localAIStatusMessageIsError
 
         VStack(alignment: .leading, spacing: 4) {
+            if appVM.activeFocusIssueID != nil {
+                FocusStripView(appVM: appVM)
+                    .animation(.easeInOut(duration: 0.2), value: appVM.activeFocusIssueID as String?)
+            }
+
             if let issueError {
                 errorRow(label: "CLI", message: issueError)
             }

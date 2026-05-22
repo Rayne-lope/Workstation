@@ -437,6 +437,10 @@ public final class IssueStore {
         filterState.toggleLabel(label)
     }
 
+    public func toggleStatus(_ status: String) {
+        filterState.toggleStatus(status)
+    }
+
     public func toggleRecurringOnly() {
         filterState.toggleRecurringOnly()
     }
@@ -489,6 +493,12 @@ public final class IssueStore {
         if !filterState.labels.isEmpty {
             let issueLabels = Set((issue.labels ?? []).compactMap { normalized($0) })
             guard !issueLabels.isDisjoint(with: filterState.labels) else {
+                return false
+            }
+        }
+
+        if !filterState.statuses.isEmpty {
+            guard let status = issue.status, filterState.statuses.contains(status) else {
                 return false
             }
         }

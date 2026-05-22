@@ -87,12 +87,17 @@ public struct LocalAIService: Sendable {
     }
 
     public func modelName(for action: LocalAIAction, settings: LocalAISettings) -> String {
+        let raw: String
         switch action.modelTier {
         case .fast:
-            return settings.fastModel.trimmingCharacters(in: .whitespacesAndNewlines)
+            raw = settings.fastModel.trimmingCharacters(in: .whitespacesAndNewlines)
         case .strong:
-            return settings.strongModel.trimmingCharacters(in: .whitespacesAndNewlines)
+            raw = settings.strongModel.trimmingCharacters(in: .whitespacesAndNewlines)
         }
+        if settings.provider == .gemini && !raw.hasPrefix("gemini") {
+            return LocalAISettings.defaultGeminiModel
+        }
+        return raw
     }
 
     public func prompt(for action: LocalAIAction) -> String {

@@ -30,7 +30,7 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
     public static let defaultGeminiBaseURL = "https://generativelanguage.googleapis.com/v1beta"
     public static let defaultFastModel = "qwen2.5-coder:3b"
     public static let defaultStrongModel = "qwen2.5-coder:7b"
-    public static let defaultGeminiModel = "gemini-3.5-flash"
+    public static let defaultGeminiModel = "gemini-2.0-flash"
 
     public var isEnabled: Bool
     public var provider: LocalAIProvider

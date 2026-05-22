@@ -209,6 +209,8 @@ struct BeadsServiceTests {
                 "-t", "feature",
                 "-p", "1",
                 "-d", "Some description",
+                "--design", "Implementation detail",
+                "--labels", "ai,drafting",
                 "--acceptance", "Done when X",
                 "--json"
             ],
@@ -219,15 +221,27 @@ struct BeadsServiceTests {
         let input = CreateIssueInput(
             title: "New",
             description: "Some description",
+            designNotes: "Implementation detail",
             issueType: "feature",
             priority: 1,
-            acceptanceCriteria: "Done when X"
+            acceptanceCriteria: "Done when X",
+            labels: ["ai", "drafting"]
         )
         let issue = try await service.createIssue(input, in: workingDirectory)
 
         #expect(issue.id == "bd-9")
         #expect(issue.issueType == "feature")
         #expect(issue.priority == 1)
+        #expect(runner.calls[0].arguments == [
+            "create", "New",
+            "-t", "feature",
+            "-p", "1",
+            "-d", "Some description",
+            "--design", "Implementation detail",
+            "--labels", "ai,drafting",
+            "--acceptance", "Done when X",
+            "--json"
+        ])
     }
 
     @Test("createIssue with only required title still works")

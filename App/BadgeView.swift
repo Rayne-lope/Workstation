@@ -32,6 +32,7 @@ enum BadgeStyle {
     case blocked
     case warning
     case recurring(isOverdue: Bool)
+    case focus
 
     var foreground: Color {
         switch self {
@@ -51,6 +52,8 @@ enum BadgeStyle {
             return WorkstationTheme.orange
         case .recurring(let isOverdue):
             return isOverdue ? WorkstationTheme.orange : WorkstationTheme.purple
+        case .focus:
+            return WorkstationTheme.background
         }
     }
 
@@ -72,6 +75,8 @@ enum BadgeStyle {
             return WorkstationTheme.orangeBg
         case .recurring(let isOverdue):
             return isOverdue ? WorkstationTheme.orangeBg : WorkstationTheme.purpleBg
+        case .focus:
+            return WorkstationTheme.accent
         }
     }
 
@@ -93,6 +98,8 @@ enum BadgeStyle {
             return WorkstationTheme.orangeBorder
         case .recurring(let isOverdue):
             return isOverdue ? WorkstationTheme.orangeBorder : WorkstationTheme.purpleBorder
+        case .focus:
+            return WorkstationTheme.accent
         }
     }
 }

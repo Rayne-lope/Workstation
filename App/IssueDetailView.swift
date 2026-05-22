@@ -362,6 +362,8 @@ struct IssueDetailView: View {
                 isLoading: store.isLoading,
                 displayMode: .history
             )
+
+            focusTimeSection
         }
     }
 
@@ -374,6 +376,7 @@ struct IssueDetailView: View {
                 isLoading: store.isLoading,
                 displayMode: .controls
             )
+            focusTimeSection
         }
     }
 
@@ -554,8 +557,11 @@ struct IssueDetailView: View {
                     closeButton
                     reopenButton
                 }
-                if alreadyInReview {
-                    sendBackButton
+                HStack(spacing: 8) {
+                    focusButton
+                    if alreadyInReview {
+                        sendBackButton
+                    }
                 }
 
                 if appVM.localAISettings.isEnabled {
@@ -830,6 +836,144 @@ struct IssueDetailView: View {
             .foregroundStyle(WorkstationTheme.textMuted)
             .textCase(.uppercase)
             .tracking(0.7)
+    }
+
+    // MARK: - Focus Mode
+
+    private var focusButton: some View {
+        let isFocused = appVM.activeFocusIssueID == issue.id
+        return Button {
+            appVM.focusToggle(for: issue.id)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: isFocused ? "stop.circle.fill" : "eye.circle")
+                    .font(.system(size: 11, weight: .bold))
+                Text(isFocused ? "End Focus" : "Focus")
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(WorkstationPrimaryButtonStyle())
+        .opacity(isFocused ? 1 : 0)
+        .disabled(!isFocused)
+        .overlay {
+            Button {
+                appVM.focusToggle(for: issue.id)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "eye.circle")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("Focus")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(WorkstationGhostButtonStyleCompat())
+            .opacity(isFocused ? 0 : 1)
+            .disabled(isFocused)
+        }
+        .help(isFocused ? "End focus session" : "Start a focus session for this issue")
+    }
+
+    private struct WorkstationGhostButtonStyleCompat: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .font(WorkstationTheme.Fonts.body(12, weight: .semibold))
+                .foregroundStyle(configuration.isPressed ? WorkstationTheme.textPrimary : WorkstationTheme.textSecondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(configuration.isPressed ? WorkstationTheme.hover : Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                        .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+        }
+    }
+
+    private var focusTimeSection: some View {
+        let totalMs = appVM.focusSessionStore?.totalMs(for: issue.id) ?? 0
+        let session = appVM.focusSessionStore?.session(for: issue.id)
+        let intervals = session?.completedIntervals ?? []
+        let isActive = session?.isActive == true
+
+        return VStack(alignment: .leading, spacing: 10) {
+            uppercaseLabel("Time Spent")
+
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.accent)
+
+                    if totalMs == 0 && !isActive {
+                        Text("No focus sessions yet")
+                            .font(WorkstationTheme.Fonts.body(12))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                    } else {
+                        Text(formatDuration(totalMs))
+                            .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
+                            .foregroundStyle(WorkstationTheme.textPrimary)
+
+                        if isActive {
+                            Text("· Active now")
+                                .font(WorkstationTheme.Fonts.body(11))
+                                .foregroundStyle(WorkstationTheme.accent)
+                        }
+
+                        Spacer()
+
+                        Text("\(intervals.count) session\(intervals.count == 1 ? "" : "s")")
+                            .font(WorkstationTheme.Fonts.body(10))
+                            .foregroundStyle(WorkstationTheme.textSubtle)
+                    }
+                }
+
+                if !intervals.isEmpty {
+                    VStack(spacing: 4) {
+                        ForEach(intervals.suffix(5).reversed()) { interval in
+                            HStack(spacing: 6) {
+                                Text(formatDate(interval.startedAt))
+                                    .font(WorkstationTheme.Fonts.body(10, weight: .medium))
+                                    .foregroundStyle(WorkstationTheme.textSubtle)
+                                    .layoutPriority(1)
+                                Spacer()
+                                Text(formatDuration(interval.durationMs))
+                                    .font(WorkstationTheme.Fonts.body(10, weight: .medium).monospacedDigit())
+                                    .foregroundStyle(WorkstationTheme.textSecondary)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(WorkstationTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(WorkstationTheme.border, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+        }
+    }
+
+    private func formatDuration(_ ms: Int64) -> String {
+        let totalSeconds = max(0, ms / 1000)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+        if hours > 0 {
+            return String(format: "%dh %02dm %02ds", hours, minutes, seconds)
+        }
+        if minutes > 0 {
+            return String(format: "%dm %02ds", minutes, seconds)
+        }
+        return String(format: "%ds", seconds)
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 
     private var statusColor: Color {
