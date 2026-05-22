@@ -5,13 +5,20 @@ public struct PromptGenerator: Sendable {
 
     private static let repoRulesDocsInstruction = "Read `GUIDE.md` and `AGENTS.md` for repo, Beads, and worktree rules."
 
+    public static func escapeForShellDoubleQuotes(_ string: String) -> String {
+        string.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "$", with: "\\$")
+            .replacingOccurrences(of: "`", with: "\\`")
+    }
+
     public func generateCommand(
         for profile: AgentProfile,
         issue: BeadIssue,
         projectPath: String?
     ) -> String {
         let prompt = generatePrompt(for: profile, issue: issue, projectPath: projectPath)
-        let escaped = prompt.replacingOccurrences(of: "\"", with: "\\\"")
+        let escaped = Self.escapeForShellDoubleQuotes(prompt)
         let args = profile.commandArgsTemplate
             .replacingOccurrences(of: "{{prompt}}", with: escaped)
         if args.isEmpty {

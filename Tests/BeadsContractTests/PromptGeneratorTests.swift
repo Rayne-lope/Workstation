@@ -243,4 +243,20 @@ struct PromptGeneratorTests {
         #expect(followupPrompt.contains("git merge <your-branch-name> --no-edit"))
         #expect(followupPrompt.contains("git push origin master"))
     }
+
+    @Test("generateCommand robustly escapes backticks, dollar signs, and backslashes")
+    func generateCommandEscapesSpecialShellCharacters() {
+        let trickyIssue = BeadIssue(id: "bd-1", title: "Tricky title with `backticks`, $dollars, and \\backslashes")
+        let custom = AgentProfile(
+            name: "Echo",
+            role: .custom,
+            command: "echo",
+            defaultPromptTemplate: "title={{issue_title}}",
+            commandArgsTemplate: "\"{{prompt}}\""
+        )
+        let cmd = generator.generateCommand(for: custom, issue: trickyIssue, projectPath: nil)
+        #expect(cmd.contains("\\`backticks\\`"))
+        #expect(cmd.contains("\\$dollars"))
+        #expect(cmd.contains("\\\\backslashes"))
+    }
 }
