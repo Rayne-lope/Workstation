@@ -5,6 +5,18 @@ import BeadsWorkspace
 
 // MARK: - Live Terminal Drawer
 
+struct TerminalLine: Identifiable, Equatable {
+    let id: Int
+    let text: String
+}
+
+private struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct LiveTerminalDrawer: View {
     let runID: UUID
     let messages: [AgentRunMessage]
@@ -15,12 +27,26 @@ struct LiveTerminalDrawer: View {
     @State private var isExpanded: Bool = true
     @State private var autoScroll: Bool = true
     @State private var scrollProxy: ScrollViewProxy? = nil
+    
+    @State private var lineWrap: Bool = true
+    @State private var scrollViewHeight: CGFloat = 240
+    @State private var lastProgrammaticScrollTime: Date = Date.distantPast
 
-    // Pull all agent log lines from coalesced messages and strip ANSI escape sequences
-    private var logLines: [String] {
+    private struct ParsedTerminalData {
+        let allLinesCount: Int
+        let visibleLines: [TerminalLine]
+    }
+
+    private var parsedData: ParsedTerminalData {
         let raw = messages.filter { $0.role == .agent }.map(\.content).joined()
         let stripped = stripANSI(raw)
-        return stripped.components(separatedBy: .newlines)
+        let lines = stripped.components(separatedBy: .newlines)
+        
+        let mapped = lines.enumerated().map { TerminalLine(id: $0.offset, text: $0.element) }
+        let totalCount = mapped.filter { !$0.text.isEmpty }.count
+        let visible = Array(mapped.suffix(300))
+        
+        return ParsedTerminalData(allLinesCount: totalCount, visibleLines: visible)
     }
 
     var body: some View {
@@ -74,12 +100,27 @@ struct LiveTerminalDrawer: View {
             Spacer()
 
             // Line count
-            if !logLines.filter({ !$0.isEmpty }).isEmpty {
-                Text("\(logLines.filter { !$0.isEmpty }.count) lines")
+            let totalCount = parsedData.allLinesCount
+            if totalCount > 0 {
+                Text("\(totalCount) lines")
                     .font(WorkstationTheme.Fonts.body(10, weight: .medium))
                     .foregroundStyle(WorkstationTheme.textSubtle)
                     .monospacedDigit()
             }
+
+            // Line wrap toggle
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    lineWrap.toggle()
+                }
+            } label: {
+                Label(lineWrap ? "Wrap Off" : "Wrap On", systemImage: lineWrap ? "text.alignleft" : "text.justify.left")
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(lineWrap ? WorkstationTheme.accent : WorkstationTheme.textSubtle)
+            }
+            .buttonStyle(TerminalHeaderButtonStyle())
+            .help(lineWrap ? "Disable line wrapping" : "Enable line wrapping")
 
             // Clear button
             Button {
@@ -129,25 +170,61 @@ struct LiveTerminalDrawer: View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: true) {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(logLines.enumerated()), id: \.offset) { idx, line in
-                        terminalLine(line, index: idx)
+                    ForEach(parsedData.visibleLines) { line in
+                        terminalLine(line)
                     }
                     // Invisible anchor at the very bottom
                     Color.clear
                         .frame(height: 1)
                         .id("terminal-bottom")
+                        .background(
+                            GeometryReader { bottomGeo in
+                                Color.clear
+                                    .preference(
+                                        key: ScrollOffsetPreferenceKey.self,
+                                        value: bottomGeo.frame(in: .named("terminal-scroll")).maxY
+                                    )
+                            }
+                        )
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
             }
+            .coordinateSpace(name: "terminal-scroll")
             .background(Color(hex: "#0A0A0A"))
+            .background(
+                GeometryReader { scrollGeo in
+                    Color.clear
+                        .onAppear {
+                            self.scrollViewHeight = scrollGeo.size.height
+                        }
+                        .onChange(of: scrollGeo.size.height) { _, newHeight in
+                            self.scrollViewHeight = newHeight
+                        }
+                }
+            )
+            .onPreferenceChange(ScrollOffsetPreferenceKey.self) { maxY in
+                // Ignore scroll offset changes that occur within 300ms of a programmatic scroll to prevent layout/animation noise from disabling auto-scroll.
+                guard Date().timeIntervalSince(lastProgrammaticScrollTime) > 0.3 else { return }
+                
+                if maxY > scrollViewHeight + 25 {
+                    if autoScroll {
+                        autoScroll = false
+                    }
+                } else if maxY <= scrollViewHeight + 5 {
+                    if !autoScroll {
+                        autoScroll = true
+                    }
+                }
+            }
             .simultaneousGesture(
                 DragGesture(minimumDistance: 1).onChanged { _ in
                     autoScroll = false
                 }
             )
-            .onChange(of: logLines.count) { _, _ in
+            .onChange(of: parsedData.visibleLines.last?.id) { _, _ in
                 if autoScroll {
+                    lastProgrammaticScrollTime = Date()
                     withAnimation(.easeOut(duration: 0.12)) {
                         proxy.scrollTo("terminal-bottom", anchor: .bottom)
                     }
@@ -161,16 +238,18 @@ struct LiveTerminalDrawer: View {
     }
 
     @ViewBuilder
-    private func terminalLine(_ line: String, index: Int) -> some View {
-        if line.isEmpty {
+    private func terminalLine(_ line: TerminalLine) -> some View {
+        if line.text.isEmpty {
             Color.clear.frame(height: 4)
         } else {
-            Text(line)
+            Text(line.text)
                 .font(.system(size: 11, weight: .regular, design: .monospaced))
-                .foregroundStyle(terminalLineColor(line: line, raw: line))
+                .foregroundStyle(terminalLineColor(line: line.text, raw: line.text))
                 .lineSpacing(2)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(lineWrap ? nil : 1)
+                .truncationMode(.tail)
         }
     }
 
@@ -179,6 +258,7 @@ struct LiveTerminalDrawer: View {
     private var resumeScrollBadge: some View {
         Button {
             autoScroll = true
+            lastProgrammaticScrollTime = Date()
             withAnimation(.easeOut(duration: 0.15)) {
                 scrollProxy?.scrollTo("terminal-bottom", anchor: .bottom)
             }
