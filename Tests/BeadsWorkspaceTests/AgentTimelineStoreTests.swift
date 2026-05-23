@@ -208,4 +208,126 @@ struct AgentTimelineStoreTests {
         store.clearAll()
         #expect(store.events(forRunID: runID2).isEmpty)
     }
+    
+    @Test("consecutive file changes collapse into a single group event")
+    func consecutiveFileChangesGrouping() {
+        let store = AgentTimelineStore()
+        let runID = UUID()
+        
+        let startEvent = AgentTimelineEvent(
+            stableKey: "start",
+            runID: runID,
+            sequence: 1,
+            type: .started,
+            title: "Started agent",
+            status: .success,
+            source: .commandLifecycle,
+            confidence: .high
+        )
+        
+        let fileEvent1 = AgentTimelineEvent(
+            stableKey: "file-1",
+            runID: runID,
+            sequence: 2,
+            type: .fileChange,
+            title: "File modified",
+            subtitle: "App/AppViewModel.swift",
+            status: .info,
+            source: .terminalRegex,
+            confidence: .low
+        )
+        
+        let fileEvent2 = AgentTimelineEvent(
+            stableKey: "file-2",
+            runID: runID,
+            sequence: 3,
+            type: .fileChange,
+            title: "File modified",
+            subtitle: "Sources/BeadsWorkspace/AgentTimelineIngestor.swift",
+            status: .info,
+            source: .gitStatus,
+            confidence: .high
+        )
+        
+        let cmdEvent = AgentTimelineEvent(
+            stableKey: "cmd",
+            runID: runID,
+            sequence: 4,
+            type: .command,
+            title: "Running swift test",
+            status: .working,
+            source: .terminalRegex,
+            confidence: .medium
+        )
+        
+        let fileEvent3 = AgentTimelineEvent(
+            stableKey: "file-3",
+            runID: runID,
+            sequence: 5,
+            type: .fileChange,
+            title: "File modified",
+            subtitle: "Tests/BeadsWorkspaceTests/AgentTimelineIngestorTests.swift",
+            status: .info,
+            source: .fileWatcher,
+            confidence: .high
+        )
+        
+        store.apply(delta: .insert(startEvent), forRunID: runID)
+        store.apply(delta: .insert(fileEvent1), forRunID: runID)
+        store.apply(delta: .insert(fileEvent2), forRunID: runID)
+        store.apply(delta: .insert(cmdEvent), forRunID: runID)
+        store.apply(delta: .insert(fileEvent3), forRunID: runID)
+        
+        let grouped = store.groupedEvents(forRunID: runID)
+        
+        // Total should be:
+        // 1. Started agent
+        // 2. Modified files (2) [collapsed from file-1 and file-2]
+        // 3. Running swift test
+        // 4. File modified (1) [not collapsed because cmdEvent separates it]
+        #expect(grouped.count == 4)
+        
+        #expect(grouped[0].type == .started)
+        
+        #expect(grouped[1].type == .fileChange)
+        #expect(grouped[1].title == "Modified files (2)")
+        #expect(grouped[1].subtitle == "App/AppViewModel.swift, Sources/BeadsWorkspace/AgentTimelineIngestor.swift")
+        #expect(grouped[1].confidence == .high) // combines low and high -> high
+        #expect(grouped[1].source == .gitStatus) // gitStatus has higher priority than terminalRegex
+        
+        #expect(grouped[2].type == .command)
+        
+        #expect(grouped[3].type == .fileChange)
+        #expect(grouped[3].title == "File modified")
+        #expect(grouped[3].subtitle == "Tests/BeadsWorkspaceTests/AgentTimelineIngestorTests.swift")
+        #expect(grouped[3].confidence == .high)
+        #expect(grouped[3].source == .fileWatcher)
+    }
+    
+    @Test("compactEvents uses grouped events and returns the latest 5")
+    func compactEventsUsesGroupedEvents() {
+        let store = AgentTimelineStore()
+        let runID = UUID()
+        
+        // Add 8 consecutive file change events
+        for i in 1...8 {
+            let fileEvent = AgentTimelineEvent(
+                stableKey: "file-\(i)",
+                runID: runID,
+                sequence: Int64(i),
+                type: .fileChange,
+                title: "File modified",
+                subtitle: "file-\(i).swift",
+                status: .info,
+                source: .fileWatcher,
+                confidence: .high
+            )
+            store.apply(delta: .insert(fileEvent), forRunID: runID)
+        }
+        
+        // All 8 consecutive file changes should collapse into 1 virtual event
+        let compact = store.compactEvents(forRunID: runID)
+        #expect(compact.count == 1)
+        #expect(compact[0].title == "Modified files (8)")
+    }
 }

@@ -184,4 +184,121 @@ struct AgentTimelineIngestorTests {
             Issue.record("Expected .insert of done event")
         }
     }
+    
+    @Test("Terminal-only file changes have low confidence")
+    func parallelVerificationTerminalOnly() {
+        let runID = UUID()
+        let ingestor = AgentTimelineIngestor(runID: runID)
+        
+        let line = TerminalLine(runID: runID, sequence: 2, text: "modified: App/AppViewModel.swift")
+        let deltas = ingestor.ingest(line: line)
+        #expect(deltas.count == 1)
+        
+        if case .insert(let event) = deltas[0] {
+            #expect(event.type == .fileChange)
+            #expect(event.source == .terminalRegex)
+            #expect(event.confidence == .low)
+            #expect(event.relatedFile == "App/AppViewModel.swift")
+        } else {
+            Issue.record("Expected .insert of fileChange event")
+        }
+    }
+    
+    @Test("File changes verified by git status have high confidence")
+    func parallelVerificationWithGitStatus() {
+        let runID = UUID()
+        let ingestor = AgentTimelineIngestor(runID: runID)
+        
+        let summary = GitStatusSummary(
+            branchName: "main",
+            isDirty: true,
+            changedFiles: [GitChangedFile(path: "App/AppViewModel.swift", status: "M")],
+            lastCommitSummary: nil
+        )
+        ingestor.registerGitStatusSummary(summary)
+        
+        let line = TerminalLine(runID: runID, sequence: 2, text: "modified: App/AppViewModel.swift")
+        let deltas = ingestor.ingest(line: line)
+        #expect(deltas.count == 1)
+        
+        if case .insert(let event) = deltas[0] {
+            #expect(event.type == .fileChange)
+            #expect(event.source == .gitStatus)
+            #expect(event.confidence == .high)
+        } else {
+            Issue.record("Expected .insert of fileChange event")
+        }
+    }
+    
+    @Test("File changes verified by file watcher have high confidence")
+    func parallelVerificationWithFileWatcher() {
+        let runID = UUID()
+        let ingestor = AgentTimelineIngestor(runID: runID)
+        
+        ingestor.registerFileWatcherChange(path: "App/AppViewModel.swift")
+        
+        let line = TerminalLine(runID: runID, sequence: 2, text: "modified: App/AppViewModel.swift")
+        let deltas = ingestor.ingest(line: line)
+        #expect(deltas.count == 1)
+        
+        if case .insert(let event) = deltas[0] {
+            #expect(event.type == .fileChange)
+            #expect(event.source == .fileWatcher)
+            #expect(event.confidence == .high)
+        } else {
+            Issue.record("Expected .insert of fileChange event")
+        }
+    }
+    
+    @Test("Direct ingestion of file watcher change event")
+    func directIngestionFileWatcher() {
+        let runID = UUID()
+        let ingestor = AgentTimelineIngestor(runID: runID)
+        
+        let deltas = ingestor.ingestFileWatcherChange(path: "App/AppViewModel.swift")
+        #expect(deltas.count == 1)
+        
+        if case .insert(let event) = deltas[0] {
+            #expect(event.type == .fileChange)
+            #expect(event.source == .fileWatcher)
+            #expect(event.confidence == .high)
+            #expect(event.relatedFile == "App/AppViewModel.swift")
+        } else {
+            Issue.record("Expected .insert of fileChange event")
+        }
+    }
+    
+    @Test("Direct ingestion of git status summary event")
+    func directIngestionGitStatus() {
+        let runID = UUID()
+        let ingestor = AgentTimelineIngestor(runID: runID)
+        
+        let summary = GitStatusSummary(
+            branchName: "main",
+            isDirty: true,
+            changedFiles: [
+                GitChangedFile(path: "App/AppViewModel.swift", status: "M"),
+                GitChangedFile(path: "Sources/BeadsWorkspace/AgentTimelineIngestor.swift", status: "M")
+            ],
+            lastCommitSummary: nil
+        )
+        
+        let deltas = ingestor.ingestGitStatusSummary(summary)
+        #expect(deltas.count == 2)
+        
+        var paths = Set<String>()
+        for delta in deltas {
+            if case .insert(let event) = delta {
+                #expect(event.type == .fileChange)
+                #expect(event.source == .gitStatus)
+                #expect(event.confidence == .high)
+                if let file = event.relatedFile {
+                    paths.insert(file)
+                }
+            } else {
+                Issue.record("Expected .insert delta")
+            }
+        }
+        #expect(paths == ["App/AppViewModel.swift", "Sources/BeadsWorkspace/AgentTimelineIngestor.swift"])
+    }
 }

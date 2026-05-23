@@ -11,8 +11,102 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
     private var seenStableKeys = Set<String>()
     private var activePhase: String? = nil
     
+    // Parallel verification sets
+    private var fileWatcherChanges = Set<String>()
+    private var gitStatusChanges = Set<String>()
+    
     public init(runID: UUID) {
         self.runID = runID
+    }
+    
+    // MARK: - Parallel Verification & Direct Ingestion
+    
+    private func normalizePath(_ path: String) -> String {
+        var clean = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        if clean.hasPrefix("file://") {
+            clean = String(clean.dropFirst(7))
+        }
+        return clean
+    }
+    
+    /// Register a file change detected by a file system watcher.
+    public func registerFileWatcherChange(path: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        fileWatcherChanges.insert(normalizePath(path))
+    }
+    
+    /// Register all file changes detected by a git status summary.
+    public func registerGitStatusSummary(_ summary: GitStatusSummary) {
+        lock.lock()
+        defer { lock.unlock() }
+        for file in summary.changedFiles {
+            gitStatusChanges.insert(normalizePath(file.path))
+        }
+    }
+    
+    /// Directly ingest a file watcher change event.
+    public func ingestFileWatcherChange(path: String, timestamp: Date = Date()) -> [TimelineDelta] {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        let normalized = normalizePath(path)
+        fileWatcherChanges.insert(normalized)
+        
+        let sequence = lastProcessedLineSequence + 1
+        lastProcessedLineSequence = sequence
+        
+        let fileKey = "file-watcher-\(runID)-\(normalized)"
+        guard seenStableKeys.insert(fileKey).inserted else { return [] }
+        
+        let fileEvent = AgentTimelineEvent(
+            stableKey: fileKey,
+            runID: runID,
+            sequence: sequence,
+            type: .fileChange,
+            title: "File modified",
+            subtitle: path,
+            timestamp: timestamp,
+            status: .info,
+            source: .fileWatcher,
+            confidence: .high,
+            relatedFile: path
+        )
+        return [.insert(fileEvent)]
+    }
+    
+    /// Directly ingest all file changes from a git status summary.
+    public func ingestGitStatusSummary(_ summary: GitStatusSummary, timestamp: Date = Date()) -> [TimelineDelta] {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        var deltas: [TimelineDelta] = []
+        for file in summary.changedFiles {
+            let normalized = normalizePath(file.path)
+            gitStatusChanges.insert(normalized)
+            
+            let sequence = lastProcessedLineSequence + 1
+            lastProcessedLineSequence = sequence
+            
+            let fileKey = "file-git-\(runID)-\(normalized)"
+            guard seenStableKeys.insert(fileKey).inserted else { continue }
+            
+            let fileEvent = AgentTimelineEvent(
+                stableKey: fileKey,
+                runID: runID,
+                sequence: sequence,
+                type: .fileChange,
+                title: "File modified",
+                subtitle: file.path,
+                timestamp: timestamp,
+                status: .info,
+                source: .gitStatus,
+                confidence: .high,
+                relatedFile: file.path
+            )
+            deltas.append(.insert(fileEvent))
+        }
+        return deltas
     }
     
     /// Incremental ingestion of a line of terminal output.
@@ -273,6 +367,24 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
         if let fileChange = parseFileChange(cleanText) {
             let fileKey = "file-\(runID)-\(line.sequence)"
             if seenStableKeys.insert(fileKey).inserted {
+                let normalized = normalizePath(fileChange)
+                let isVerifiedByGit = gitStatusChanges.contains(normalized)
+                let isVerifiedByWatcher = fileWatcherChanges.contains(normalized)
+                
+                let source: TimelineEventSource
+                let confidence: TimelineEventConfidence
+                
+                if isVerifiedByGit {
+                    source = .gitStatus
+                    confidence = .high
+                } else if isVerifiedByWatcher {
+                    source = .fileWatcher
+                    confidence = .high
+                } else {
+                    source = .terminalRegex
+                    confidence = .low
+                }
+                
                 let fileEvent = AgentTimelineEvent(
                     stableKey: fileKey,
                     runID: runID,
@@ -281,8 +393,8 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
                     title: "File modified",
                     subtitle: fileChange,
                     status: .info,
-                    source: .terminalRegex,
-                    confidence: .medium,
+                    source: source,
+                    confidence: confidence,
                     rawExcerpt: cleanText,
                     rawLineStart: line.sequence,
                     rawLineEnd: line.sequence,
