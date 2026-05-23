@@ -181,4 +181,23 @@ struct PreferencesStoreTests {
         #expect(localAI.fastModel == LocalAISettings.defaultFastModel)
         #expect(localAI.strongModel == LocalAISettings.defaultStrongModel)
     }
+
+    @Test("Custom system prompt and token budget settings persist and reload")
+    func customSystemPromptAndTokenBudgetPersist() {
+        let (defaults, _) = makeDefaults()
+        let store = PreferencesStore(userDefaults: defaults)
+
+        store.update {
+            $0.localAI.copilotSystemPrompt = "Be a concise Swift dev"
+            $0.localAI.totalPromptTokens = 120
+            $0.localAI.totalCompletionTokens = 80
+            $0.localAI.copilotTokenBudget = 1000
+        }
+
+        let reloaded = PreferencesStore(userDefaults: defaults)
+        #expect(reloaded.preferences.localAI.copilotSystemPrompt == "Be a concise Swift dev")
+        #expect(reloaded.preferences.localAI.totalPromptTokens == 120)
+        #expect(reloaded.preferences.localAI.totalCompletionTokens == 80)
+        #expect(reloaded.preferences.localAI.copilotTokenBudget == 1000)
+    }
 }
