@@ -5,6 +5,7 @@ final class StubTerminalLauncher: TerminalLaunching, @unchecked Sendable {
     struct Call: Equatable {
         let projectURL: URL
         let command: String?
+        let runID: UUID?
     }
 
     enum StubError: Error, LocalizedError {
@@ -34,9 +35,9 @@ final class StubTerminalLauncher: TerminalLaunching, @unchecked Sendable {
         lock.unlock()
     }
 
-    func openTerminal(at projectURL: URL, command: String?) throws {
+    func openTerminal(at projectURL: URL, command: String?, runID: UUID?) throws {
         lock.lock()
-        callLog.append(Call(projectURL: projectURL, command: command))
+        callLog.append(Call(projectURL: projectURL, command: command, runID: runID))
         let error = nextError
         nextError = nil
         lock.unlock()

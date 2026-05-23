@@ -143,6 +143,38 @@ final class AppViewModel {
                 prefs.localAI.totalCompletionTokens += completion
             }
         }
+
+        NotificationCenter.default.addObserver(
+            forName: .ptyOutputReceived,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let userInfo = notification.userInfo,
+                  let runID = userInfo["runID"] as? UUID,
+                  let text = userInfo["text"] as? String else {
+                return
+            }
+            self.appendTranscriptMessage(runID: runID, role: .agent, content: text)
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: .ptyProcessTerminated,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let userInfo = notification.userInfo,
+                  let runID = userInfo["runID"] as? UUID else {
+                return
+            }
+            let exitCode = userInfo["exitCode"] as? Int ?? 0
+            if exitCode == 0 {
+                self.updateAgentRunStatus(id: runID, status: .needsReview)
+            } else {
+                self.updateAgentRunStatus(id: runID, status: .failed)
+            }
+        }
     }
 
     func bind(workspaceVM: WorkspaceViewModel) {
@@ -1207,7 +1239,14 @@ final class AppViewModel {
 }
 
 private struct TerminalLauncherAdapter: TerminalLaunching {
-    func openTerminal(at projectURL: URL, command: String?) throws {
+    func openTerminal(at projectURL: URL, command: String?, runID: UUID?) throws {
+        if let runID {
+            if let command, !command.isEmpty {
+                try PTYRunner.shared.startSession(runID: runID, projectURL: projectURL, command: command)
+                return
+            }
+        }
+        
         if let command, !command.isEmpty {
             try TerminalLauncher.openTerminal(at: projectURL, command: command)
         } else {

@@ -75,7 +75,7 @@ public final class AgentRunLaunchCoordinator {
         terminalCommand: String
     ) throws {
         do {
-            try terminalLauncher.openTerminal(at: projectURL, command: terminalCommand)
+            try terminalLauncher.openTerminal(at: projectURL, command: terminalCommand, runID: session.id)
             historyStore.updateStatus(id: session.id, status: .terminalOpened)
         } catch {
             historyStore.updateStatus(id: session.id, status: .failed, notes: error.localizedDescription)
