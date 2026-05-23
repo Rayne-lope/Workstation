@@ -95,6 +95,7 @@ final class AppViewModel {
     @ObservationIgnored private var workspaceCancellable: AnyCancellable?
     @ObservationIgnored private var fileWatcher: IssueFileWatcher?
     @ObservationIgnored private var ptyFlushTimers: [UUID: Timer] = [:]
+    @ObservationIgnored private var timelineIngestors: [UUID: AgentTimelineIngestor] = [:]
 
     init(
         shellRunner: ShellCommandRunner = ShellCommandRunner(),
@@ -960,17 +961,39 @@ final class AppViewModel {
             ptyFlushTimers.removeValue(forKey: runID)
             return
         }
-        
+
         let pendingText = buffer.take()
         guard !pendingText.isEmpty else { return }
-        
+
         self.appendTranscriptMessage(runID: runID, role: .agent, content: pendingText)
+
+        // Ingest timeline lines for the compact timeline view
+        ingestTimelineLines(for: runID)
+    }
+
+    private func ingestTimelineLines(for runID: UUID) {
+        guard let streamBuffer = PTYProcessRegistry.shared.streamBuffer(for: runID) else { return }
+        let lines = streamBuffer.takeLines()
+        guard !lines.isEmpty else { return }
+
+        let ingestor = timelineIngestors[runID] ?? {
+            let newIngestor = AgentTimelineIngestor(runID: runID)
+            timelineIngestors[runID] = newIngestor
+            return newIngestor
+        }()
+
+        for line in lines {
+            let deltas = ingestor.ingest(line: line)
+            for delta in deltas {
+                AgentTimelineStore.shared.apply(delta: delta, forRunID: runID)
+            }
+        }
     }
 
     private func flushBufferImmediately(runID: UUID) {
         ptyFlushTimers[runID]?.invalidate()
         ptyFlushTimers.removeValue(forKey: runID)
-        
+
         if let buffer = PTYProcessRegistry.shared.buffer(for: runID) {
             let pendingText = buffer.take()
             if !pendingText.isEmpty {
@@ -978,6 +1001,28 @@ final class AppViewModel {
             }
             PTYProcessRegistry.shared.removeBuffer(for: runID)
         }
+
+        // Flush remaining lines from stream buffer and ingest
+        if let streamBuffer = PTYProcessRegistry.shared.streamBuffer(for: runID) {
+            streamBuffer.flush()
+            let lines = streamBuffer.takeLines()
+            if !lines.isEmpty {
+                let ingestor = timelineIngestors[runID] ?? {
+                    let newIngestor = AgentTimelineIngestor(runID: runID)
+                    timelineIngestors[runID] = newIngestor
+                    return newIngestor
+                }()
+                for line in lines {
+                    let deltas = ingestor.ingest(line: line)
+                    for delta in deltas {
+                        AgentTimelineStore.shared.apply(delta: delta, forRunID: runID)
+                    }
+                }
+            }
+        }
+
+        // Remove ingestor to prevent memory leaks
+        timelineIngestors.removeValue(forKey: runID)
     }
 
     func updateTranscriptMessageContent(id: UUID, content: String) {
