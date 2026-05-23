@@ -10,6 +10,12 @@ struct IssueDetailView: View {
     @State private var indonesianSummaryError: String?
     @State private var selectedDetailTab: IssueDetailTab = .details
 
+    @State private var changedFiles: [GitChangedFile] = []
+    @State private var isLoadingFiles = false
+    @State private var filesError: String? = nil
+    @State private var timer: Timer? = nil
+    @State private var hoveredFileID: String? = nil
+
     var body: some View {
         VStack(spacing: 0) {
             panelHeader
@@ -31,6 +37,15 @@ struct IssueDetailView: View {
             Rectangle()
                 .fill(WorkstationTheme.border)
                 .frame(width: 1)
+        }
+        .onAppear {
+            startMonitoring()
+        }
+        .onDisappear {
+            stopMonitoring()
+        }
+        .onChange(of: issue.id) { _, _ in
+            refreshModifiedFiles()
         }
         .environment(\.openURL, OpenURLAction { url in
             NSWorkspace.shared.open(url)
@@ -332,6 +347,9 @@ struct IssueDetailView: View {
     private var detailsTabContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             textSections
+            if hasActiveWorktree {
+                modifiedFilesSection
+            }
             dependenciesSection
         }
     }
@@ -993,6 +1011,273 @@ struct IssueDetailView: View {
         default:
             return WorkstationTheme.textSecondary
         }
+    }
+
+    // MARK: - Modified Files Section (Workstation-8rmu)
+
+    private var hasActiveWorktree: Bool {
+        guard let workspace = appVM.activeWorkspace else { return false }
+        let location = appVM.gitWorktreeService.worktreeLocation(for: workspace, issueID: issue.id)
+        return FileManager.default.fileExists(atPath: location.worktreeURL.path)
+    }
+
+    private func startMonitoring() {
+        refreshModifiedFiles()
+        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            refreshModifiedFiles()
+        }
+    }
+
+    private func stopMonitoring() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func refreshModifiedFiles() {
+        guard let workspace = appVM.activeWorkspace else { return }
+        let location = appVM.gitWorktreeService.worktreeLocation(for: workspace, issueID: issue.id)
+        guard FileManager.default.fileExists(atPath: location.worktreeURL.path) else {
+            self.changedFiles = []
+            self.filesError = nil
+            return
+        }
+
+        isLoadingFiles = true
+        filesError = nil
+        Task {
+            do {
+                let summary = try await GitStatusService(commandRunner: appVM.shellRunner).statusSummary(in: location.worktreeURL)
+                await MainActor.run {
+                    self.changedFiles = summary.changedFiles
+                    self.isLoadingFiles = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.filesError = error.localizedDescription
+                    self.isLoadingFiles = false
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var modifiedFilesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                uppercaseLabel("Modified Files")
+                
+                if !changedFiles.isEmpty {
+                    Text("\(changedFiles.count)")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(WorkstationTheme.borderSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                }
+                
+                Spacer()
+                
+                if isLoadingFiles {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(WorkstationTheme.accent)
+                } else {
+                    Button {
+                        refreshModifiedFiles()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.accent)
+                            .frame(width: 24, height: 24)
+                            .background(WorkstationTheme.hover)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Refresh file status")
+                }
+            }
+            .padding(.bottom, 2)
+
+            if let filesError {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(WorkstationTheme.red)
+                    Text(filesError)
+                        .font(WorkstationTheme.Fonts.body(11))
+                        .foregroundStyle(WorkstationTheme.textSecondary)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(WorkstationTheme.redBg)
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+            } else if changedFiles.isEmpty {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(WorkstationTheme.green)
+                    Text("Working tree is clean. No modified files.")
+                        .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(WorkstationTheme.card)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                        .stroke(WorkstationTheme.border, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+            } else {
+                VStack(spacing: 0) {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 1) {
+                            ForEach(changedFiles) { file in
+                                modifiedFileRow(file)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 280)
+                }
+                .background(WorkstationTheme.card)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                        .stroke(WorkstationTheme.border, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+            }
+        }
+    }
+
+    private func modifiedFileRow(_ file: GitChangedFile) -> some View {
+        let isHovered = hoveredFileID == file.id
+        let url = URL(fileURLWithPath: file.path)
+        let fileName = url.lastPathComponent
+        let folderPath = url.deletingLastPathComponent().path
+        
+        return Button {
+            openModifiedFile(file)
+        } label: {
+            HStack(spacing: 12) {
+                // Change status badge
+                statusBadge(for: file.status)
+                
+                // File type icon
+                Image(systemName: fileIconName(for: file.path))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(fileIconColor(for: file.path))
+                    .frame(width: 20, height: 20)
+                
+                // File path details
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(fileName)
+                        .font(WorkstationTheme.Fonts.body(12, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                    
+                    if !folderPath.isEmpty && folderPath != "." {
+                        Text(folderPath)
+                            .font(WorkstationTheme.Fonts.body(10))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
+                
+                Spacer()
+                
+                // Action indicator on hover
+                if isHovered {
+                    Image(systemName: "arrow.up.forward.app")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.accent)
+                        .transition(.opacity)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isHovered ? WorkstationTheme.hover : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            hoveredFileID = hovering ? file.id : nil
+        }
+    }
+
+    private func openModifiedFile(_ file: GitChangedFile) {
+        guard let workspace = appVM.activeWorkspace else { return }
+        let location = appVM.gitWorktreeService.worktreeLocation(for: workspace, issueID: issue.id)
+        let fileURL = location.worktreeURL.appendingPathComponent(file.path)
+        NSWorkspace.shared.open(fileURL)
+    }
+
+    private func fileIconName(for path: String) -> String {
+        let ext = URL(fileURLWithPath: path).pathExtension.lowercased()
+        switch ext {
+        case "swift": return "curlybraces"
+        case "md", "markdown": return "doc.text"
+        case "json", "yaml", "yml", "plist", "xml": return "slider.horizontal.3"
+        case "sh", "bash", "zsh": return "terminal"
+        case "png", "jpg", "jpeg", "gif", "svg", "assets": return "photo"
+        default: return "doc"
+        }
+    }
+
+    private func fileIconColor(for path: String) -> Color {
+        let ext = URL(fileURLWithPath: path).pathExtension.lowercased()
+        switch ext {
+        case "swift": return WorkstationTheme.orange
+        case "md", "markdown": return WorkstationTheme.blue
+        case "json", "yaml", "yml", "plist", "xml": return WorkstationTheme.purple
+        case "sh", "bash", "zsh": return WorkstationTheme.accent
+        case "png", "jpg", "jpeg", "gif", "svg", "assets": return WorkstationTheme.green
+        default: return WorkstationTheme.textSecondary
+        }
+    }
+
+    private func statusBadge(for status: String) -> some View {
+        let label: String
+        let fg: Color
+        let bg: Color
+        let border: Color
+
+        let trimmed = status.trimmingCharacters(in: .whitespaces)
+        if trimmed == "A" || trimmed == "??" || trimmed == "?" {
+            label = "+"
+            fg = WorkstationTheme.green
+            bg = WorkstationTheme.greenBg
+            border = WorkstationTheme.greenBorder
+        } else if trimmed == "D" {
+            label = "-"
+            fg = WorkstationTheme.red
+            bg = WorkstationTheme.redBg
+            border = WorkstationTheme.redBorder
+        } else if trimmed == "R" || trimmed == "C" {
+            label = "→"
+            fg = WorkstationTheme.blue
+            bg = WorkstationTheme.blueBg
+            border = WorkstationTheme.blueBorder
+        } else {
+            label = "M"
+            fg = WorkstationTheme.orange
+            bg = WorkstationTheme.orangeBg
+            border = WorkstationTheme.orangeBorder
+        }
+
+        return Text(label)
+            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .foregroundStyle(fg)
+            .frame(width: 16, height: 16)
+            .background(bg)
+            .overlay(
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(border, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
     }
 }
 
