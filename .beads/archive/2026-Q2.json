@@ -1,0 +1,742 @@
+[
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T05:16:51Z",
+    "created_at" : "2026-05-23T04:39:31Z",
+    "description" : "Why: Currently, all completed\/closed issues reside in the same active database and are exported directly into the single passive .beads\/issues.jsonl file. Over time, as hundreds of issues are closed, this causes workspace bloat, degrades loading speed, and limits performance.\n\nWhat:\n1. Define a clear archiving protocol where closed\/completed issues are transferred to a dedicated historical storage (e.g., .beads\/archive\/ partitioned by year\/quarter or a dedicated .beads\/archive.db).\n2. Add a new tab in the Workstation UI (Sidebar\/Panel) called 'Archive & History' so users can browse, search, and inspect completed issues without cluttering the active Kanban columns.\n3. Keep the active workspace memory lean, snappy, and optimized for speed.",
+    "id" : "Workstation-zzde",
+    "issue_type" : "feature",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Architecture] Archiving and dedicated storage system for completed issues",
+    "updated_at" : "2026-05-23T05:16:51Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T04:36:22Z",
+    "created_at" : "2026-05-23T03:39:51Z",
+    "description" : "Properties NSTextView (layoutManager, textContainer, textStorage) di-force-unwrap (!) di updateHeight() yang berpotensi crash saat teardown atau inisialisasi.\\n\\nLokasi: App\/IssueRightPane.swift:171-173",
+    "id" : "Workstation-tb4",
+    "issue_type" : "bug",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "[Lokasi UI]\nLaci detail issue di sisi kanan layar (Issue Detail Panel \/ Right Pane), khususnya komponen kotak input teks multi-baris (NSTextView) untuk deskripsi atau komentar.\n\n[Panduan Pengujian Manual]\n1. Jalankan aplikasi Workstation.\n2. Klik salah satu issue di papan kanban untuk membuka laci detail di sisi kanan.\n3. Lakukan interaksi seperti mengedit deskripsi issue atau menambahkan komentar.\n4. Input teks akan menyesuaikan tingginya secara dinamis sesuai teks yang diketik tanpa terjadi kegagalan\/crash.\n5. Tutup detail panel (teardown view) beberapa kali untuk menguji stabilitas pembongkaran objek NSTextView dan pastikan tidak ada crash di latar belakang.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Scan] Unsafe force-unwraps on NSTextView properties in IssueRightPane",
+    "updated_at" : "2026-05-23T04:36:22Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T04:36:20Z",
+    "created_at" : "2026-05-23T04:06:09Z",
+    "description" : "**Context**\nThe AI assistant in Copilot frequently uses '##' for subheadings to structure its responses. However, currently it displays as raw text (e.g., '## Title') because MarkdownTextRenderer uses inlineOnlyPreservingWhitespace for .copilot mode, which ignores block headings.\n\n**Goal**\nEnable proper rendering of '##' headings in Copilot chat bubbles so they appear as stylized subheadings (e.g., bold, slightly larger font, on their own line with spacing) instead of showing the raw '##' prefix.\n\n**Proposed Changes**\n- Update MarkdownTextRenderer.swift to detect lines starting with '##'.\n- Style them appropriately in the Copilot chat view (e.g., in applyCopilotStyling or by parsing them into custom styled text\/view blocks).",
+    "id" : "Workstation-u25y",
+    "issue_type" : "bug",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "[Lokasi UI]\nTampilan chat bubble di dalam panel kanan obrolan Copilot (diaktifkan lewat tombol bintang 'Copilot' di kanan atas atau Cmd+K).\n\n[Panduan Pengujian Manual]\n1. Jalankan aplikasi Workstation.\n2. Buka panel kanan Copilot lewat tombol berikon bintang ('Copilot') di pojok kanan atas atau gunakan pintasan Cmd+K.\n3. Ketikkan pesan ke Copilot yang meminta respons terstruktur dengan sub-heading H1, H2, atau H3 (contoh: 'Tulis ringkasan singkat dengan heading H1, H2, dan H3' atau perhatikan teks berformat '###').\n4. Amati respons asisten AI: baris dengan penanda '# ', '## ', atau '### ' sekarang dirender bersih secara otomatis sebagai judul\/sub-judul tebal dengan skala ukuran font (H1 = 17pt, H2 = 15pt, H3 = 13.5pt) dengan spasi vertikal yang rapi tanpa menyertakan prefiks tag mentah lagi.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[UI] Support H2 Header (##) rendering in Copilot chat bubbles",
+    "updated_at" : "2026-05-23T04:36:20Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T04:36:17Z",
+    "created_at" : "2026-05-22T17:53:51Z",
+    "description" : "When the network connection to the local AI or external LLM fails, show a beautiful offline state interactive card in the chat bubble featuring a 'Retry' button rather than a raw, hard-to-read error message.",
+    "id" : "Workstation-zj7",
+    "issue_type" : "bug",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "### Lokasi Elemen Baru\/Berubah di UI\n- Berada di **Panel Kanan (Detail Pane)** pada tab **Copilot** (yang memiliki ikon sparkles\/bintang).\n- Ketika koneksi jaringan ke AI lokal atau LLM eksternal terputus atau offline, gelembung pesan error biasa kini digantikan oleh sebuah **Offline Error Card** premium yang sesuai dengan Style Guide.\n- Kartu ini menampilkan ikon `wifi.slash` berwarna merah dan pesan ramah pengguna \"Network Connection Offline\".\n- Terdapat bagian detail teknis kesalahan yang dapat dilipat\/diekspansi dengan mengklik tombol kolaps **\"Show Technical Details\"** lengkap dengan animasi transisi chevron (`chevron.right` ke `chevron.down`).\n- Di bagian kanan bawah kartu error tersebut, terdapat tombol **\"Retry Connection\"** berwarna emas premium (menggunakan style `WorkstationPrimaryButtonStyle`).\n- Tombol \"Retry Connection\" ini ketika diklik akan menghapus kartu error tersebut dan secara otomatis memicu pengulangan regenerasi pesan Copilot yang terakhir dikirim.\n\n### Panduan Pengujian Manual Langkah Demi Langkah\n1. **Jalankan Aplikasi**: Jalankan aplikasi Workstation.\n2. **Buka Copilot**: Buka panel Copilot di sebelah kanan (bisa dengan klik ikon Copilot di toolbar atau pintasan `Cmd+K`).\n3. **Simulasikan Offline**: Matikan koneksi internet Anda atau hentikan server model AI lokal Anda agar layanan AI tidak dapat dihubungi.\n4. **Kirim Pesan**: Ketikkan pesan atau pertanyaan di kolom input chat Copilot lalu kirimkan.\n5. **Amati Error Card**: Tunggu sejenak hingga sistem mendeteksi kegagalan jaringan atau server tidak terjangkau. Perhatikan bahwa alih-alih menampilkan teks error mentah yang tidak ramah, sistem akan menampilkan kartu **Offline Error Card** berwarna merah lembut dengan ikon `wifi.slash`.\n6. **Ekspansi Detail Teknis**: Klik tulisan **\"Show Technical Details\"** untuk mengekspansi detail kesalahan teknis jaringan. Klik lagi untuk menyembunyikannya.\n7. **Simulasikan Online Kembali**: Nyalakan kembali koneksi internet atau hidupkan kembali server model AI lokal Anda.\n8. **Uji Coba Pengulangan (Retry)**: Klik tombol **\"Retry Connection\"** di bagian bawah kartu error tersebut.\n9. **Verifikasi**: Verifikasi bahwa kartu error tersebut hilang dan Copilot secara otomatis mencoba mengirim ulang pesan terakhir untuk menghasilkan respons baru dari model AI.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "\\[Copilot\\] Gracefully handle network offline states with retry actions",
+    "updated_at" : "2026-05-23T04:36:17Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T04:36:11Z",
+    "created_at" : "2026-05-22T17:53:53Z",
+    "description" : "Allow users to edit or select custom System Prompts for the Copilot directly from the settings panel, letting them customize the AI's tone, framework versions, or coding styles.",
+    "id" : "Workstation-tnf",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "### Lokasi Elemen Baru\/Berubah di UI\n- Berada di panel **Settings** (ikon roda gigi di pojok kiri bawah sidebar utama) pada tab **Local AI** (dengan ikon cpu).\n- Terdapat seksi baru bernama **\"Copilot System Prompt\"** lengkap dengan ikon sparkles\/bintang.\n- Seksi ini menyediakan sebuah area editor teks multi-baris (`TextEditor`) monospaced, di mana pengguna dapat mengedit\/menulis instruksi sistem kustom sesuka hati.\n- Di bagian bawah area editor tersebut, terdapat baris pintasan **\"Presets\"** yang memungkinkan pengguna memuat template instruksi sistem dengan sekali klik:\n  - **Standard**: Mengosongkan kustomisasi untuk kembali menggunakan system prompt bawaan Beads.\n  - **Concise Developer**: Menginstruksikan AI menjadi pengembang senior yang menjawab secara sangat ringkas dan langsung ke kode solusi Swift tanpa basa-basi.\n  - **Detailed Mentor**: Menginstruksikan AI bertindak sebagai mentor pemrograman yang ramah, memberikan penjelasan detail langkah demi langkah, dan menyarankan praktik terbaik.\n\n### Panduan Pengujian Manual Langkah Demi Langkah\n1. **Buka Pengaturan**: Jalankan aplikasi Workstation, lalu klik ikon roda gigi (**Settings**) di pojok kiri bawah sidebar utama untuk membuka panel pengaturan.\n2. **Pilih Tab Local AI**: Klik tab **Local AI** di sidebar panel pengaturan.\n3. **Temukan Seksi Baru**: Gulir ke bawah hingga Anda melihat seksi **\"Copilot System Prompt\"**.\n4. **Uji Coba Presets**: Klik tombol preset **\"Concise Developer\"**. Perhatikan bahwa area teks editor langsung terisi dengan instruksi pengembang ringkas.\n5. **Simpan Otomatis**: Ketikkan atau edit teks tersebut secara manual untuk memverifikasi penyimpanan kustomisasi secara langsung.\n6. **Buka Copilot**: Tutup panel Settings, lalu buka panel chat **Copilot** di sebelah kanan (gunakan tombol Copilot di toolbar atau pintasan `Cmd+K`).\n7. **Kirim Pertanyaan**: Kirimkan pertanyaan pemrograman, misalnya: *\"Bagaimana cara membuat Singleton di Swift?\"*.\n8. **Verifikasi Respon Ringkas**: Verifikasi bahwa respon Copilot langsung menyajikan kode Singleton Swift secara padat dan tanpa teks basa-basi pembuka\/penutup, sesuai system prompt kustom pengembang ringkas.\n9. **Kembalikan ke Default**: Kembali ke **Settings -> Local AI** dan klik preset **\"Standard\"** untuk mengosongkan kustomisasi dan kembali ke system prompt bawaan.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "\\[Copilot\\] Add system prompt customization under Preferences",
+    "updated_at" : "2026-05-23T04:36:11Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T04:36:08Z",
+    "created_at" : "2026-05-23T04:23:47Z",
+    "description" : "Why: Currently, when an issue is moved to the 'Review' column (by adding the 'human' label), its status in the right pane details and top breadcrumb still says 'in_progress'. This makes it inconsistent with the column, and the Copilot AI is also unaware that the issue is in the 'Review' state instead of 'in_progress'.\n\nWhat:\n- In IssueDetailView.swift, if the issue has the 'human' label, display its status as 'review' and color it with the Blue theme (matching the Review column color).\n- In LocalAIAction.swift, update the rendered status of issues passed to the Copilot prompt context so that 'in_progress' issues with the 'human' label are described as 'review'.",
+    "id" : "Workstation-1rn0",
+    "issue_type" : "bug",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "[Lokasi UI]\n1. Panel Detail Issue (Issue Detail Panel di laci sebelah kanan): Bagian breadcrumb header atas ('Issue \/ review') dan properti 'STATUS' sekarang menyelaraskan nilainya menjadi 'review' dengan ikon lingkaran berwarna biru (sebelumnya 'in_progress' berwarna emas).\n2. Konteks Obrolan Copilot AI: Informasi status yang dikirimkan ke model AI untuk issue berlabel 'human' kini secara konsisten bernilai 'review'.\n\n[Panduan Pengujian Manual]\n1. Jalankan aplikasi Workstation.\n2. Klik salah satu card issue di kolom 'REVIEW' pada papan kanban (misalnya Workstation-u25y atau Workstation-tb4) untuk membuka detail panel sebelah kanan.\n3. Amati area atas detail panel: teks status yang sebelumnya tertulis 'in_progress' (warna emas) kini berubah menjadi 'review' (warna biru).\n4. Amati baris properti 'STATUS' di bawah judul: ikon titik lingkaran kini berwarna biru dengan teks 'review'.\n5. Buka panel obrolan Copilot AI (Cmd+K) dan tanyakan status issue tersebut (misal: 'Apa status dari Workstation-u25y?'). AI sekarang akan secara akurat menjawab bahwa statusnya adalah 'review'.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[UI] Align issue detail status and Copilot context with the Review column when human label is present",
+    "updated_at" : "2026-05-23T04:36:08Z"
+  },
+  {
+    "acceptance_criteria" : "The new feature is present in the Settings section with appropriate labelling.\nUser can interact with the feature (e.g., toggle, select, input) and the interaction is reflected immediately.\nThe setting value persists across page reloads and app restarts.\nExisting settings continue to work without regression.\nAny relevant validation or error handling is in place.",
+    "assignee" : "claude",
+    "closed_at" : "2026-05-23T04:36:06Z",
+    "created_at" : "2026-05-23T02:14:24Z",
+    "description" : "Introduce a new feature within the app's Settings section to allow users to configure additional preferences or behaviour. The exact functionality is to be defined, but this issue covers the end-to-end addition: UI component, data binding, persistence, and integration with existing settings.",
+    "id" : "Workstation-eqv",
+    "issue_type" : "feature",
+    "labels" : [
+      "enhancement",
+      "feature",
+      "human",
+      "settings"
+    ],
+    "notes" : "Implemented: new \\\"Board\\\" tab di Settings, dengan \\\"Compact card layout\\\" toggle.\n\nLokasi di UI:\n- Buka app, klik Settings (gear icon di sidebar atau keyboard shortcut Cmd+,)\n- Di Settings sidebar kiri, muncul tab baru \\\"Board\\\" dengan icon square.grid.2x2\n- Klik tab Board → tampilan panel \\\"Board\\\" dengan satu toggle: \\\"Compact card layout\\\"\n\nEfek toggle:\n- OFF (default): card normal — padding penuh (16px), title 3 baris, description terlihat, footer dengan metadata.\n- ON: card lebih compact — padding dikurangi (12px horizontal, 10px vertical), title max 2 baris, description di-hidden, footer lebih ringkas.\n\nVerifikasi manual:\n1. Buka app, masukkan project beads workspace\n2. Jalankan `.\/run-app run` atau buka dari DerivedData\n3. Tekan Cmd+, untuk buka Settings\n4. Klik tab \\\"Board\\\" di sidebar kiri Settings\n5. Toggle \\\"Compact card layout\\\" → ON\n6. Buka kanban board (pastikan view mode kanban aktif)\n7. Lihat card — deskripsi seharusnya hilang, card lebih ringkas\n8. Toggle OFF → card kembali ke tampilan normal dengan deskripsi\n9. Tutup app, buka lagi — setting tetap persist (disimpan di UserDefaults)\n\nswift test: 316 tests pass. xcodebuild: SUCCEEDED.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Add new feature to Settings section in Beads Kanban app",
+    "updated_at" : "2026-05-23T04:36:06Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T04:33:35Z",
+    "created_at" : "2026-05-23T04:28:06Z",
+    "description" : "Why: When working on multiple issues, it is tedious to claim and launch agents individually. A bulk launch option is needed so that the user can select multiple issues in the Kanban board, select an AI agent profile from a dropdown picker, and launch them in parallel git worktrees in one click.\n\nWhat:\n- In AppViewModel.swift, added bulkAgentProfileID property and bulkLaunchAgents() to launch parallel agent worktrees for selected issues with automatic orphan conflict cleanup.\n- In BulkActionPanel.swift, added a premium agent selection picker and a primary 'Launch Agents' button to execute the bulk launch.",
+    "id" : "Workstation-cwpf",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Fitur bulk launch agents telah berhasil diimplementasikan dengan UI\/UX premium. Timed pre-flight check and automated worktree cleanup terintegrasi dengan baik untuk peluncuran paralel tanpa konflik. Silakan lakukan review dan test.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[UI\/UX] Support bulk launch agents on multiple selected issues",
+    "updated_at" : "2026-05-23T04:33:35Z"
+  },
+  {
+    "closed_at" : "2026-05-23T03:52:57Z",
+    "created_at" : "2026-05-23T03:50:06Z",
+    "description" : "User reported that the copilot is too sensitive and often interprets conversational prompts (like asking to create an issue or discussing solutions) as mutation requests, triggering the action plan UI and blocking consultation. Need to refine 'looksLikeMutationRequest' to ignore questions\/consultations.",
+    "id" : "Workstation-691",
+    "issue_type" : "task",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Make Copilot mutation detection less sensitive",
+    "updated_at" : "2026-05-23T03:52:57Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T03:50:21Z",
+    "created_at" : "2026-05-23T03:39:53Z",
+    "description" : "TerminalLauncher.openTerminal memanggil process.waitUntilExit() secara sinkron dari MainActor\/UI thread, berpotensi memicu freeze UI jika osascript lambat.\\n\\nLokasi: Sources\/BeadsWorkspace\/TerminalLauncher.swift:54",
+    "id" : "Workstation-5sf",
+    "issue_type" : "bug",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Scan] Blocking waitUntilExit on main thread in TerminalLauncher",
+    "updated_at" : "2026-05-23T03:50:21Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T02:13:49Z",
+    "created_at" : "2026-05-22T17:53:50Z",
+    "description" : "Add persistent chat history saving to SQLite or JSON database so users can view past conversation trees and continue old conversations when restarting the application or switching between issues.",
+    "id" : "Workstation-m1d",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "### Lokasi Elemen Baru\/Berubah di UI\n- Obrolan Copilot secara otomatis disimpan secara persisten di balik layar ke dalam berkas JSON (`copilot-transcripts.json`) di direktori Application Support pengguna.\n- Riwayat obrolan dipisahkan secara rapi per Issue ID yang sedang aktif (atau berlabel \"global\" jika tidak ada issue yang dipilih).\n- Di **Panel Kanan (Detail Pane)** pada tab **Copilot** di bagian pojok kanan atas header, terdapat tombol **\"Clear Chat\"** baru dengan ikon tempat sampah (`trash`). Tombol ini hanya muncul ketika sudah ada pesan di dalam chat obrolan.\n- Mengklik tombol tempat sampah tersebut akan menghapus riwayat obrolan untuk issue yang aktif secara permanen baik dari UI maupun dari berkas penyimpanan persisten.\n\n### Panduan Pengujian Manual Langkah Demi Langkah\n1. **Kirim Pesan Pertama**: Jalankan aplikasi Workstation, buka panel Copilot, lalu pilih salah satu issue dari papan Kanban (misalnya `Workstation-m1d`). Kirim beberapa pesan obrolan di panel Copilot.\n2. **Uji Coba Perpindahan Issue**: Pilih issue yang berbeda (misalnya `Workstation-zj7`) atau hapus pilihan issue. Perhatikan bahwa obrolan di panel Copilot akan kosong atau menampilkan obrolan dari issue yang baru Anda pilih.\n3. **Kembali ke Issue Pertama**: Kembali pilih issue pertama (`Workstation-m1d`). Verifikasi bahwa riwayat percakapan Anda sebelumnya dimuat kembali dengan sempurna.\n4. **Uji Coba Restart Aplikasi**: Restart\/Tutup aplikasi Workstation secara keseluruhan, lalu jalankan kembali.\n5. **Verifikasi Setelah Restart**: Buka kembali panel Copilot dan pilih issue `Workstation-m1d`. Verifikasi bahwa riwayat percakapan Anda tetap ada dan tidak hilang setelah aplikasi di-restart.\n6. **Uji Coba Hapus Obrolan (Clear Chat)**: Klik tombol **\"Clear Chat\"** (ikon tempat sampah `trash`) di pojok kanan atas header Copilot.\n7. **Verifikasi Hapus**: Verifikasi bahwa seluruh pesan obrolan terhapus secara instan dari layar dan tombol tempat sampah tersebut hilang dari header karena chat sudah kosong.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "\\[Copilot\\] Support persistent chat history across sessions",
+    "updated_at" : "2026-05-23T02:13:49Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T00:30:06Z",
+    "created_at" : "2026-05-23T00:29:01Z",
+    "description" : "When Beads creates a new git worktree for an agent run, the Antigravity CLI (agy) displays an interactive trust prompt asking if the user trusts the folder. This halts execution in the console\/background and forces fallback to a default scratch directory. Automatically append the new worktree path to trustedWorkspaces in ~\/.gemini\/antigravity-cli\/settings.json before launching the agent.",
+    "id" : "Workstation-u9o",
+    "issue_type" : "bug",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "[bug] [Copilot] Auto-trust newly created git worktrees to prevent interactive trust prompts",
+    "updated_at" : "2026-05-23T00:30:06Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T18:03:03Z",
+    "created_at" : "2026-05-22T18:01:21Z",
+    "description" : "The Copilot intent router triggers the JSON WorkflowPlan \/ interactive action card too easily on generic keywords (like 'ready', 'buat', etc.) and shows unusable Proceed\/Cancel cards when no actual actions are parsed. Refine the intent detection and gracefully degrade empty\/skip action plans to normal text messages.",
+    "id" : "Workstation-4qf",
+    "issue_type" : "bug",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[bug] [Copilot] Fix overly sensitive interactive action card triggers",
+    "updated_at" : "2026-05-22T18:03:03Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T15:24:31Z",
+    "created_at" : "2026-05-22T15:21:22Z",
+    "description" : "Add an interactive setup card in the Workflow Copilot panel when an agent launch is requested, allowing users to configure the target issue, agent profile, model, extra prompts, and flags before execution.",
+    "id" : "Workstation-y0p",
+    "issue_type" : "feature",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Implement Interactive Agent Launch Pre-flight Card in Copilot",
+    "updated_at" : "2026-05-22T15:24:31Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T14:44:42Z",
+    "created_at" : "2026-05-22T14:41:00Z",
+    "description" : "Fix bug where selecting multiple issues switches Right Pane to Bulk Actions panel even when in Copilot mode. Polish input chips to only show issue ID, and add smooth hover scale & color micro-animations to Plus and Send buttons.",
+    "id" : "Workstation-jwh",
+    "issue_type" : "bug",
+    "labels" : [
+      "copilot",
+      "ui",
+      "ux"
+    ],
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Workstation Copilot Selection and Input UX Polish",
+    "updated_at" : "2026-05-22T14:44:42Z"
+  },
+  {
+    "acceptance_criteria" : "1. User and assistant messages are styled as distinct modern left\/right aligned chat bubbles.\n2. Collapsible 'Thinking' section is present during streaming responses.\n3. Active context items are rendered inside the input box as dismissible tags\/chips.\n4. Input container has a model selection dropdown and a sleek send icon button.\n5. Pressing 'Enter' inside the TextEditor\/TextField submits the message immediately; 'Shift+Enter' or 'Option+Enter' adds a newline.",
+    "assignee" : "zhipu",
+    "closed_at" : "2026-05-22T14:31:01Z",
+    "created_at" : "2026-05-22T13:12:51Z",
+    "description" : "Rework the WorkflowCopilotPane UI\/UX in App\/IssueRightPane.swift to align with modern agentic chat interfaces.\n\nKey UI\/UX Enhancements:\n1. Modern Message Bubbles: Align User messages to the right in sleek dark-grey\/black bubbles, and Assistant messages to the left.\n2. Collapsible Thinking Process: Show a 'Thought for X seconds' collapsible indicator when the agent is processing.\n3. Response Actions: Include micro-actions (copy, feedback, regenerate) at the bottom of responses.\n4. Sleek Input & Context Bar: Refactor the input field to include context chips (active files\/issues) with close buttons inside the container, model selection dropdown, and a simple arrow send button.\n5. Immediate Send on Enter: Pressing 'Enter' on the text field should immediately submit the prompt. To insert a new line, support 'Shift + Enter' or 'Option + Enter'.",
+    "id" : "Workstation-b7l",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi UI\/UX Copilot Panel selesai. Semua 5 acceptance criteria terpenuhi:\n\n1. **Modern Message Bubbles**: Pesan user ditampilkan rata kanan dengan background accentBg (gelap dengan sentuhan gold) dan border accentBorder. Pesan assistant rata kiri dengan background card dan border default. Label peran diubah dari 'YOU'\/'COPILOT' menjadi 'You'\/'Copilot' (lebih natural).\n\n2. **Collapsible Thinking Process**: Saat assistant streaming, muncul indikator 'Thinking...' dengan animasi pulsing dot. Setelah streaming selesai, muncul label 'Thought for Xs' di atas bubble assistant menunjukkan durasi proses.\n\n3. **Response Actions**: Di bawah setiap pesan assistant, ada tombol micro-action: Copy (salin teks respons ke clipboard) dan Regenerate (hanya muncul di pesan terakhir). Tombol menggunakan icon kecil dengan style ghost.\n\n4. **Sleek Input & Context Bar**: Input field dirombak total — konteks issue yang dipilih sekarang ditampilkan sebagai dismissible chips (dengan tombol ×) di dalam container input, bukan section terpisah. Ada label nama model (strong model) di kiri bawah input. Tombol Send diganti dari 'paperplane.fill' menjadi icon panah atas (arrow.up) dalam lingkaran. Tombol Draft Issues dan Regenerate dipindahkan ke dalam bar input sebagai icon buttons.\n\n5. **Immediate Send on Enter**: Menggunakan custom NSTextView (CopilotTextView) yang menangkap Enter key — Enter tanpa modifier langsung mengirim pesan. Shift+Enter atau Option+Enter menyisipkan baris baru. Cmd+Enter tetap bisa digunakan dari keyboard shortcut.\n\n**Perubahan lain:**\n- Header disederhanakan (icon sparkle + title, tanpa subtitle panjang)\n- Empty state menampilkan icon dan hint 'Shift + Enter for a new line'\n- CopilotConversationModel ditambah field 'isStreaming' dan 'thinkingDuration'\n- NSColor extensions untuk warna CopilotTextView\n\n**Cara manual testing:**\n1. Buka app, pilih 1-2 issue di board\n2. Klik tombol 'Copilot' (sparkles) di header\n3. Ketik pesan di input field baru → tekan Enter → pesan langsung terkirim (bukan newline)\n4. Tekan Shift+Enter → seharusnya menyisipkan baris baru\n5. Perhatikan bubble user rata kanan (background gelap gold), bubble assistant rata kiri (background card)\n6. Saat assistant streaming, muncul indikator 'Thinking...' dengan pulsing dot\n7. Setelah selesai, muncul 'Thought for Xs' di atas bubble assistant\n8. Hover di bawah bubble assistant → muncul tombol Copy dan Regenerate\n9. Perhatikan context chips di dalam input container → klik × untuk remove\n10. Perhatikan nama model (misal 'deepseek-v4-flash') di kiri bawah input bar\n\nBuild: SUCCEEDED (xcodebuild Debug)\nTests: 303 passed (swift test)",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Improve Workflow Copilot Panel UI\/UX to match modern AI chat patterns",
+    "updated_at" : "2026-05-22T14:31:01Z"
+  },
+  {
+    "acceptance_criteria" : "Ikon '+' di input bar menampilkan popover berisi opsi Draft Issue(s) dan Regenerate.\nInput field dimulai dari ketinggian 1 baris dan bertambah secara otomatis sesuai konten teks hingga batas maksimal (6-8 baris) lalu scroll.\nChat bubble assistant merender **bold**, *italic*, ~~strikethrough~~, dan list (numbered & bulleted).\nTidak ada regresi pada fitur: Kirim Enter, Shift+Enter newline, context chips, micro-actions (copy, regenerate).\nBuild SUCCEEDED, semua tests yang ada masih pass (minimal 303 tests seperti sebelumnya).",
+    "assignee" : "claude",
+    "closed_at" : "2026-05-22T14:30:58Z",
+    "created_at" : "2026-05-22T13:55:36Z",
+    "description" : "Menyempurnakan Copilot Panel UI\/UX berdasarkan masukan setelah implementasi Workstation-b7l (Modern Chat Patterns). Meliputi pemindahan tombol Draft & Regenerate ke menu '+', auto-resize input field, dan rendering markdown pada chat bubble assistant.",
+    "id" : "Workstation-cb2",
+    "issue_type" : "feature",
+    "labels" : [
+      "chat",
+      "copilot",
+      "human",
+      "input",
+      "markdown",
+      "ui",
+      "ux"
+    ],
+    "notes" : "Implementasi selesai. Berikut ringkasan perubahan:\n\n## Lokasi Perubahan di UI\n\n### Input Bar (panel kanan bawah Copilot)\n1. **Tombol \"+\"** — muncul di sebelah kiri sebelum input field. Klik tombol ini menampilkan popover menu.\n2. **Popover menu** — berisi dua opsi:\n   - \"Draft Issue(s) from PRD\" — untuk generate issue drafts dari PRD text yang ada di input\n   - \"Regenerate Last Response\" — untuk regenerate response sebelumnya\n3. **Input field** — sekarang auto-resize: mulai dari 1 baris (~38pt), bertumbuh otomatis sampai ~180pt (6-8 baris), lalu scroll dalam area tersebut.\n4. Tombol **Send** tetap di kanan dengan icon arrow-up.\n\n### Chat Bubble (Pesan Assistant)\n- Sekarang merender **markdown**: bold, italic, strikethrough, numbered list, bulleted list.\n- User bubble tetap plain text (tidak di-render markdown).\n- Tetap ada micro-actions (copy) di bawah bubble.\n\n## File Berubah\n- `App\/IssueRightPane.swift` — CopilotMenuPopover struct, showingCopilotMenu state, auto-resize EnterToSendTextEditor, MarkdownTextRenderer.copilotText() usage\n- `Sources\/BeadsWorkspace\/MarkdownTextRenderer.swift` — tambah `.copilot` mode dan `copilotText()` function\n\n## Cara Testing Manual\n1. Buka app → tekan Cmd+K atau klik Copilot di toolbar → panel kanan berubah ke Copilot.\n2. **Test Markdown**: Kirim pertanyaan ke copilot, balasannya akan merender bold (**text**), italic (*text*), strikethrough (~~text~~), dan list.\n3. **Test \"+\" Menu**: Klik tombol \"+\" di kiri bawah → popover muncul dengan opsi \"Draft Issue(s) from PRD\" dan \"Regenerate Last Response\".\n4. **Test Auto-resize**: Ketik teks panjang di input → field akan membesar otomatis sampai 6-8 baris, setelah itu scroll.\n5. **Test Enter\/Shift+Enter**: Enter kirim pesan, Shift+Enter untuk newline.\n6. **Test Copy**: Klik icon doc.on.doc di bawah assistant bubble → teks di-copy.\n\n## Acceptance Criteria\n✓ Ikon '+' menampilkan popover dengan Draft Issue(s) dan Regenerate\n✓ Input field auto-resize 1 baris → max 6-8 baris → scroll\n✓ Chat bubble assistant merender markdown (bold, italic, strikethrough, list)\n✓ Tidak ada regresi: Enter kirim, Shift+Enter newline, context chips, copy action\n✓ Build SUCCEEDED, 314 tests pass",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Refine Copilot Input, Actions & Markdown Rendering",
+    "updated_at" : "2026-05-22T14:30:58Z"
+  },
+  {
+    "acceptance_criteria" : "1. Copilot interprets issue-mutation prompts and returns structured action recommendations.\n2. Recommendations are shown as an interactive proposal card in the message feed.\n3. The proposal card has a text field\/preview of changes, alongside 'Confirm & Execute' and 'Cancel' buttons.\n4. Confirming mutates the selected issues in the Store and refreshes the Board view.\n5. Build succeeds and tests pass.",
+    "assignee" : "claude",
+    "closed_at" : "2026-05-22T14:09:45Z",
+    "created_at" : "2026-05-22T13:15:53Z",
+    "description" : "Introduce an 'Active Agent' capability to the Workflow Copilot Pane. When a user asks Copilot to perform mutations on selected issues (e.g., 'please close these issues', 'translate these issues to Indonesian', 'change priorities to P1', 'assign to me'), Copilot should generate an interactive proposal card instead of a plain text response.\n\nProposed UX Flow & Features:\n1. Intent Recognition: Expand the Copilot reasoning flow to recognize command prompts targeting the selected issues.\n2. Interactive Proposal Cards: Render a custom proposal card in the chat history stream listing the planned changes (e.g. showing a preview of the close reason or translated titles\/descriptions).\n3. Action Confirmation: Embed 'Confirm & Execute' and 'Cancel' buttons in the proposal card. Confirming triggers the mutations in the IssueStore in real-time, automatically updating the board.",
+    "id" : "Workstation-ca6",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi selesai. Berikut ringkasan perubahan:\n\n## File Baru\n- `Sources\/BeadsContract\/WorkflowPlan.swift` — Model data untuk WorkflowPlan, WorkflowAction, WorkflowActionKind. Menyediakan parser JSON dari raw LLM response.\n- `Tests\/BeadsContractTests\/WorkflowPlanTests.swift` — 11 test untuk WorkflowPlan parsing, CodingKeys, dan displayLabel.\n\n## File Diubah\n- `Sources\/BeadsWorkspace\/LocalAIAction.swift` — Tambah case `.copilotPlan(prompt:contextIssues:)` dengan prompt template yang meminta LLM mengembalikan JSON plan.\n- `Sources\/BeadsWorkspace\/UpdateIssueInput.swift` — Tambah field `notes` dan `labels` (var, bukan let) supaya bisa di-assign saat copilot apply plan.\n- `Sources\/BeadsWorkspace\/BeadsService.swift` — Extend updateIssue untuk support notes (--notes) dan labels (--labels).\n- `App\/IssueRightPane.swift` — WorkflowCopilotPane: \n  - Tambah mutation request detection (looksLikeMutationRequest) yang routing ke copilotPlan instead of plain copilot.\n  - Tambah proposal card section dengan checkbox per action, warning banner, dan tombol Confirm\/Discard.\n  - Tambah applyPlan() dan executeAction() untuk assign, assignAndLaunch, closeWithReason, requestReview, updateField.\n\n## Cara Testing Manual\n1. Buka app, masukkan workspace yang punya issues.\n2. Pilih 1-3 issue di board (click + shift-click untuk multi-select).\n3. Tekan Cmd+K atau klik tombol Copilot di toolbar — panel kanan berubah ke Workflow Copilot.\n4. Ketik prompt mutation seperti \"assign to me\", \"close these issues\", \"change priority to P1\", atau \"request review\".\n5. Copilot mendeteksi mutation request → kirim ke copilotPlan → parse JSON plan → tampilkan proposal card.\n6. Checklist\/uncheck actions yang ingin di-apply, lihat warning jika ada.\n7. Klik \"Confirm N Actions\" untuk execute semua checked mutations → board refresh otomatis.\n8. Alternatif: ketik \"summarize backlog\" atau pertanyaan read-only → copilot tetap reply sebagai plain text bubble (tidak menampilkan proposal card).\n\n## Acceptance Criteria\n✓ Copilot interprets issue-mutation prompts and returns structured action recommendations\n✓ Recommendations are shown as an interactive proposal card in the message feed  \n✓ Proposal card has checkboxes, preview of changes, and Confirm\/Cancel buttons\n✓ Confirming mutates selected issues in the Store and refreshes the Board view\n✓ Build succeeds and tests pass (314 tests, 36 suites)\n\nswift test: 314\/314 hijau\n.\/run-app build: SUCCEEDED",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Support Interactive Copilot Action Execution for Issue Mutations",
+    "updated_at" : "2026-05-22T14:09:45Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T13:12:32Z",
+    "created_at" : "2026-05-22T12:42:25Z",
+    "description" : "Rework the local AI service and settings panel. Remove Ollama and Gemini local AI integrations. Migrate to OpenCode Go API (https:\/\/opencode.ai\/zen\/go\/v1) using model opencode-go\/deepseek-v4-flash by default. Integrate automatic credential lookup from ~\/.local\/share\/opencode\/auth.json to pre-populate the API key. Rework Settings panels and connection tester to align with OpenCode's endpoint requirements. Ensure all tests build and pass successfully.",
+    "id" : "Workstation-cxz",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Reworked Local AI service and Settings Panel to use OpenCode Go API natively, adding automatic API key lookup from ~\/.local\/share\/opencode\/auth.json.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Rework Local AI to use OpenCode Go API",
+    "updated_at" : "2026-05-22T13:12:32Z"
+  },
+  {
+    "assignee" : "me",
+    "closed_at" : "2026-05-22T11:52:10Z",
+    "created_at" : "2026-05-22T09:34:05Z",
+    "description" : "When launching an AI agent via 'Run Agent' or 'Run in Worktree', the terminal shows a broken command like 'cd && opencode run -m ...' instead of 'cd '\/path' && opencode run ...'. The project path is missing from the cd command, and complex prompts with quotes are not properly escaped.\n\nRoot causes:\n1. Path is empty or not passed correctly to TerminalLauncher when command is provided\n2. Double-escaping: PromptGenerator escapes quotes for shell, then TerminalLauncher.escapeForAppleScript escapes them again for AppleScript, corrupting the command\n\nFix:\n1. Ensure projectURL.path is always included in the cd command\n2. Remove PromptGenerator shell escaping (keep raw prompt) and let TerminalLauncher handle escaping once for AppleScript\n3. Add tests for complex prompts with nested quotes\n\nAcceptance criteria:\n- Terminal shows correct path: cd '\/Users\/...\/Project' && opencode run ...\n- Commands with quotes render correctly in Terminal.app\n- All existing tests still pass\n- Build succeeds",
+    "id" : "Workstation-gei",
+    "issue_type" : "bug",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Fix terminal display bug when launching AI agents",
+    "updated_at" : "2026-05-22T11:52:10Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T08:51:27Z",
+    "created_at" : "2026-05-22T08:23:36Z",
+    "description" : "Currently, when the Workstation app is in light\/white mode, the Close Issue form\/sheet remains in dark mode. We need to ensure that the sheet dynamically inherits or applies the active color scheme (light\/dark) properly, including its background, text editors, labels, and borders.",
+    "id" : "Workstation-2qh",
+    "issue_type" : "bug",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "fixed CloseIssueSheet and BulkCloseSheet light\/dark mode color scheme transition by dynamically inheriting colorScheme",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Fix CloseIssueSheet styling in Light Mode",
+    "updated_at" : "2026-05-22T08:51:27Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-22T07:15:44Z",
+    "created_at" : "2026-05-22T05:33:52Z",
+    "description" : "Tambah 'Focus Mode' sebagai fitur first-class di Workstation. Terdiri dari tiga bagian: (1) FocusSession model — struct\/class baru yang menyimpan issueID, startTime, pausedDuration, dan array of SessionInterval. Persist ke UserDefaults atau file sidecar supaya survive app restart. (2) Persistent focus strip di StatusBarView — saat issue di-focus, strip menampilkan: status dot, issue ID + judul (truncated), elapsed timer yang update tiap detik, tombol Pause\/Resume, dan tombol unfocus (✕). Strip ini selalu visible di semua view selama ada active focus session. (3) Session log di IssueDetailView — section baru 'Time Spent' yang menampilkan total waktu kumulatif dari semua session untuk issue itu, breakdown per session (tanggal, durasi). (4) Trigger focus: klik 'Focus' button di issue card atau detail pane, atau otomatis saat issue di-claim. (5) Gentle reminder notification setelah 90 menit tanpa pause — 'Sudah 90 menit di issue ini, mau istirahat?'",
+    "id" : "Workstation-ya2",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Focus Mode: persistent focus strip + session time tracking",
+    "updated_at" : "2026-05-22T07:15:44Z"
+  },
+  {
+    "closed_at" : "2026-05-22T07:15:42Z",
+    "created_at" : "2026-05-22T05:23:46Z",
+    "description" : "Buat fondasi view baru 'Workspace Detail' yang menjadi container untuk semua tab statistik workspace. View ini perlu: (1) header dengan nama workspace + health badge + action buttons, (2) inner tab bar (Overview, Issues, Team, Activity) dengan underline indicator seperti di referensi, (3) body yang swap konten per tab, (4) entry point dari sidebar atau toolbar. Ini blocker untuk semua tab detail lainnya.",
+    "id" : "Workstation-m6n",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "WorkspaceDetailView: shell & tab navigation",
+    "updated_at" : "2026-05-22T07:15:42Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-22T07:15:40Z",
+    "created_at" : "2026-05-22T05:32:02Z",
+    "description" : "Implementasi command palette global yang bisa dibuka dari mana saja dengan ⌘K (atau ⌘Shift+K supaya tidak konflik dengan Copilot yang sudah dihapus). Palette adalah floating sheet dengan fuzzy search input yang mencakup: (1) Issue search — ketik judul\/ID, langsung navigate ke issue atau select di board. (2) Actions — 'Move to In Progress', 'Claim', 'Close', 'New Issue', 'Reload' — semua aksi board yang biasanya butuh klik. (3) Status filter shortcuts — 'Show only Blocked', 'Show In Progress', dll. (4) Recent issues — tanpa ketik apapun, langsung tampil 5 issue terakhir yang dibuka. UI: dark\/light adaptive, rounded sheet di tengah layar, keyboard-navigable (arrow keys + Enter), dismiss dengan Escape. Tidak perlu mouse sama sekali.",
+    "id" : "Workstation-3ao",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented Command Palette (⌘⇧K) with fuzzy search. Features: (1) Issue search — fuzzy match by title\/ID, select to navigate. (2) 3 quick actions — Reload, New Issue, Debug Panel. (3) 3 filter shortcuts — Human Review, Blocked, Clear Filters. (4) Recent issues shown by default (top 5 by updatedAt). (5) Keyboard navigation (↑↓, Enter, Escape). (6) Dark Craftboard style sheet centered with shadow. Also added statuses filter to FilterState for future extension. BUILD SUCCEEDED, 273\/273 tests green.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Command Palette: global ⌘K search & action hub",
+    "updated_at" : "2026-05-22T07:15:40Z"
+  },
+  {
+    "closed_at" : "2026-05-22T07:15:38Z",
+    "created_at" : "2026-05-22T05:33:52Z",
+    "description" : "Implementasi macOS native notifications (UNUserNotificationCenter) untuk membuat user aware terhadap perubahan penting tanpa harus aktif melihat app. Event yang trigger notifikasi: (1) Agent selesai running — 'Agent finished: Workstation-xxx moved to Review' dengan action button 'Open Issue'. (2) Issue berpindah status — khususnya ke In Review (butuh perhatian user) atau Done (bisa celebrate). (3) Blocked issue ter-unblock — 'Workstation-xxx is now unblocked, ready to work'. (4) Focus session reminder — 90 menit tanpa pause (dari Focus Mode). Implementasi: minta permission UNUserNotificationCenter saat pertama kali user enable. Notifikasi harus actionable — tap notifikasi buka app + navigate ke issue yang relevan. Settings panel untuk toggle masing-masing jenis notifikasi on\/off. Hindari notification spam — cooldown 30 detik per issue untuk status changes.",
+    "id" : "Workstation-pyn",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi selesai. Build & 273 tests hijau.\n\nFILES:\n- Sources\/BeadsContract\/SmartNotificationSettings.swift — struct settings (Codable, Equatable, Sendable) dengan 4 toggle: agentCompletion, statusChange, unblocked, focusReminder. Cooldown default 30s, focus reminder default 90 menit.\n- Sources\/BeadsWorkspace\/SmartNotificationManager.swift — @MainActor @Observable service. Permission via UNUserNotificationCenter.requestAuthorization. Status-diff detection dengan snapshot sebelum reload + compare setelah reload. Cooldown per-issue dengan lastNotificationTimes dict. Focus reminder sent once per session (focusReminderSentForID set).\n- App\/NotificationSettingsView.swift — sheet 380×480 dengan permission indicator (dot hijau\/orange), 4 toggle rows, cooldown picker (15\/30\/60\/120s).\n- Sources\/BeadsWorkspace\/AppPreferences.swift — field 'notifications: SmartNotificationSettings' dengan backwards-compat decodeIfPresent.\n- App\/AppViewModel.swift — initNotificationManager() on first workspace sync, snapshotBeforeReload() + detectStatusChanges() setiap reloadIssues(), triggerFocusReminderIfNeeded() di tickFocusTimer(), sendAgentCompletionNotification() di updateAgentRunStatus saat .needsReview.\n- App\/BoardSidebarView.swift — Notifications button (bell icon).\n- App\/BoardView.swift — .sheet(isPresented: $appVM.isNotificationSettingsPresented) → NotificationSettingsView.\n\nCATATAN: Blocker Workstation-1pc (FSEvents file watcher) masih in_progress dengan label human. Smart Notifications sudah bisa bekerja karena detection dilakukan di reloadIssues() yang dipanggil file watcher — ketika Workstation-1pc selesai, notifikasi otomatis lebih responsif tanpa perubahan tambahan.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Smart Notifications: status change & agent completion awareness",
+    "updated_at" : "2026-05-22T07:15:38Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-22T07:15:36Z",
+    "created_at" : "2026-05-22T05:32:02Z",
+    "description" : "Floating input untuk bikin issue instant tanpa interrupt flow. Trigger: ⌘Shift+N dari mana saja di dalam app. UI: small popover atau bottom sheet — satu text field untuk judul, optional type selector (Task\/Bug\/Feature via Tab key), langsung submit dengan Enter. Issue masuk ke Backlog dengan priority default. Tidak perlu buka CreateIssueSheet yang full — itu tetap ada untuk pengisian lengkap. Fitur tambahan: (1) Jika ada teks di clipboard saat dibuka, pre-fill judul dari clipboard. (2) Setelah submit, tampilkan toast kecil 'Issue created: Workstation-xxx' dengan link untuk open detail kalau mau lengkapin. (3) Keyboard shortcut yang bisa dikonfigurasi di settings.",
+    "id" : "Workstation-xnc",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented Quick Capture (⌘⇧N) with: (1) Instant floating sheet triggered by ⌘⇧N. (2) Title input with clipboard pre-fill on open. (3) Type selector cycling Task→Bug→Feature→Epic→Chore via Tab key. (4) P2 priority default. (5) Issue created with bd, ID shown in toast. (6) Toast with issue link to navigate directly. (7) Auto-dismiss toast after 4s. BUILD SUCCEEDED, 273\/273 tests green.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Quick Capture: instant issue creation from anywhere",
+    "updated_at" : "2026-05-22T07:15:36Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-22T07:15:34Z",
+    "created_at" : "2026-05-22T05:34:34Z",
+    "description" : "Ganti polling manual dengan FSEvents\/DispatchSource untuk watch .beads\/issues.jsonl secara real-time. Saat file berubah (ditulis oleh bd CLI atau agent), app otomatis reload issues tanpa perlu user klik ⌘R. Implementasi: buat BeadsFileWatcher service menggunakan DispatchSource.makeFileSystemObjectSource — watch directory .beads\/ untuk event .write. Debounce 300ms supaya tidak flood reload saat bd menulis multiple kali dalam satu operasi. Integrate ke IssueStore: replace\/supplement polling dengan watcher. Side effect positif: semua fitur yang depend on fresh data (Smart Notifications, Focus Mode reminder, board view) otomatis benefit tanpa perubahan tambahan. Ini blocker untuk Smart Notifications.",
+    "id" : "Workstation-1pc",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "FSEvents file watcher: auto-detect issues.jsonl changes",
+    "updated_at" : "2026-05-22T07:15:34Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T04:11:31Z",
+    "created_at" : "2026-05-22T04:00:36Z",
+    "description" : "Sebelum menerapkan light mode ke tiap view, perlu ada fondasi sistem warna yang mendukung dua mode (light\/dark). Saat ini semua warna di-hardcode di WorkstationTheme sebagai dark-only. Tujuan issue ini: audit semua color token di WorkstationTheme, ganti ke adaptive Color (menggunakan colorScheme-aware atau NSColor system colors), dan pastikan accent\/gold tetap konsisten di kedua mode. Ini blocker untuk semua issue light mode lainnya.",
+    "id" : "Workstation-m8y",
+    "issue_type" : "task",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Adaptive color system selesai. Semua token WorkstationTheme sekarang resolve otomatis via NSColor dynamicProvider. Light mode palette diambil dari Craftboard React reference. Token baru ditambah: hover, active, inputBg, greenBg, greenBorder — siap dipakai oleh 6 issue view berikutnya. Build + 273 tests hijau.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Light Mode: design token & color system setup",
+    "updated_at" : "2026-05-22T04:11:31Z"
+  },
+  {
+    "acceptance_criteria" : "- User can open New Issue and choose AI Detail mode.\n- User can enter a rough idea.\n- App generates a structured issue draft.\n- Draft shows title, description, implementation notes, acceptance criteria, type, priority, and labels.\n- User can edit the draft before creation.\n- User can regenerate.\n- User can cancel.\n- User can create the issue from the draft.\n- Issue creation uses bd create.\n- App does not mutate Beads without confirmation.\n- App handles Ollama unavailable errors gracefully.\n- App handles unparseable AI output gracefully.",
+    "assignee" : "codex",
+    "closed_at" : "2026-05-20T15:16:27Z",
+    "created_at" : "2026-05-20T06:28:31Z",
+    "description" : "Add an AI-powered issue detailing flow in New Issue.\n\nThe user can enter a rough idea, then Local AI generates a structured issue draft with title, description, implementation notes, acceptance criteria, issue type, priority, labels, and split or dependency suggestions if useful.",
+    "id" : "Workstation-c3w",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented AI Issue Detailer for New Issue. Added IssueDraft parsing\/mapping, extended bd create plumbing for design notes and labels, added LocalAIAction.detailIssueFromRoughIdea, and refactored the create sheet to support Manual and AI Detail modes with editable draft fields, regeneration, and soft error handling. Validation: swift test; xcodebuild -project BeadsKanbanApp.xcodeproj -scheme BeadsKanbanApp -configuration Debug build.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "AI Issue Detailer: turn rough ideas into structured issue drafts",
+    "updated_at" : "2026-05-20T15:16:27Z"
+  },
+  {
+    "acceptance_criteria" : "- User can prepare runs for all assigned batch issues.\n- Each run has the correct issue ID and title.\n- Each run has an assigned agent and command.\n- Each run has a generated prompt.\n- Runs persist after app restart.\n- Runs can be opened in Agent Run Console.\n- No terminal is launched automatically in this issue.",
+    "closed_at" : "2026-05-20T14:25:39Z",
+    "created_at" : "2026-05-20T06:28:36Z",
+    "description" : "Create AgentRunRecords for each assigned issue in a batch.\n\nEach run should include issue metadata, assigned agent, command, generated prompt, project path, optional worktree path, and status.",
+    "id" : "Workstation-r3u",
+    "issue_type" : "feature",
+    "notes" : "This should stop at preparation so launch modes can be layered on next.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Auto Plan: prepare AgentRunRecords for assigned batch issues",
+    "updated_at" : "2026-05-20T14:25:39Z"
+  },
+  {
+    "acceptance_criteria" : "- User can assign a default executor for all batch issues.\n- User can override the executor per issue.\n- App prevents or warns when the selected profile cannot execute code.\n- Assignments persist locally.\n- Assignments do not modify Beads assignee.",
+    "closed_at" : "2026-05-20T14:24:47Z",
+    "created_at" : "2026-05-20T06:28:35Z",
+    "description" : "Allow each issue in a batch to be assigned to an executor agent profile.\n\nThis is app-local agent assignment metadata and should not be confused with Beads assignee or claim.",
+    "id" : "Workstation-s8s",
+    "issue_type" : "feature",
+    "notes" : "Executor assignment should stay local and separate from Beads ownership.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Auto Plan: assign executor agents to batch issues",
+    "updated_at" : "2026-05-20T14:24:47Z"
+  },
+  {
+    "acceptance_criteria" : "- User can reload issues after a spec run.\n- App shows candidate issues for the batch.\n- User can select which issues belong to the batch.\n- App stores a local BatchAgentPlan.\n- Batch plan persists after app restart.\n- Existing issue loading still works.",
+    "closed_at" : "2026-05-20T13:50:37Z",
+    "created_at" : "2026-05-20T06:28:35Z",
+    "description" : "After the spec agent creates or refines issues, the app should reload Beads and help the user identify which issues belong to the batch.\n\nThe app must not assume every new or updated issue is part of the batch.",
+    "id" : "Workstation-4ls",
+    "issue_type" : "feature",
+    "notes" : "This is the discovery step that turns a plan run into a batch candidate list.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Auto Plan: discover newly created or updated issues after spec run",
+    "updated_at" : "2026-05-20T13:50:37Z"
+  },
+  {
+    "acceptance_criteria" : "- User can enter a high-level planning request.\n- User can select a spec agent profile.\n- App generates a batch planning prompt.\n- Prompt instructs the spec agent to create or refine Beads issues.\n- Prompt instructs the spec agent not to modify source code.\n- User can copy the prompt.\n- User can open terminal for the selected spec agent.\n- No issues are created automatically unless the user explicitly triggers an existing BeadsService action.",
+    "closed_at" : "2026-05-20T13:49:27Z",
+    "created_at" : "2026-05-20T06:28:34Z",
+    "description" : "Add a UI where the user can enter a high-level request and ask a spec agent to create or refine multiple Beads issues.\n\nThe UI should generate a spec prompt that instructs the agent to use Beads commands, not source edits, to shape the plan.",
+    "id" : "Workstation-meh",
+    "issue_type" : "feature",
+    "notes" : "This is the entry point for planning, not the actual issue creation step.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Auto Plan: create batch planning request UI",
+    "updated_at" : "2026-05-20T13:49:27Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-20T12:32:32Z",
+    "created_at" : "2026-05-20T10:37:31Z",
+    "description" : "Summary\nSimplify the assignee UX so choosing an AI executor becomes the main handoff action. When the user picks Claude, Codex, or another AI executor, the app should claim the issue and open the agent in a worktree automatically. Human assignees stay assignment-only.\n\nKey changes\n- Make AI executor assignee selection trigger a combined assign + run flow.\n- Support the same behavior from all existing entry points, including issue card right-click menus, issue detail menus, and any assignee picker UI.\n- Keep the visual assignee badges\/icons unchanged.\n- Keep worktree launch as the default path for AI executors.\n- Preserve the manual\/advanced launch path only as a secondary fallback, not the main flow.\n- Keep Beads mutations explicit through `bd`, and terminal launch through the existing safe launcher.\n\nAcceptance criteria\n- Selecting Claude or Codex from assignee UI claims the issue and opens the agent terminal in a worktree.\n- Right-click menus expose the same combined action as direct selection.\n- Selecting a human assignee updates metadata only and does not launch Terminal.\n- Existing prompt copy, agent run history, and console behavior still work.\n- Existing dirty\/worktree safety rules still apply.\n- Assignee visuals stay the same.\n\nImplementation notes\n- Reuse the existing selected-agent and worktree launch plumbing where possible.\n- Keep the new flow simple enough that the user does not need to think in two separate steps: assign, then run.",
+    "id" : "Workstation-1ok",
+    "issue_type" : "feature",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Assignee handoff: combine assign and launch for AI executors",
+    "updated_at" : "2026-05-20T12:32:32Z"
+  },
+  {
+    "acceptance_criteria" : "- BulkActionPanel compiles again.\\n- IssueStore exposes the selection behavior expected by bulk actions, or BulkActionPanel is updated to the new API.\\n- App build succeeds in the worktree.\\n- Existing bulk selection UX still works.",
+    "assignee" : "claude",
+    "closed_at" : "2026-05-20T12:24:28Z",
+    "created_at" : "2026-05-20T11:59:12Z",
+    "description" : "BulkActionPanel no longer compiles because it expects selection APIs on IssueStore that are missing in the current tree.\\n\\nObserved failures while building the worktree used for Local AI testing:\\n- IssueStore has no member selectedIssues\\n- IssueStore has no member toggleSelection\\n- IssueStore has no member selectedIssueIDs\\n\\nThis blocks app builds in the worktree and makes it hard to validate unrelated features. The fix should restore the selection contract or refactor the bulk action panel to use the current store API without breaking existing multi-select UX.\\n\\nWhat needs to be done:\\n- Inspect the intended IssueStore selection model.\\n- Restore or replace the missing selection methods used by BulkActionPanel.\\n- Keep bulk action behavior consistent with the existing UI.\\n- Make sure the app builds again in the worktree.\\n\\nAcceptance criteria:\\n- BulkActionPanel compiles again.\\n- IssueStore exposes the selection behavior expected by bulk actions, or BulkActionPanel is updated to the new API.\\n- App build succeeds in the worktree.\\n- Existing bulk selection UX still works.",
+    "id" : "Workstation-vk9",
+    "issue_type" : "bug",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Fixed. Root cause: BulkActionPanel was committed in cfdc302 expecting IssueStore selection APIs (selectedIssues, toggleSelection, selectedIssueIDs, hasMultiSelection) that never landed alongside it. Additionally DetailPaneMode.bulkAction was added to AppViewModel without IssueRightPane updating its switch, also breaking build.\n\nTwo commits on master:\n- ce68038 fix: restore IssueStore selection APIs for BulkActionPanel (selectedIssueIDs, rangeAnchorID, toggleSelection, selectRange, selectedIssues, hasMultiSelection; selectIssue\/clearSelection maintain multi-state; performReload prunes stale ids)\n- 80d33e1 fix: handle bulkAction case in IssueRightPane (routes to BulkActionPanel; skip auto-reset to .issue while multi-selection active)\n\nVerified: swift build ok, swift test 261\/261 green, xcodebuild Debug succeeded. Also overlaid both files into worktree workstation-workstation-6tq and confirmed its app build succeeds. 6tq backups restored — its own working tree untouched. Bulk selection UX preserved (cmd-click toggle, shift-click range, esc clear, BulkActionPanel right-pane with Claim All \/ Mark Human Review \/ Close All \/ Clear).",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Bulk actions: restore IssueStore selection APIs for BulkActionPanel",
+    "updated_at" : "2026-05-20T12:24:28Z"
+  },
+  {
+    "acceptance_criteria" : "- Local AI output appears in a preview UI.\n- User can copy generated output.\n- User can edit generated output before applying.\n- User can cancel without side effects.\n- User must explicitly click Apply before the app mutates anything.\n- Preview UI works even if output is plain text.\n- App does not crash on long output.",
+    "assignee" : "codex",
+    "closed_at" : "2026-05-20T12:24:24Z",
+    "created_at" : "2026-05-20T06:28:31Z",
+    "description" : "Add a preview UI for all local AI suggestions.\n\nLocal AI output must never be applied silently. The user must be able to review, edit, copy, regenerate, apply, or cancel.",
+    "id" : "Workstation-j1b",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Added a reusable local AI suggestion preview flow with an editable sheet, copy\/regenerate\/apply\/cancel actions, and a concrete close-issue AI draft path that previews Ollama output before it is applied to the close reason draft. Wired the new preview state and sheet into the app target, and kept the actual Beads mutation behind the existing Close Issue confirmation. Validation: swift test, xcodebuild -project BeadsKanbanApp.xcodeproj -scheme BeadsKanbanApp -configuration Debug build.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "AI Suggestion Preview: review local AI output before applying",
+    "updated_at" : "2026-05-20T12:24:24Z"
+  },
+  {
+    "acceptance_criteria" : "- App can call OllamaService with a prompt.\n- App can receive a text response.\n- App handles request failures cleanly.\n- LocalAIAction exists.\n- LocalAIService can build prompts for supported actions.\n- No source-code execution is added.\n- No Beads mutation happens automatically.",
+    "assignee" : "codex",
+    "closed_at" : "2026-05-20T11:30:09Z",
+    "created_at" : "2026-05-20T06:28:30Z",
+    "description" : "Add the local AI service layer that talks to Ollama and routes app actions to local AI prompts.\n\nThe service should use non-streaming requests first and return text responses that the app can preview before applying.",
+    "id" : "Workstation-0vx",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Added the local AI transport and routing layer for Ollama-backed actions. New LocalAIAction cases build prompts for issue drafting, backlog analysis, prompt optimization, close reasons, and run summaries. LocalAIService selects fast vs strong models, validates settings, and delegates to a new OllamaService request layer that posts non-streaming \/api\/generate requests and returns the response text. Added focused tests for prompt routing, request encoding, success, and failure paths. Verified with swift test and xcodebuild -project BeadsKanbanApp.xcodeproj -scheme BeadsKanbanApp -configuration Debug build.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Local AI Service: add Ollama request layer and action router",
+    "updated_at" : "2026-05-20T11:30:09Z"
+  },
+  {
+    "assignee" : "codex",
+    "closed_at" : "2026-05-20T11:11:15Z",
+    "created_at" : "2026-05-20T10:50:24Z",
+    "description" : "Add explicit launch preflight and recovery states for worktree-based agent runs.\n\nWhy this exists:\nWorktree runs need clearer feedback when setup, dirty-tree, or branch conflicts block launch.\n\nWhat needs to be done:\n- Detect and surface missing setup, dirty tree, existing worktree, and branch conflict states.\n- Show a clear recovery path before launching Terminal.\n- Keep launch routed through the existing safe launcher.\n- Make the blocked state actionable instead of a dead end.\n\nAcceptance criteria:\n- User can see why a worktree launch is blocked.\n- User can retry validation or choose a recovery action.\n- Successful launch still goes through the safe terminal path.\n- No silent shell execution is added.",
+    "id" : "Workstation-2fb",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Added worktree launch preflight in GitWorktreeService and AppViewModel. Launch now pauses on setup, dirty-tree confirmation, existing worktree, or branch conflict states and shows the recovery sheet. Successful launch still uses the safe terminal launcher. Added service coverage for clean, dirty, setup-missing, and conflict preflight cases.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Worktree Launch: preflight and recovery states",
+    "updated_at" : "2026-05-20T11:11:15Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-20T10:25:52Z",
+    "created_at" : "2026-05-20T10:24:35Z",
+    "description" : "Worktree creation should not be blocked by uncommitted changes in the source workspace. Parallel agent runs need isolated worktrees even when the main tree is dirty. Keep the warning visible if needed, but let the worktree be created from the current checkout state.",
+    "id" : "Workstation-1z2",
+    "issue_type" : "bug",
+    "notes" : "Worktree creation no longer blocks on a dirty source tree. GitWorktreeService now skips the source-tree dirty preflight and can create isolated worktrees while the main checkout remains modified.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Worktree launch: allow dirty source trees",
+    "updated_at" : "2026-05-20T10:25:52Z"
+  },
+  {
+    "acceptance_criteria" : "- User can enable or disable Local AI.\n- User can configure Ollama base URL.\n- User can configure the fast model.\n- User can configure the strong model.\n- User can test connection to Ollama.\n- Settings persist after app restart.\n- App shows a clear error if Ollama is unavailable.\n- Existing Beads workflow still works.",
+    "assignee" : "codex",
+    "closed_at" : "2026-05-20T10:23:47Z",
+    "created_at" : "2026-05-20T06:28:29Z",
+    "description" : "Add app settings for enabling local AI assistance through Ollama.\n\nThe user should be able to configure:\n- enable or disable Local AI\n- provider\n- base URL\n- fast model\n- strong model\n- test connection\n\nDefault settings:\n- provider: Ollama\n- base URL: http:\/\/localhost:11434\n- fast model: qwen2.5-coder:3b\n- strong model: qwen2.5-coder:7b",
+    "id" : "Workstation-6gu",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented persisted Local AI settings for Ollama: added LocalAISettings and LocalAIProvider, default Ollama values, Ollama reachability tester against \/api\/tags, welcome-screen settings card, sidebar entry, and test coverage for persistence and connection behavior. Build and focused tests pass.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Local AI Settings: configure Ollama provider and models",
+    "updated_at" : "2026-05-20T10:23:47Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-20T04:15:35Z",
+    "created_at" : "2026-05-20T04:09:54Z",
+    "description" : "When a selected project or worktree is missing Beads setup, the app should offer a user-triggered Launch Setup action instead of leaving the user at a dead end. The setup flow should use the existing workspace validation\/setup-hint model, open the safe terminal launcher with the relevant command hints (bd init, bd setup claude, brew install beads), and then let the user re-validate the workspace. This should work for any project, not just the current repo.",
+    "id" : "Workstation-bqd",
+    "issue_type" : "feature",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Add Launch Setup action for missing Beads worktrees",
+    "updated_at" : "2026-05-20T04:15:35Z"
+  },
+  {
+    "acceptance_criteria" : "User can open an Agent Run Console for an existing AgentRunRecord. Creating a new agent run opens the console automatically. Console shows issue ID and issue title. Console shows selected agent name and command. Console shows run status. Console shows project path or worktree path. Console shows the generated prompt. User can copy the prompt again. User can open Terminal from the console using existing safe terminal launcher rules. User can update run status manually: needsReview, accepted, failed, abandoned. User can add\/edit local notes for the run. Notes persist after app restart. Console works for Claude Code Executor runs. Console works for Codex Code Executor runs. No embedded AI API is added. No live terminal streaming is added. No .beads files are edited directly.",
+    "assignee" : "claude",
+    "closed_at" : "2026-05-20T03:38:40Z",
+    "created_at" : "2026-05-20T02:53:46Z",
+    "description" : "Add an Agent Run Console panel\/drawer for the selected AgentRunRecord. This is the local\/simple version of an agent console. It should not run or stream the AI agent inside the app yet. The goal is to make each vibe coding session easier to control by showing selected issue, selected agent, generated prompt, run status, project path or worktree path, terminal command, quick actions for copying prompt and opening terminal, local notes, and next-step actions like mark needs review or accepted. This version should be purely local UI + stored AgentRunRecord data. It should not embed Claude\/Codex. It should not stream terminal output. It should not require a pseudo-terminal. Suggested component names: AgentRunConsoleView, AgentRunHeaderView, AgentRunPromptPreviewView, AgentRunActionsView, AgentRunNotesView. Suggested UI layout: right-side drawer or detail panel. Header: issue ID, issue title, agent name, status badge, project\/worktree path. Prompt section: generated prompt preview, copy prompt button, optional edit-before-copy textarea if already supported. Actions: Open Terminal, Copy Command, Mark Needs Review, Mark Accepted, Mark Failed, Mark Abandoned. Notes: local notes textarea, save notes to AgentRunRecord. Implementation notes: Reuse existing AgentRunHistory and AgentRunRecord model. If AgentRunRecord does not yet store notes, ensure notes can be persisted. When a run is created from Implement with Selected Agent, automatically open\/show the Agent Run Console for that run. The console should work for both Claude Code Executor and Codex Code Executor. If the run uses a worktree, show the worktree path. If the run uses the main project folder, show the project path. The console should be read\/write only for app-local metadata such as run status and notes. Do not mutate Beads issue status automatically from this console, except through existing explicit user actions if already available. Do not close Beads issues automatically. Do not run custom arbitrary shell commands silently.",
+    "id" : "Workstation-69f",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented Agent Run Console v1.\n\nChanges:\n- New AgentRunConsoleView (App\/AgentRunConsoleView.swift) with sub-views: AgentRunHeaderView, AgentRunPromptPreviewView, AgentRunActionsView, AgentRunNotesView. Shows issue ID\/title, agent name, status badge, project\/worktree path, generated prompt, terminal command, status-action buttons (needsReview\/accepted\/failed\/abandoned), and a notes editor with Save\/Revert.\n- AgentRunHistoryStore: added updateNotes(id:notes:), record(id:), latestRecord(forIssueID:). Notes-only updates preserve status and completedAt; whitespace-only notes are normalized to nil.\n- AppViewModel: added activeConsoleRunID state, presentAgentRunConsole \/ presentLatestAgentRunConsole \/ dismissAgentRunConsole, updateAgentRunStatus, updateAgentRunNotes, and openTerminalForAgentRun (reuses existing TerminalLauncher). Launches via performAgentLaunch and beginWorktreeAgentLaunch now set activeConsoleRunID so the console opens automatically after Implement with Selected Agent \/ Run in Worktree.\n- BoardView: presents the console as a sheet bound to activeConsoleRunID; only opens when a record exists.\n- IssueDetailView: 'Run Console' button appears when the issue has at least one recorded run, opening the latest run.\n- Tests: new AgentRunHistoryStoreTests for updateNotes and lookups. Full suite (219 tests) passes; xcodebuild app build also succeeds.\n\nNo embedded Claude\/Codex API, no live streaming, no .beads file mutations. Status changes only affect the local AgentRunRecord.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Agent Run Console v1: local prompt and run control panel",
+    "updated_at" : "2026-05-20T03:38:40Z"
+  },
+  {
+    "closed_at" : "2026-05-20T03:24:49Z",
+    "created_at" : "2026-05-20T03:24:45Z",
+    "description" : "Worktree preflight should not treat passive Beads export noise as a blocking git dirty state. When bd writes .beads\/issues.jsonl or related export files, creating or launching an agent run in a worktree should still succeed as long as there are no real source or project file changes. Keep the existing bd-only mutation rule and preserve issue file watching\/reload behavior.",
+    "id" : "Workstation-lyu",
+    "issue_type" : "bug",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Ignore Beads export noise in worktree runs",
+    "updated_at" : "2026-05-20T03:24:49Z"
+  },
+  {
+    "acceptance_criteria" : "(1) Right-click card open → menu muncul dengan minimal 5 item context-aware. (2) Klik 'Claim' → status berubah ke in_progress, kanban refresh. (3) Klik 'Close...' → buka existing CloseIssueSheet. (4) Item 'Flag for Review' hilang dari menu kalau status bukan in_progress. (5) Test IssueStore mutation paths sudah covered di baseline.",
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-19T16:53:34Z",
+    "created_at" : "2026-05-19T15:39:39Z",
+    "description" : "Why: Action paling sering (claim, flag review, close, copy prompt) saat ini cuma ada di detail panel. Power user harus buka panel dulu sebelum bisa act. Context menu = 1 right-click + 1 pilih = 2 klik total, no panel needed.\n\nWhat:\n- Tambah .contextMenu modifier di IssueCardView (kanban) dan IssueListView row.\n- Menu items: Claim (kalau status=open), Flag for Review (kalau status=in_progress), Close..., Copy Prompt, Copy Agent Command, Add Blocker..., Change Priority > submenu P0-P4, Change Assignee > submenu claude\/codex\/other\/me.\n- Item disabled kontekstual (Flag for Review tidak muncul untuk open\/closed).\n- Reuse AppViewModel.copyPrompt, presentCloseSheet, store.claim\/requestHumanReview yang sudah ada.\n\nOut of scope:\n- Multi-select context menu (separate issue kalau perlu).\n- Keyboard accelerator di menu item (terikat ke keyboard nav issue terpisah).",
+    "id" : "Workstation-y7j",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented shared macOS context menus for issue cards and list rows.\n\nChanges:\n- Added reusable issue context menu actions for Claim, Flag for Review, Close..., Copy Prompt, Copy Agent Command, Add Blocker..., priority submenu, and assignee submenu.\n- Centralized close and blocker sheet presentation in AppViewModel\/BoardView so context-menu actions work from board surfaces.\n- Added assignee support to UpdateIssueInput and BeadsService.updateIssue via --assignee.\n- Kept selection, drag, reload, and detail-panel actions intact.\n\nVerification:\n- swift test\n- xcodebuild -project BeadsKanbanApp.xcodeproj -scheme BeadsKanbanApp -configuration Debug build",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Right-click context menu di card kanban & list",
+    "updated_at" : "2026-05-19T16:53:34Z"
+  },
+  {
+    "acceptance_criteria" : "(1) Drag card dari Ready ke In Progress otomatis claim+assignee=user. (2) Drop ke Done buka close sheet, cancel batal mutate. (3) Drop ke kolom sama-status = noop tanpa error. (4) Test KanbanBoardViewTests untuk drop handler logic. (5) Visual: card opacity drop ~0.5 saat drag, target border gold.",
+    "assignee" : "claude",
+    "closed_at" : "2026-05-19T16:28:25Z",
+    "created_at" : "2026-05-19T15:39:25Z",
+    "description" : "Why: Transisi status (claim, flag review, close) saat ini tersembunyi di menu\/sheet — butuh 2-3 klik. Drag-drop adalah gesture paling natural di kanban dan satu klik-drag bisa replace seluruh flow context menu untuk perpindahan kolom.\n\nWhat:\n- Drag card dari Ready ke In Progress → trigger 'bd update --claim'.\n- Drag card dari In Progress ke Review → trigger 'bd update --add-label human'.\n- Drag card ke Done → buka CloseIssueSheet (require reason).\n- Drag ke Blocked → noop atau toast 'add blocker via picker' (Blocked column read-only secara semantik).\n- Pakai SwiftUI .onDrag\/.dropDestination di KanbanBoardView.swift.\n- Drop tidak boleh trigger select\/open-detail (state guard).\n- Visual feedback: card semi-transparent saat di-drag, target column highlight border gold.\n\nOut of scope:\n- Drag-drop reorder dalam kolom yang sama (bd tidak punya konsep order).\n- Drag dari\/ke List view.",
+    "id" : "Workstation-9x8",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented drag-and-drop antar kolom kanban.\n\nFiles:\n- NEW Sources\/BeadsContract\/KanbanDropResolver.swift — pure resolver (KanbanDropAction enum + action(from:to:) function)\n- NEW Tests\/BeadsContractTests\/KanbanDropResolverTests.swift — 12 cases covering full drop matrix\n- App\/KanbanBoardView.swift — .draggable(issue.id) per card dengan preview opacity 0.7; .dropDestination per kolom dengan hoverTargetColumn state + gold border overlay (2px, animasi 0.12s); handleDrop dispatches ke store mutations\n- App\/BoardView.swift — pass onRequestClose closure ke KanbanBoardView (presents CloseIssueSheet via appVM)\n\nDrop matrix yang aktif:\n- Ready\/Backlog → InProgress = store.claim()\n- InProgress → Review = store.requestHumanReview() (add label human)\n- InProgress\/Review → Done = onRequestClose() → CloseIssueSheet\n- Sisanya noop (Done→x, Blocked→x, Ready→Done, dst)\n\nVerifikasi:\n- swift test: 183\/183 hijau (baseline 170 → 183, +12 cases baru + +1 yang sudah ada di baseline)\n- swift build: clean\n- xcodegen generate: success (file baru ter-register)\n- .\/run-app build: BUILD SUCCEEDED\n\nManual smoke pending — please verify 5 path di plan: Ready→InProgress (claim), InProgress→Review (label human), InProgress→Done (sheet muncul, cancel = no mutation), Done→InProgress (noop), Ready→Done (noop). Visual: drag preview opacity 0.7, target column gold border saat hover. Click biasa tetap select card.\n\nOut of scope (per plan): reverse transitions (butuh removeLabel service yg belum ada), reorder dalam kolom (bd tidak punya order), drag kanban↔list, toast saat noop.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Drag-and-drop card antar kolom kanban",
+    "updated_at" : "2026-05-19T16:28:25Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-19T08:35:39Z",
+    "created_at" : "2026-05-19T05:52:05Z",
+    "description" : "Implement RecentProjectsStore + PreferencesStore mirroring AgentProfileStore pattern. Auto-restore last project on launch. Wire defaults into CreateIssueSheet\/CloseIssueSheet. Recent projects section in WelcomeView. Close M1 (namespace UserDefaults keys). Plan at \/Users\/apple\/.claude\/plans\/tolong-pahami-project-ini-purring-squirrel.md",
+    "id" : "Workstation-4iy",
+    "issue_type" : "feature",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Phase 9: Local Persistence (Recent Projects + Preferences)",
+    "updated_at" : "2026-05-19T08:35:39Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-19T08:35:31Z",
+    "created_at" : "2026-05-19T04:32:10Z",
+    "description" : "Implement AppViewModel + BoardView (NavigationSplitView 3-pane) + 12 new files in App\/ flat. Wraps existing IssueStore\/AgentProfileStore\/PromptGenerator backend. Closes H3 (TerminalLauncher throws) + H4 (AgentProfileStore.errorMessage). See plan at \/Users\/apple\/.claude\/plans\/tolong-pahami-project-ini-purring-squirrel.md",
+    "id" : "Workstation-wkt",
+    "issue_type" : "feature",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Phase 6: UI minimal untuk menguji backend",
+    "updated_at" : "2026-05-19T08:35:31Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-18T18:15:35Z",
+    "created_at" : "2026-05-18T18:13:58Z",
+    "description" : "Formalize Kanban mapping per PRD §10.5. Add KanbanColumn enum (backlog\/ready\/inProgress\/blocked\/done) and KanbanStateMapper pure function (issue + readyIDs → column). Handle unknown status: fall back to backlog with isKnownStatus flag. Refactor IssueStore computed columns to use mapper. Tests for mapper coverage + unknown status badge support.",
+    "id" : "Workstation-dwz",
+    "issue_type" : "feature",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Phase 5: KanbanColumn + KanbanStateMapper",
+    "updated_at" : "2026-05-18T18:15:35Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-18T18:05:02Z",
+    "created_at" : "2026-05-18T18:03:19Z",
+    "description" : "Build @Observable @MainActor IssueStore wrapping BeadsService typed API. State: issues, readyIssueIDs, selectedIssue, isLoading, errorMessage, lastReloadedAt. Actions reload\/select\/create\/claim\/update\/close\/reopen with auto-reload after mutations. Computed kanban column properties (backlog\/ready\/inProgress\/blocked\/done) per PRD §10.5.1 mapping rules. Sort by priority then updatedAt desc. Unit tests via StubCommandRunner.",
+    "id" : "Workstation-ogw",
+    "issue_type" : "feature",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Phase 4: IssueStore @Observable state layer",
+    "updated_at" : "2026-05-18T18:05:02Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-18T17:57:50Z",
+    "created_at" : "2026-05-18T17:54:20Z",
+    "description" : "Upgrade BeadsService from raw CommandResult to typed Swift API per PRD §10. Add read commands (listIssues\/readyIssues\/showIssue), mutations (create\/claim\/update\/close\/reopen), BeadsError taxonomy, CreateIssueInput\/UpdateIssueInput, MockCommandRunner, and unit tests.",
+    "id" : "Workstation-t0o",
+    "issue_type" : "feature",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "Phase 3: BeadsService typed API + mutations",
+    "updated_at" : "2026-05-18T17:57:50Z"
+  }
+]

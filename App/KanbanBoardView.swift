@@ -210,7 +210,7 @@ struct KanbanBoardView: View {
     }
 }
 
-private struct DotsBackground: View {
+struct DotsBackground: View {
     @Environment(\.colorScheme) private var colorScheme
 
     /// Pre-computed star positions for the twinkling effect.
