@@ -164,4 +164,34 @@ struct MarkdownTextRendererTests {
             Issue.record("Expected table block")
         }
     }
+
+    @Test("parseContentBlocks parses H2 heading starting with ##")
+    func parseContentBlocksParsesH2Heading() throws {
+        let markdown = """
+        Intro text
+        ## Important Heading
+        Outro text
+        """
+        
+        let blocks = MarkdownTextRenderer.parseContentBlocks(from: markdown)
+        #expect(blocks.count == 3)
+        
+        if case .text(let txt) = blocks[0] {
+            #expect(txt.trimmingCharacters(in: .whitespacesAndNewlines) == "Intro text")
+        } else {
+            Issue.record("Expected first block to be text")
+        }
+        
+        if case .heading2(let heading) = blocks[1] {
+            #expect(heading == "Important Heading")
+        } else {
+            Issue.record("Expected second block to be heading2")
+        }
+        
+        if case .text(let txt) = blocks[2] {
+            #expect(txt.trimmingCharacters(in: .whitespacesAndNewlines) == "Outro text")
+        } else {
+            Issue.record("Expected third block to be text")
+        }
+    }
 }

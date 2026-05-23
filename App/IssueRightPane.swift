@@ -168,9 +168,11 @@ private struct EnterToSendTextEditor: NSViewRepresentable {
             guard let textView = textView, let scrollView = scrollView else { return }
 
             // Calculate needed height based on content
-            let layoutManager = textView.layoutManager!
-            let textContainer = textView.textContainer!
-            let textStorage = textView.textStorage!
+            guard let layoutManager = textView.layoutManager,
+                  let textContainer = textView.textContainer,
+                  let textStorage = textView.textStorage else {
+                return
+            }
 
             // Force layout if needed
             layoutManager.ensureLayout(for: textContainer)
@@ -1956,6 +1958,14 @@ struct WorkflowCopilotPane: View {
                     MarkdownTextRenderer.copilotText(for: plain)
                         .font(WorkstationTheme.Fonts.body(13))
                         .foregroundStyle(WorkstationTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                case .heading2(let title):
+                    Text(title)
+                        .font(WorkstationTheme.Fonts.body(15, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                        .padding(.top, 12)
+                        .padding(.bottom, 4)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                 case .table(let headers, let alignments, let rows):

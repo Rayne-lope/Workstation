@@ -18,6 +18,7 @@ public enum MarkdownTextRenderer {
     public enum MessageContentBlock: Equatable, Hashable {
         case text(String)
         case table(headers: [String], alignments: [TableAlignment], rows: [[String]])
+        case heading2(String)
     }
 
     public static func parseContentBlocks(from text: String) -> [MessageContentBlock] {
@@ -29,6 +30,20 @@ public enum MarkdownTextRenderer {
         
         while i < lines.count {
             let line = lines[i]
+            
+            // Check if a line is an H2 heading (starts with ##)
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            if trimmedLine.hasPrefix("## ") {
+                // Flush accumulated text block
+                if !currentTextLines.isEmpty {
+                    blocks.append(.text(currentTextLines.joined(separator: "\n")))
+                    currentTextLines.removeAll()
+                }
+                let headingText = String(trimmedLine.dropFirst(3)).trimmingCharacters(in: .whitespacesAndNewlines)
+                blocks.append(.heading2(headingText))
+                i += 1
+                continue
+            }
             
             // Check if a table starts at line `i` (header) and `i+1` is separator
             if i + 1 < lines.count {
