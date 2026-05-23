@@ -1,0 +1,508 @@
+import Foundation
+
+public final class AgentTimelineIngestor: @unchecked Sendable {
+    private let lock = NSLock()
+    private let runID: UUID
+    
+    // Ingestor state
+    private var lastProcessedLineSequence: Int64 = 0
+    private var activeCommandRun: TimelineCommandRun? = nil
+    private var activeApprovalRequest: AgentApprovalRequest? = nil
+    private var seenStableKeys = Set<String>()
+    
+    public init(runID: UUID) {
+        self.runID = runID
+    }
+    
+    /// Incremental ingestion of a line of terminal output.
+    public func ingest(line: TerminalLine) -> [TimelineDelta] {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        guard line.sequence > lastProcessedLineSequence else { return [] }
+        lastProcessedLineSequence = line.sequence
+        
+        var deltas: [TimelineDelta] = []
+        let cleanText = line.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanText.isEmpty else { return [] }
+        
+        // 1. Process "Started" on the very first sequence
+        if line.sequence == 1 {
+            let startKey = "start-\(runID)-\(line.sequence)"
+            if seenStableKeys.insert(startKey).inserted {
+                let startEvent = AgentTimelineEvent(
+                    stableKey: startKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .started,
+                    title: "Agent Started",
+                    subtitle: "Ingestion pipeline initialized",
+                    status: .success,
+                    source: .commandLifecycle,
+                    confidence: .high,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence
+                )
+                deltas.append(.insert(startEvent))
+            }
+        }
+        
+        // 2. Command matching
+        if let commandText = matchCommandLine(cleanText) {
+            let cmdKey = "cmd-\(runID)-\(line.sequence)"
+            let cmdRun = TimelineCommandRun(
+                stableKey: cmdKey,
+                runID: runID,
+                command: commandText,
+                startedAt: line.timestamp,
+                status: .working
+            )
+            self.activeCommandRun = cmdRun
+            
+            let cmdEvent = AgentTimelineEvent(
+                stableKey: cmdKey,
+                runID: runID,
+                sequence: line.sequence,
+                type: .command,
+                title: "Running command",
+                subtitle: commandText,
+                status: .working,
+                source: .terminalRegex,
+                confidence: .high,
+                rawExcerpt: cleanText,
+                rawLineStart: line.sequence,
+                rawLineEnd: line.sequence,
+                relatedCommand: commandText
+            )
+            deltas.append(.insert(cmdEvent))
+            
+            // Complete/update any active approval since the process has advanced
+            if activeApprovalRequest != nil {
+                activeApprovalRequest = nil
+                deltas.append(.updateApproval(nil))
+            }
+            
+            return deltas // Return early since command line is high signal
+        }
+        
+        // 3. Command Exit / Exit code matching
+        if cleanText.contains("exit 0") || cleanText.contains("BUILD SUCCEEDED") {
+            if let active = activeCommandRun {
+                var updated = active
+                updated.endedAt = line.timestamp
+                updated.exitCode = 0
+                updated.status = .success
+                
+                let cmdKey = active.stableKey
+                let successEvent = AgentTimelineEvent(
+                    stableKey: cmdKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .command,
+                    title: "Command succeeded",
+                    subtitle: active.command,
+                    status: .success,
+                    source: .terminalRegex,
+                    confidence: .high,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence,
+                    relatedCommand: active.command
+                )
+                deltas.append(.update(stableKey: cmdKey, successEvent))
+                activeCommandRun = nil
+                
+                // Complete/update any active approval since the process has advanced
+                if activeApprovalRequest != nil {
+                    activeApprovalRequest = nil
+                    deltas.append(.updateApproval(nil))
+                }
+                
+                return deltas // Return early since command completion is high signal
+            }
+        } else if cleanText.contains("exit ") || cleanText.contains("BUILD FAILED") || cleanText.contains("Command failed") {
+            if let active = activeCommandRun {
+                var updated = active
+                updated.endedAt = line.timestamp
+                updated.exitCode = 1
+                updated.status = .failure
+                
+                let cmdKey = active.stableKey
+                let failEvent = AgentTimelineEvent(
+                    stableKey: cmdKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .command,
+                    title: "Command failed",
+                    subtitle: active.command,
+                    status: .failure,
+                    source: .terminalRegex,
+                    confidence: .high,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence,
+                    relatedCommand: active.command
+                )
+                deltas.append(.update(stableKey: cmdKey, failEvent))
+                activeCommandRun = nil
+                
+                if activeApprovalRequest != nil {
+                    activeApprovalRequest = nil
+                    deltas.append(.updateApproval(nil))
+                }
+                
+                return deltas // Return early
+            }
+        }
+        
+        // 4. Swift Compiler / General problems matching
+        if let problem = parseProblem(cleanText, sequence: line.sequence) {
+            let probKey = "prob-\(runID)-\(line.sequence)"
+            if seenStableKeys.insert(probKey).inserted {
+                let agentProblem = AgentRunProblem(
+                    stableKey: probKey,
+                    runID: runID,
+                    severity: problem.severity,
+                    message: problem.message,
+                    filePath: problem.file,
+                    line: problem.line,
+                    column: problem.column,
+                    source: .terminalRegex,
+                    confidence: .medium,
+                    rawLine: line.sequence
+                )
+                deltas.append(.appendProblem(agentProblem))
+                
+                let probEvent = AgentTimelineEvent(
+                    stableKey: probKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .problem,
+                    title: problem.severity == .error ? "Error detected" : "Warning detected",
+                    subtitle: problem.message,
+                    status: problem.severity == .error ? .failure : .warning,
+                    source: .terminalRegex,
+                    confidence: .medium,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence,
+                    relatedFile: problem.file
+                )
+                deltas.append(.insert(probEvent))
+            }
+        }
+        
+        // 5. Test results matching
+        if let testSummary = parseTestSummary(cleanText) {
+            let testKey = "test-\(runID)-\(line.sequence)"
+            if seenStableKeys.insert(testKey).inserted {
+                let testEvent = AgentTimelineEvent(
+                    stableKey: testKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .test,
+                    title: "Tests executed",
+                    subtitle: testSummary.message,
+                    status: testSummary.failedCount > 0 ? .failure : .success,
+                    source: .terminalRegex,
+                    confidence: .high,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence
+                )
+                deltas.append(.insert(testEvent))
+            }
+        } else if cleanText.contains("swift test") || cleanText.contains("Test Suite") {
+            let testSuiteKey = "test-suite-\(runID)-\(line.sequence)"
+            if seenStableKeys.insert(testSuiteKey).inserted {
+                let status: TimelineEventStatus = cleanText.contains("failed") ? .failure : (cleanText.contains("passed") ? .success : .working)
+                let testEvent = AgentTimelineEvent(
+                    stableKey: testSuiteKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .test,
+                    title: "Testing activity",
+                    subtitle: cleanText,
+                    status: status,
+                    source: .terminalRegex,
+                    confidence: .medium,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence
+                )
+                deltas.append(.insert(testEvent))
+            }
+        }
+        
+        // 6. Build stage matching
+        if let buildStage = matchBuildStage(cleanText) {
+            let buildKey = "build-\(runID)-\(line.sequence)"
+            if seenStableKeys.insert(buildKey).inserted {
+                let buildEvent = AgentTimelineEvent(
+                    stableKey: buildKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .build,
+                    title: "Building Workstation",
+                    subtitle: buildStage,
+                    status: .working,
+                    source: .terminalRegex,
+                    confidence: .medium,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence
+                )
+                deltas.append(.insert(buildEvent))
+            }
+        }
+        
+        // 7. File changes matching
+        if let fileChange = parseFileChange(cleanText) {
+            let fileKey = "file-\(runID)-\(line.sequence)"
+            if seenStableKeys.insert(fileKey).inserted {
+                let fileEvent = AgentTimelineEvent(
+                    stableKey: fileKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .fileChange,
+                    title: "File modified",
+                    subtitle: fileChange,
+                    status: .info,
+                    source: .terminalRegex,
+                    confidence: .medium,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence,
+                    relatedFile: fileChange
+                )
+                deltas.append(.insert(fileEvent))
+            }
+        }
+        
+        // 8. Approval prompt matching
+        if let approvalPrompt = parseApprovalPrompt(cleanText) {
+            let appKey = "approval-\(runID)-\(line.sequence)"
+            let promptHash = String(approvalPrompt.hashValue)
+            
+            // Check if we already have this active prompt or if it is distinct
+            if activeApprovalRequest?.promptHash != promptHash {
+                let request = AgentApprovalRequest(
+                    stableKey: appKey,
+                    runID: runID,
+                    promptHash: promptHash,
+                    prompt: approvalPrompt,
+                    proposedInput: "y\n",
+                    rejectInput: "n\n",
+                    riskLevel: classifyRisk(approvalPrompt),
+                    state: .active
+                )
+                activeApprovalRequest = request
+                deltas.append(.updateApproval(request))
+                
+                let approvalEvent = AgentTimelineEvent(
+                    stableKey: appKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .needsApproval,
+                    title: "Approval required",
+                    subtitle: approvalPrompt,
+                    status: .warning,
+                    source: .terminalRegex,
+                    confidence: .high,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence
+                )
+                deltas.append(.insert(approvalEvent))
+            }
+        }
+        
+        // 9. Done completion matching
+        if isDoneLine(cleanText) {
+            let doneKey = "done-\(runID)-\(line.sequence)"
+            if seenStableKeys.insert(doneKey).inserted {
+                let doneEvent = AgentTimelineEvent(
+                    stableKey: doneKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .done,
+                    title: "Agent finished",
+                    subtitle: "Session completed successfully",
+                    status: .success,
+                    source: .terminalRegex,
+                    confidence: .high,
+                    rawExcerpt: cleanText,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence
+                )
+                deltas.append(.insert(doneEvent))
+                
+                if activeApprovalRequest != nil {
+                    activeApprovalRequest = nil
+                    deltas.append(.updateApproval(nil))
+                }
+            }
+        }
+        
+        return deltas
+    }
+    
+    // MARK: - Parser Helpers
+    
+    private func matchCommandLine(_ text: String) -> String? {
+        if text.hasPrefix("$ ") {
+            return String(text.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+        }
+        if text.hasPrefix("> ") {
+            return String(text.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+        }
+        
+        let execPrefix = "Executing command: "
+        if text.hasPrefix(execPrefix) {
+            return String(text.dropFirst(execPrefix.count)).trimmingCharacters(in: .whitespaces)
+        }
+        
+        let cmdPrefix = "CommandLine: "
+        if text.hasPrefix(cmdPrefix) {
+            return String(text.dropFirst(cmdPrefix.count)).trimmingCharacters(in: .whitespaces)
+        }
+        
+        return nil
+    }
+    
+    private struct ExtractedProblem {
+        let severity: ProblemSeverity
+        let message: String
+        let file: String?
+        let line: Int?
+        let column: Int?
+    }
+    
+    private func parseProblem(_ text: String, sequence: Int64) -> ExtractedProblem? {
+        let lower = text.lowercased()
+        
+        // 1. Full swift compiler format check (e.g. file.swift:42:17: error: message)
+        if let errorRange = text.range(of: ": error:") {
+            let message = String(text[errorRange.upperBound...]).trimmingCharacters(in: .whitespaces)
+            let fileAndCoords = String(text[..<errorRange.lowerBound])
+            let parts = fileAndCoords.components(separatedBy: ":")
+            if parts.count >= 2 {
+                let file = parts[0].trimmingCharacters(in: .whitespaces)
+                let line = Int(parts[1])
+                let col = parts.count >= 3 ? Int(parts[2]) : nil
+                return ExtractedProblem(severity: .error, message: message, file: file, line: line, column: col)
+            }
+        }
+        
+        if let warnRange = text.range(of: ": warning:") {
+            let message = String(text[warnRange.upperBound...]).trimmingCharacters(in: .whitespaces)
+            let fileAndCoords = String(text[..<warnRange.lowerBound])
+            let parts = fileAndCoords.components(separatedBy: ":")
+            if parts.count >= 2 {
+                let file = parts[0].trimmingCharacters(in: .whitespaces)
+                let line = Int(parts[1])
+                let col = parts.count >= 3 ? Int(parts[2]) : nil
+                return ExtractedProblem(severity: .warning, message: message, file: file, line: line, column: col)
+            }
+        }
+        
+        // 2. Simple fallback checks
+        if text.hasPrefix("error:") || text.hasPrefix("fatal error:") || lower.contains("permission denied") || lower.contains("no such file") {
+            let msg = text.hasPrefix("error:") ? String(text.dropFirst(6)) : (text.hasPrefix("fatal error:") ? String(text.dropFirst(12)) : text)
+            return ExtractedProblem(severity: .error, message: msg.trimmingCharacters(in: .whitespaces), file: nil, line: nil, column: nil)
+        }
+        
+        if text.hasPrefix("warning:") {
+            let msg = String(text.dropFirst(8))
+            return ExtractedProblem(severity: .warning, message: msg.trimmingCharacters(in: .whitespaces), file: nil, line: nil, column: nil)
+        }
+        
+        return nil
+    }
+    
+    private struct TestSummary {
+        let message: String
+        let passedCount: Int
+        let failedCount: Int
+    }
+    
+    private func parseTestSummary(_ text: String) -> TestSummary? {
+        let lower = text.lowercased()
+        if lower.contains("executed") && lower.contains("tests") && lower.contains("failures") {
+            let failed = lower.contains("0 failures") ? 0 : 1
+            return TestSummary(message: text, passedCount: 1, failedCount: failed)
+        }
+        if lower.contains("tests passed") || lower.contains("tests failed") {
+            let failed = lower.contains("0 tests failed") || lower.contains("0 failed") ? 0 : 1
+            return TestSummary(message: text, passedCount: 1, failedCount: failed)
+        }
+        return nil
+    }
+    
+    private func matchBuildStage(_ text: String) -> String? {
+        if text.hasPrefix("CompileSwift") {
+            return "Compiling Swift sources"
+        }
+        if text.hasPrefix("Ld ") {
+            return "Linking binary"
+        }
+        if text.hasPrefix("CodeSign ") {
+            return "Code signing"
+        }
+        if text.hasPrefix("ProcessInfoPlistFile ") {
+            return "Processing Info.plist"
+        }
+        return nil
+    }
+    
+    private func parseFileChange(_ text: String) -> String? {
+        let clean = text.trimmingCharacters(in: .whitespaces)
+        if clean.hasPrefix("modified:") {
+            return clean.components(separatedBy: "modified:").last?.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        let createdPrefix = "Created file file://"
+        if clean.hasPrefix(createdPrefix) {
+            return clean.components(separatedBy: "file://").last?.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        let changesPrefix = "Changes made to: "
+        if clean.hasPrefix(changesPrefix) {
+            return String(clean.dropFirst(changesPrefix.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        return nil
+    }
+    
+    private func parseApprovalPrompt(_ text: String) -> String? {
+        let lower = text.lowercased()
+        
+        let containsPromptFormat = text.contains("[y/N]") || text.contains("[Y/n]") || text.contains("(y/n)") || text.contains("[y/n]")
+        let containsQuestionKeywords = lower.contains("do you want to continue") || lower.contains("confirm?") || lower.contains("proceed?") || lower.contains("allow?") || lower.contains("setuju?") || lower.contains("lanjutkan?") || lower.contains("persetujuan")
+        
+        if containsPromptFormat || containsQuestionKeywords {
+            return text
+        }
+        return nil
+    }
+    
+    private func classifyRisk(_ prompt: String) -> ApprovalRiskLevel {
+        let lower = prompt.lowercased()
+        if lower.contains("rm -rf") || lower.contains("delete") || lower.contains("erase") || lower.contains("force") || lower.contains("critical") {
+            return .critical
+        }
+        if lower.contains("write") || lower.contains("modify") || lower.contains("change") || lower.contains("high") {
+            return .high
+        }
+        if lower.contains("run") || lower.contains("execute") || lower.contains("medium") {
+            return .medium
+        }
+        return .low
+    }
+    
+    private func isDoneLine(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        return lower.contains("completed the session") || lower.contains("closed workstation-")
+    }
+}

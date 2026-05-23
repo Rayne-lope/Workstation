@@ -132,6 +132,7 @@
 		AA0000000000000000000002 /* AgentTimelineEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* AgentTimelineEvent.swift */; };
 		AA0000000000000000000004 /* AgentTimelineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* AgentTimelineStore.swift */; };
 		AA0000000000000000000006 /* TerminalStreamBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* TerminalStreamBuffer.swift */; };
+		AA0000000000000000000008 /* AgentTimelineIngestor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* AgentTimelineIngestor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -261,6 +262,7 @@
 		AA0000000000000000000001 /* AgentTimelineEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTimelineEvent.swift; sourceTree = "<group>"; };
 		AA0000000000000000000003 /* AgentTimelineStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTimelineStore.swift; sourceTree = "<group>"; };
 		AA0000000000000000000005 /* TerminalStreamBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalStreamBuffer.swift; sourceTree = "<group>"; };
+		AA0000000000000000000007 /* AgentTimelineIngestor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTimelineIngestor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -311,6 +313,7 @@
 				539D23D5A48E3C6D6129CCD2 /* AgentRunStatus.swift */,
 				0EB07A4DAE97C487B1BBB698 /* AgentRunTranscriptStore.swift */,
 				AA0000000000000000000001 /* AgentTimelineEvent.swift */,
+				AA0000000000000000000007 /* AgentTimelineIngestor.swift */,
 				AA0000000000000000000003 /* AgentTimelineStore.swift */,
 				2D5AB344D5A4D3F85B094889 /* AppPreferences.swift */,
 				2DE4BAAABA3B24747611E458 /* AppTheme.swift */,
@@ -548,6 +551,7 @@
 				A7D93288EE987302E1DFF8A6 /* AgentRunTranscriptStore.swift in Sources */,
 				434F3A7547E49627055FD4AC /* AgentRunTranscriptView.swift in Sources */,
 				AA0000000000000000000002 /* AgentTimelineEvent.swift in Sources */,
+				AA0000000000000000000008 /* AgentTimelineIngestor.swift in Sources */,
 				AA0000000000000000000004 /* AgentTimelineStore.swift in Sources */,
 				BC1A02D14A7A47D3DDD9A8B0 /* AppFontRegistrar.swift in Sources */,
 				2301A9AA47A99AFEF3B5278F /* AppPreferences.swift in Sources */,
