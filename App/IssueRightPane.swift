@@ -1960,11 +1960,19 @@ struct WorkflowCopilotPane: View {
                         .foregroundStyle(WorkstationTheme.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
-                case .heading2(let title):
+                case .heading(let level, let title):
+                    let fontSize: CGFloat = {
+                        switch level {
+                        case 1: return 17
+                        case 2: return 15
+                        case 3: return 13.5
+                        default: return 12.5
+                        }
+                    }()
                     Text(title)
-                        .font(WorkstationTheme.Fonts.body(15, weight: .bold))
+                        .font(WorkstationTheme.Fonts.body(fontSize, weight: .bold))
                         .foregroundStyle(WorkstationTheme.textPrimary)
-                        .padding(.top, 12)
+                        .padding(.top, level == 1 ? 16 : (level == 2 ? 12 : 8))
                         .padding(.bottom, 4)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)

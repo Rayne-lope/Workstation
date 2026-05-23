@@ -165,16 +165,18 @@ struct MarkdownTextRendererTests {
         }
     }
 
-    @Test("parseContentBlocks parses H2 heading starting with ##")
-    func parseContentBlocksParsesH2Heading() throws {
+    @Test("parseContentBlocks parses H1, H2, and H3 headings starting with #, ##, ###")
+    func parseContentBlocksParsesHeadings() throws {
         let markdown = """
         Intro text
+        # Major Heading
         ## Important Heading
+        ### Subsection Heading
         Outro text
         """
         
         let blocks = MarkdownTextRenderer.parseContentBlocks(from: markdown)
-        #expect(blocks.count == 3)
+        #expect(blocks.count == 5)
         
         if case .text(let txt) = blocks[0] {
             #expect(txt.trimmingCharacters(in: .whitespacesAndNewlines) == "Intro text")
@@ -182,16 +184,31 @@ struct MarkdownTextRendererTests {
             Issue.record("Expected first block to be text")
         }
         
-        if case .heading2(let heading) = blocks[1] {
+        if case .heading(let level, let heading) = blocks[1] {
+            #expect(level == 1)
+            #expect(heading == "Major Heading")
+        } else {
+            Issue.record("Expected second block to be H1 heading")
+        }
+
+        if case .heading(let level, let heading) = blocks[2] {
+            #expect(level == 2)
             #expect(heading == "Important Heading")
         } else {
-            Issue.record("Expected second block to be heading2")
+            Issue.record("Expected third block to be H2 heading")
+        }
+
+        if case .heading(let level, let heading) = blocks[3] {
+            #expect(level == 3)
+            #expect(heading == "Subsection Heading")
+        } else {
+            Issue.record("Expected fourth block to be H3 heading")
         }
         
-        if case .text(let txt) = blocks[2] {
+        if case .text(let txt) = blocks[4] {
             #expect(txt.trimmingCharacters(in: .whitespacesAndNewlines) == "Outro text")
         } else {
-            Issue.record("Expected third block to be text")
+            Issue.record("Expected fifth block to be text")
         }
     }
 }

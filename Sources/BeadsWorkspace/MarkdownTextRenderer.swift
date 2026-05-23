@@ -18,7 +18,7 @@ public enum MarkdownTextRenderer {
     public enum MessageContentBlock: Equatable, Hashable {
         case text(String)
         case table(headers: [String], alignments: [TableAlignment], rows: [[String]])
-        case heading2(String)
+        case heading(level: Int, text: String)
     }
 
     public static func parseContentBlocks(from text: String) -> [MessageContentBlock] {
@@ -31,18 +31,22 @@ public enum MarkdownTextRenderer {
         while i < lines.count {
             let line = lines[i]
             
-            // Check if a line is an H2 heading (starts with ##)
+            // Check if a line is a heading (starts with one or more #)
             let trimmedLine = line.trimmingCharacters(in: .whitespaces)
-            if trimmedLine.hasPrefix("## ") {
-                // Flush accumulated text block
-                if !currentTextLines.isEmpty {
-                    blocks.append(.text(currentTextLines.joined(separator: "\n")))
-                    currentTextLines.removeAll()
+            if trimmedLine.hasPrefix("#") {
+                let hashCount = trimmedLine.prefix(while: { $0 == "#" }).count
+                let rest = trimmedLine.dropFirst(hashCount)
+                if hashCount >= 1 && hashCount <= 6 && rest.hasPrefix(" ") {
+                    // Flush accumulated text block
+                    if !currentTextLines.isEmpty {
+                        blocks.append(.text(currentTextLines.joined(separator: "\n")))
+                        currentTextLines.removeAll()
+                    }
+                    let headingText = rest.trimmingCharacters(in: .whitespacesAndNewlines)
+                    blocks.append(.heading(level: hashCount, text: headingText))
+                    i += 1
+                    continue
                 }
-                let headingText = String(trimmedLine.dropFirst(3)).trimmingCharacters(in: .whitespacesAndNewlines)
-                blocks.append(.heading2(headingText))
-                i += 1
-                continue
             }
             
             // Check if a table starts at line `i` (header) and `i+1` is separator
