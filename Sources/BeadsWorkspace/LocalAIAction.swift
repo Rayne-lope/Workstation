@@ -21,10 +21,11 @@ public enum LocalAIAction: Equatable, Sendable {
     case draftIssuesFromPRD(prd: String)
     case copilot(prompt: String, contextIssues: [BeadIssue])
     case copilotPlan(prompt: String, contextIssues: [BeadIssue])
+    case draftCommitMessage(worktreeURL: String, diffSummary: String, diff: String, lastCommit: String?)
 
     public var modelTier: LocalAIModelTier {
         switch self {
-        case .issueDrafting, .backlogAnalysis, .runSummary, .simplifyIssueIndonesian, .detailIssueFromRoughIdea, .draftIssuesFromPRD, .copilot, .copilotPlan:
+        case .issueDrafting, .backlogAnalysis, .runSummary, .simplifyIssueIndonesian, .detailIssueFromRoughIdea, .draftIssuesFromPRD, .copilot, .copilotPlan, .draftCommitMessage:
             return .strong
         case .promptOptimization, .closeReason:
             return .fast
@@ -32,11 +33,22 @@ public enum LocalAIAction: Equatable, Sendable {
     }
 
     public var systemPrompt: String {
-        """
-        You are a local AI assistant for the Beads Kanban app.
-        Return plain text only.
-        Do not execute commands, mutate Beads data, or write source code.
-        """
+        switch self {
+        case .draftCommitMessage:
+            return """
+            You are a professional commit message generator for the Beads Kanban app.
+            Format the output according to Conventional Commits:
+            type(scope): short description
+
+            Do not wrap output in markdown fences or any formatting. Return plain text only.
+            """
+        default:
+            return """
+            You are a local AI assistant for the Beads Kanban app.
+            Return plain text only.
+            Do not execute commands, mutate Beads data, or write source code.
+            """
+        }
     }
 
     public var prompt: String {
@@ -222,6 +234,20 @@ public enum LocalAIAction: Equatable, Sendable {
             - Focus on what changed, what failed, and what still needs attention.
             - Do not invent facts that are not present above.
             """
+        case let .draftCommitMessage(worktreeURL, diffSummary, diff, lastCommit):
+            var lines = [
+                "Generate a commit message for this worktree.",
+                "Worktree: \(worktreeURL)",
+                "Changed files summary:",
+                diffSummary,
+                "Diff content:",
+                diff
+            ]
+            if let lastCommit = lastCommit, !lastCommit.isEmpty {
+                lines.append("Last commit message: \(lastCommit)")
+            }
+            lines.append("Use Conventional Commits format.")
+            return lines.joined(separator: "\n")
         }
     }
 
