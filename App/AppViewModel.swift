@@ -1131,6 +1131,60 @@ final class AppViewModel {
         }
     }
 
+    // MARK: - AI Commit Message Drafting & Execution
+
+    /// Draft a commit message using the local AI, given the issue's active worktree.
+    /// Returns the drafted commit message string.
+    /// - Parameters:
+    ///   - issue: The issue whose worktree to analyze.
+    /// - Throws: Errors from git operations or AI service.
+    public func draftCommitMessage(for issue: BeadIssue) async throws -> String {
+        guard let workspace = activeWorkspace else {
+            throw AICommitError.noActiveWorkspace
+        }
+        let location = gitWorktreeService.worktreeLocation(for: workspace, issueID: issue.id)
+        let diff = try await gitWorktreeService.getDiff(in: location.worktreeURL)
+        let diffSummary = try await gitWorktreeService.getChangedFilesSummary(in: location.worktreeURL)
+        let lastCommit = try await gitWorktreeService.getLastCommitMessage(in: location.worktreeURL)
+
+        let action = LocalAIAction.draftCommitMessage(
+            worktreeURL: location.worktreeURL.path,
+            diffSummary: diffSummary,
+            diff: diff,
+            lastCommit: lastCommit
+        )
+        return try await requestLocalAIResponse(for: action)
+    }
+
+    /// Execute git commit with the given message, push to origin, then remove the worktree.
+    /// - Parameters:
+    ///   - issue: The issue whose worktree to operate on.
+    ///   - message: The commit message to use.
+    /// - Throws: Errors from git commit, push, or worktree removal.
+    public func commitAndPushWorktree(for issue: BeadIssue, message: String) async throws {
+        guard let workspace = activeWorkspace else {
+            throw AICommitError.noActiveWorkspace
+        }
+        let location = gitWorktreeService.worktreeLocation(for: workspace, issueID: issue.id)
+        try await gitWorktreeService.commitAndPush(message: message, in: location.worktreeURL)
+        try await gitWorktreeService.removeWorktree(location: location, workingDirectory: workspace.inspectionURL)
+    }
+
+    /// Get the current diff for an issue's worktree (used to check if there are changes before drafting).
+    /// - Parameters:
+    ///   - issue: The issue whose worktree to check.
+    /// - Returns: A tuple of (diff, changedFilesSummary, hasChanges).
+    public func worktreeDiffInfo(for issue: BeadIssue) async throws -> (diff: String, summary: String, hasChanges: Bool) {
+        guard let workspace = activeWorkspace else {
+            throw AICommitError.noActiveWorkspace
+        }
+        let location = gitWorktreeService.worktreeLocation(for: workspace, issueID: issue.id)
+        let diff = try await gitWorktreeService.getDiff(in: location.worktreeURL)
+        let summary = try await gitWorktreeService.getChangedFilesSummary(in: location.worktreeURL)
+        let hasChanges = !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return (diff, summary, hasChanges)
+    }
+
     // MARK: - Focus Mode
 
     func focusElapsedMs(for issueID: String) -> Int64 {
@@ -1234,6 +1288,17 @@ final class AppViewModel {
             }
         } catch {
             print("Failed to trust workspace: \(error.localizedDescription)")
+        }
+    }
+}
+
+private enum AICommitError: LocalizedError, Sendable {
+    case noActiveWorkspace
+
+    var errorDescription: String? {
+        switch self {
+        case .noActiveWorkspace:
+            return "No active workspace is selected."
         }
     }
 }
