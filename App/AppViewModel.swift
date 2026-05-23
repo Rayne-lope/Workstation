@@ -51,6 +51,7 @@ final class AppViewModel {
 
     var viewMode: BoardViewMode = .list
     var selectedAgentProfileID: UUID = AgentProfile.codingExecutorID
+    var bulkAgentProfileID: UUID = AgentProfile.codingExecutorID
 
     var isCreatePresented = false
     var isClosePresented = false
@@ -812,6 +813,42 @@ final class AppViewModel {
             return "--- ISSUE \(idx + 1)/\(total): \(issue.id) ---\n\(payload.prompt)"
         }
         Clipboard.copy(blocks.joined(separator: "\n\n"))
+    }
+
+    func bulkLaunchAgents() {
+        guard let store = issueStore, let workspace = activeWorkspace else { return }
+        let selectedIssues = store.selectedIssues()
+        guard !selectedIssues.isEmpty else { return }
+        
+        let profile = agentProfileStore.profiles.first(where: { $0.id == bulkAgentProfileID }) ?? selectedAgentProfile()
+        guard profile.canExecuteCode else { return }
+
+        // Clear previous states
+        pendingAgentLaunch = nil
+        pendingWorktreeLaunch = nil
+        launchErrorMessage = nil
+        terminalErrorMessage = nil
+        worktreeMessage = nil
+
+        // Clear multi-selection and hide the bulk action panel
+        store.clearSelection()
+        detailPaneMode = .issue
+
+        Task {
+            for issue in selectedIssues {
+                let preflight = await gitWorktreeService.preflightLaunch(for: issue, in: workspace)
+                if preflight.isBlocked {
+                    await gitWorktreeService.cleanupOrphanWorktree(for: issue, in: workspace)
+                }
+                let freshPreflight = await gitWorktreeService.preflightLaunch(for: issue, in: workspace)
+                await performWorktreeAgentLaunch(
+                    for: issue,
+                    profile: profile,
+                    workspace: workspace,
+                    preflight: freshPreflight
+                )
+            }
+        }
     }
 
     func clearMultiSelection() {

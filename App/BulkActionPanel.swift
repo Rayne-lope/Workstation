@@ -105,14 +105,65 @@ struct BulkActionPanel: View {
     }
 
     private var actions: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
+            // Agent Selection for Bulk Launch
+            VStack(alignment: .leading, spacing: 6) {
+                Text("LAUNCH AGENTS PROFILE")
+                    .font(WorkstationTheme.Fonts.body(9.5, weight: .bold))
+                    .tracking(0.8)
+                    .foregroundStyle(WorkstationTheme.textSubtle)
+                
+                HStack {
+                    Image(systemName: "person.crop.square.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(WorkstationTheme.accent)
+                    
+                    Picker("", selection: $appVM.bulkAgentProfileID) {
+                        ForEach(appVM.agentProfileStore.profiles.filter { $0.role == .codingExecutor && $0.canExecuteCode }) { profile in
+                            Text("\(profile.name) (\(profile.role.rawValue))")
+                                .tag(profile.id)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(WorkstationTheme.cardAlt)
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                        .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                )
+            }
+            .padding(.bottom, 2)
+
+            Button {
+                appVM.bulkLaunchAgents()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("Launch Agents (\(selected.count) Issues)")
+                        .font(WorkstationTheme.Fonts.body(13, weight: .bold))
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(WorkstationPrimaryButtonStyle())
+            .disabled(store.isLoading || selected.isEmpty)
+            .help("Launch the selected agent profile in a separate git worktree for each selected issue")
+
+            Divider().overlay(WorkstationTheme.borderSoft)
+                .padding(.vertical, 4)
+
             Button {
                 appVM.showCopilotPane()
             } label: {
                 Label("Ask Copilot…", systemImage: "sparkles")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(WorkstationPrimaryButtonStyle())
+            .buttonStyle(WorkstationGhostButtonStyle())
             .disabled(selected.isEmpty)
             .help("Ask Copilot with the selected issues as context")
 
@@ -122,7 +173,7 @@ struct BulkActionPanel: View {
                 Label("Claim All", systemImage: "person.crop.circle.badge.checkmark")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(WorkstationPrimaryButtonStyle())
+            .buttonStyle(WorkstationGhostButtonStyle())
             .disabled(store.isLoading)
 
             Button {
