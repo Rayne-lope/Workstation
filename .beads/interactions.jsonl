@@ -310,3 +310,4 @@
 {"id":"int-490dea74","kind":"field_change","created_at":"2026-05-23T10:39:05.227538Z","actor":"Rayne-lope","issue_id":"Workstation-pwfb","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
 {"id":"int-a4442354","kind":"field_change","created_at":"2026-05-23T10:42:34.502308Z","actor":"Rayne-lope","issue_id":"Workstation-uhwd","extra":{"field":"assignee","new_value":"zhipu","old_value":""}}
 {"id":"int-c0410850","kind":"field_change","created_at":"2026-05-23T10:52:13.520457Z","actor":"Rayne-lope","issue_id":"Workstation-uhwd","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
+{"id":"int-d67d2969","kind":"field_change","created_at":"2026-05-23T11:08:45.504773Z","actor":"Rayne-lope","issue_id":"Workstation-1a1","extra":{"field":"assignee","new_value":"gemini","old_value":""}}
