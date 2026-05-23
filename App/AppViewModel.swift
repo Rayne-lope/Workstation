@@ -94,6 +94,8 @@ final class AppViewModel {
 
     @ObservationIgnored private var workspaceCancellable: AnyCancellable?
     @ObservationIgnored private var fileWatcher: IssueFileWatcher?
+    @ObservationIgnored private var ptyBuffers: [UUID: String] = [:]
+    @ObservationIgnored private var ptyFlushTimers: [UUID: Timer] = [:]
 
     init(
         shellRunner: ShellCommandRunner = ShellCommandRunner(),
@@ -155,7 +157,8 @@ final class AppViewModel {
                   let text = userInfo["text"] as? String else {
                 return
             }
-            self.appendTranscriptMessage(runID: runID, role: .agent, content: text)
+            self.agentRunTranscriptStore.skipPersist = true
+            self.bufferAndScheduleFlush(runID: runID, text: text)
         }
 
         NotificationCenter.default.addObserver(
@@ -168,6 +171,9 @@ final class AppViewModel {
                   let runID = userInfo["runID"] as? UUID else {
                 return
             }
+            self.flushBufferImmediately(runID: runID)
+            self.agentRunTranscriptStore.skipPersist = false
+            self.agentRunTranscriptStore.forcePersist()
             let exitCode = userInfo["exitCode"] as? Int ?? 0
             if exitCode == 0 {
                 self.updateAgentRunStatus(id: runID, status: .needsReview)
@@ -933,6 +939,29 @@ final class AppViewModel {
         content: String
     ) -> AgentRunMessage? {
         agentRunTranscriptStore.append(runID: runID, role: role, content: content)
+    }
+
+    private func bufferAndScheduleFlush(runID: UUID, text: String) {
+        let current = ptyBuffers[runID] ?? ""
+        ptyBuffers[runID] = current + text
+        
+        if ptyFlushTimers[runID] == nil {
+            let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { [weak self] _ in
+                guard let self = self else { return }
+                self.flushBufferImmediately(runID: runID)
+            }
+            ptyFlushTimers[runID] = timer
+        }
+    }
+
+    private func flushBufferImmediately(runID: UUID) {
+        ptyFlushTimers[runID]?.invalidate()
+        ptyFlushTimers.removeValue(forKey: runID)
+        
+        guard let text = ptyBuffers.removeValue(forKey: runID), !text.isEmpty else {
+            return
+        }
+        self.appendTranscriptMessage(runID: runID, role: .agent, content: text)
     }
 
     func updateTranscriptMessageContent(id: UUID, content: String) {
