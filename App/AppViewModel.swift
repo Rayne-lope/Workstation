@@ -920,6 +920,18 @@ final class AppViewModel {
         return agentRunHistoryStore.record(id: id)
     }
 
+    func killActiveAgent(runID: UUID) {
+        PTYProcessRegistry.shared.killProcess(for: runID)
+        flushBufferImmediately(runID: runID)
+        agentRunTranscriptStore.skipPersist = false
+        agentRunTranscriptStore.forcePersist()
+        updateAgentRunStatus(id: runID, status: .failed)
+    }
+
+    func clearLiveLogs(runID: UUID) {
+        agentRunTranscriptStore.deleteAll(forRunID: runID)
+    }
+
     func updateAgentRunStatus(id: UUID, status: AgentRunStatus) {
         agentRunHistoryStore.updateStatus(id: id, status: status)
     }

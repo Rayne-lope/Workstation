@@ -7,7 +7,7 @@ struct AgentRunConsoleContent: View {
 
     @State private var notesDraft: String = ""
     @State private var copyConfirmation: String?
-    @State private var selectedTab: AgentRunConsoleTab = .prompt
+    @State private var selectedTab: AgentRunConsoleTab = .terminal
 
     var body: some View {
         ScrollView(.vertical) {
@@ -135,6 +135,8 @@ struct AgentRunConsoleContent: View {
             promptCard
         case .command:
             commandCard
+        case .terminal:
+            terminalDrawerSection
         case .activity:
             activityContent
         }
@@ -206,6 +208,16 @@ struct AgentRunConsoleContent: View {
         }
     }
 
+    private var terminalDrawerSection: some View {
+        LiveTerminalDrawer(
+            runID: record.id,
+            messages: appVM.transcriptMessages(for: record.id),
+            isActive: record.status == .terminalOpened,
+            onKillAgent: { appVM.killActiveAgent(runID: record.id) },
+            onClearLogs: { appVM.clearLiveLogs(runID: record.id) }
+        )
+    }
+
     private var activityContent: some View {
         VStack(alignment: .leading, spacing: compact ? 14 : 16) {
             sectionCard {
@@ -223,25 +235,6 @@ struct AgentRunConsoleContent: View {
                     isDirty: notesDraft != (record.notes ?? ""),
                     onSave: { saveNotes() },
                     onRevert: { notesDraft = record.notes ?? "" }
-                )
-            }
-
-            sectionCard {
-                AgentRunTranscriptView(
-                    runID: record.id,
-                    messages: appVM.transcriptMessages(for: record.id),
-                    onAppend: { role, content in
-                        appVM.appendTranscriptMessage(runID: record.id, role: role, content: content)
-                    },
-                    onUpdateContent: { id, content in
-                        appVM.updateTranscriptMessageContent(id: id, content: content)
-                    },
-                    onUpdateRole: { id, role in
-                        appVM.updateTranscriptMessageRole(id: id, role: role)
-                    },
-                    onDelete: { id in
-                        appVM.deleteTranscriptMessage(id: id)
-                    }
                 )
             }
         }
@@ -381,6 +374,7 @@ struct AgentRunConsoleContent: View {
 private enum AgentRunConsoleTab: String, CaseIterable, Identifiable {
     case prompt
     case command
+    case terminal
     case activity
 
     var id: String { rawValue }
@@ -389,6 +383,7 @@ private enum AgentRunConsoleTab: String, CaseIterable, Identifiable {
         switch self {
         case .prompt: return "Prompt"
         case .command: return "Command"
+        case .terminal: return "Terminal"
         case .activity: return "Activity"
         }
     }
@@ -397,6 +392,7 @@ private enum AgentRunConsoleTab: String, CaseIterable, Identifiable {
         switch self {
         case .prompt: return "doc.text"
         case .command: return "terminal"
+        case .terminal: return "chevron.left.forwardslash.chevron.right"
         case .activity: return "waveform.path.ecg"
         }
     }

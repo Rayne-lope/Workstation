@@ -55,6 +55,7 @@
 		5C3457B6E50903A055CFD460 /* BoardSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB1EB4ED6437C458FE5DD39 /* BoardSidebarView.swift */; };
 		5F6BB8AF75B8E8A4FDBDD38B /* KanbanBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5479031AA691E8487A8769C2 /* KanbanBoardView.swift */; };
 		6118D768851A2391F76C76F1 /* AgentRunConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C29EACE5A1325EBBDFACE1B /* AgentRunConsoleView.swift */; };
+		AA11B000C0DE0000CAFE0001 /* LiveTerminalDrawer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11B000C0DE0000CAFE0002 /* LiveTerminalDrawer.swift */; };
 		6783CF7E06D40DF26AE3AF91 /* glm.png in Resources */ = {isa = PBXBuildFile; fileRef = 7E8076A719C88118D525766F /* glm.png */; };
 		6816E14341F3673E8F83E252 /* AgentRunHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21136495113009F87FFC43FA /* AgentRunHistoryStore.swift */; };
 		695395B3EBB5BFCB9F06BFAF /* GitStatusService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172FE67FF2659FDC69E0219B /* GitStatusService.swift */; };
@@ -170,6 +171,7 @@
 		45E86C3EE3BADCC3721FFFF5 /* IssueDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDraft.swift; sourceTree = "<group>"; };
 		47E024339F6709086B129865 /* IssueListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueListView.swift; sourceTree = "<group>"; };
 		4C29EACE5A1325EBBDFACE1B /* AgentRunConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunConsoleView.swift; sourceTree = "<group>"; };
+		AA11B000C0DE0000CAFE0002 /* LiveTerminalDrawer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTerminalDrawer.swift; sourceTree = "<group>"; };
 		4E76DEF5D604366BFFE11D3E /* ProcessCommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessCommandRunner.swift; sourceTree = "<group>"; };
 		539D23D5A48E3C6D6129CCD2 /* AgentRunStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunStatus.swift; sourceTree = "<group>"; };
 		5479031AA691E8487A8769C2 /* KanbanBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanBoardView.swift; sourceTree = "<group>"; };
@@ -388,6 +390,7 @@
 				66B054C739B30C65BA3CEECA /* AgentRunActionsView.swift */,
 				01C85CDBD0FA8B298BA457F8 /* AgentRunConsoleContent.swift */,
 				4C29EACE5A1325EBBDFACE1B /* AgentRunConsoleView.swift */,
+				AA11B000C0DE0000CAFE0002 /* LiveTerminalDrawer.swift */,
 				894623BE6C865390CCA4B26B /* AgentRunNotesView.swift */,
 				A9D17E8ECAB8F8236106375E /* AgentRunPromptPreviewView.swift */,
 				EBEB229B00EA9F96BA7BDE44 /* AgentRunTranscriptView.swift */,
@@ -525,6 +528,7 @@
 				BB74D8798FDE3CED7887F347 /* AgentRunActionsView.swift in Sources */,
 				E2E40DF2A4201F7470C7E7AE /* AgentRunConsoleContent.swift in Sources */,
 				6118D768851A2391F76C76F1 /* AgentRunConsoleView.swift in Sources */,
+				AA11B000C0DE0000CAFE0001 /* LiveTerminalDrawer.swift in Sources */,
 				6816E14341F3673E8F83E252 /* AgentRunHistoryStore.swift in Sources */,
 				1AFCE7434DDE29985264B8A6 /* AgentRunLaunchCoordinator.swift in Sources */,
 				3B8DDC6433B38031DB822BB0 /* AgentRunMessage.swift in Sources */,
