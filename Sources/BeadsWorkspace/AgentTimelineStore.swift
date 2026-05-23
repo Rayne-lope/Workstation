@@ -134,4 +134,29 @@ public final class AgentTimelineStore: @unchecked Sendable {
             commandsMap[runID] = current
         }
     }
+
+    // MARK: - Approval State Management
+
+    /// Updates the state of the active approval for a runID.
+    /// Returns true if the approval was found and updated.
+    @discardableResult
+    public func updateApprovalState(forRunID runID: UUID, newState: ApprovalState) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard var approval = activeApprovalMap[runID] else { return false }
+        approval.state = newState
+        activeApprovalMap[runID] = approval
+        return true
+    }
+
+    /// Validates that an approval is still active and safe to respond to.
+    /// Returns the approval if valid, nil otherwise.
+    public func validateApproval(forRunID runID: UUID, promptHash: String) -> AgentApprovalRequest? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let approval = activeApprovalMap[runID] else { return nil }
+        // Must be active and prompt hash must match
+        guard approval.state == .active && approval.promptHash == promptHash else { return nil }
+        return approval
+    }
 }

@@ -89,6 +89,11 @@ final class AppViewModel {
     var localAIConnectionMessage: String?
     var localAIConnectionMessageIsError = false
     var isTestingLocalAIConnection = false
+
+    // Approval confirmation state for critical risk approvals
+    var pendingCriticalApproval: AgentApprovalRequest?
+    var isApprovalConfirmationPresented: Bool = false
+
     private(set) var activeWorkspace: ProjectWorkspace?
     private var activeWorkspaceStorageKey: String?
 
@@ -779,6 +784,49 @@ final class AppViewModel {
     func dismissAgentRunConsole() {
         activeConsoleRunID = nil
         detailPaneMode = .issue
+    }
+
+    // MARK: - Approval Confirmation
+
+    /// Presents the confirmation sheet for critical risk approvals.
+    func presentCriticalApprovalConfirmation(for approval: AgentApprovalRequest) {
+        pendingCriticalApproval = approval
+        isApprovalConfirmationPresented = true
+    }
+
+    /// Dismisses the approval confirmation sheet.
+    func dismissApprovalConfirmation() {
+        pendingCriticalApproval = nil
+        isApprovalConfirmationPresented = false
+    }
+
+    /// Confirms a critical approval after user has typed "APPROVE".
+    func confirmCriticalApproval() {
+        guard let approval = pendingCriticalApproval else { return }
+        let runID = approval.runID
+
+        // Validate approval is still active
+        guard let activeApproval = AgentTimelineStore.shared.activeApproval(forRunID: runID) else {
+            dismissApprovalConfirmation()
+            return
+        }
+
+        guard activeApproval.state == .active && activeApproval.promptHash == approval.promptHash else {
+            dismissApprovalConfirmation()
+            return
+        }
+
+        // Set state to responding
+        AgentTimelineStore.shared.updateApprovalState(forRunID: runID, newState: .responding)
+
+        // Write to PTY
+        let success = PTYProcessRegistry.shared.writeInput(for: runID, text: approval.proposedInput)
+
+        // Update final state
+        let finalState: ApprovalState = success ? .accepted : .failedToSend
+        AgentTimelineStore.shared.updateApprovalState(forRunID: runID, newState: finalState)
+
+        dismissApprovalConfirmation()
     }
 
     func showIssuePane() {

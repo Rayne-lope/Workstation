@@ -261,11 +261,11 @@ struct AgentRunTimelineCompactView: View {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(WorkstationTheme.orange)
+                    .foregroundStyle(riskHeaderColor(for: approval.riskLevel))
 
                 Text("Approval Required")
                     .font(WorkstationTheme.Fonts.body(11, weight: .bold))
-                    .foregroundStyle(WorkstationTheme.orange)
+                    .foregroundStyle(riskHeaderColor(for: approval.riskLevel))
 
                 Spacer()
 
@@ -280,72 +280,308 @@ struct AgentRunTimelineCompactView: View {
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Action buttons
-            HStack(spacing: 8) {
-                // Approve button
-                Button {
-                    handleApproval(runID: runID, approved: true)
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .bold))
-                        Text("Approve")
-                            .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
-                    }
-                    .foregroundStyle(WorkstationTheme.card)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(WorkstationTheme.green)
-                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
-                }
-                .buttonStyle(.plain)
+            // Action buttons based on risk level
+            approvalActions(for: approval)
+        }
+        .padding(10)
+        .background(riskCardBackground(for: approval.riskLevel))
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                .stroke(riskCardBorder(for: approval.riskLevel), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+    }
 
-                // Reject button
+    @ViewBuilder
+    private func approvalActions(for approval: AgentApprovalRequest) -> some View {
+        switch approval.riskLevel {
+        case .low, .medium:
+            lowMediumApprovalActions(for: approval)
+        case .high:
+            highApprovalActions(for: approval)
+        case .critical:
+            criticalApprovalActions(for: approval)
+        }
+    }
+
+    private func lowMediumApprovalActions(for approval: AgentApprovalRequest) -> some View {
+        HStack(spacing: 8) {
+            // Approve button
+            Button {
+                handleApproval(runID: runID, approved: true, forApproval: approval)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("Approve")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                }
+                .foregroundStyle(WorkstationTheme.card)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(WorkstationTheme.green)
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            // Reject button
+            Button {
+                handleApproval(runID: runID, approved: false, forApproval: approval)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("Reject")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                }
+                .foregroundStyle(WorkstationTheme.textSecondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(WorkstationTheme.cardAlt)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                        .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            // View Raw Log button
+            Button {
+                appVM.showConsolePane(forIssueID: issueID)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text("Raw Log")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                }
+                .foregroundStyle(WorkstationTheme.textMuted)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func highApprovalActions(for approval: AgentApprovalRequest) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Expand button
+            if !approvalExpanded {
                 Button {
-                    handleApproval(runID: runID, approved: false)
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        approvalExpanded = true
+                    }
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .bold))
-                        Text("Reject")
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text("Expand Details")
                             .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
                     }
-                    .foregroundStyle(WorkstationTheme.textSecondary)
+                    .foregroundStyle(WorkstationTheme.orange)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(WorkstationTheme.cardAlt)
+                    .background(WorkstationTheme.orangeBg)
                     .overlay(
                         RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                            .stroke(WorkstationTheme.orangeBorder, lineWidth: 1)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
                 }
                 .buttonStyle(.plain)
+            }
 
-                Spacer()
-
-                // View Raw Log button
-                Button {
-                    appVM.showConsolePane(forIssueID: issueID)
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .font(.system(size: 10, weight: .semibold))
-                        Text("Raw Log")
-                            .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+            if approvalExpanded {
+                // Expanded details
+                VStack(alignment: .leading, spacing: 8) {
+                    // Command preview if available
+                    if let command = approval.commandPreview, !command.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "terminal")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(WorkstationTheme.textMuted)
+                            Text(command)
+                                .font(WorkstationTheme.Fonts.body(10, weight: .medium).monospaced())
+                                .foregroundStyle(WorkstationTheme.textMuted)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(WorkstationTheme.cardAlt)
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
                     }
-                    .foregroundStyle(WorkstationTheme.textMuted)
+
+                    // Affected files
+                    if !approval.filePreview.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("AFFECTED FILES")
+                                .font(WorkstationTheme.Fonts.label)
+                                .foregroundStyle(WorkstationTheme.textMuted)
+                                .textCase(.uppercase)
+                                .tracking(0.3)
+
+                            ForEach(approval.filePreview.prefix(3), id: \.self) { file in
+                                HStack(spacing: 6) {
+                                    Image(systemName: "doc")
+                                        .font(.system(size: 9, weight: .semibold))
+                                        .foregroundStyle(WorkstationTheme.textMuted)
+                                    Text(file)
+                                        .font(WorkstationTheme.Fonts.body(10))
+                                        .foregroundStyle(WorkstationTheme.textSecondary)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                            }
+                            if approval.filePreview.count > 3 {
+                                Text("+ \(approval.filePreview.count - 3) more")
+                                    .font(WorkstationTheme.Fonts.body(9))
+                                    .foregroundStyle(WorkstationTheme.textMuted)
+                            }
+                        }
+                    }
+
+                    // Action buttons
+                    HStack(spacing: 8) {
+                        // Approve button
+                        Button {
+                            handleApproval(runID: runID, approved: true, forApproval: approval)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 10, weight: .bold))
+                                Text("Approve Once")
+                                    .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                            }
+                            .foregroundStyle(WorkstationTheme.card)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(WorkstationTheme.orange)
+                            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+
+                        // Reject button
+                        Button {
+                            handleApproval(runID: runID, approved: false, forApproval: approval)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 10, weight: .bold))
+                                Text("Reject")
+                                    .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                            }
+                            .foregroundStyle(WorkstationTheme.textSecondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(WorkstationTheme.cardAlt)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                                    .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    // Raw Terminal button
+                    Button {
+                        appVM.showConsolePane(forIssueID: issueID)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "rectangle.on.rectangle.angled")
+                                .font(.system(size: 10, weight: .semibold))
+                            Text("Raw Terminal")
+                                .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                        }
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
-        .padding(10)
-        .background(WorkstationTheme.orangeBg)
-        .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                .stroke(WorkstationTheme.orangeBorder, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+    }
+
+    private func criticalApprovalActions(for approval: AgentApprovalRequest) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Warning message
+            HStack(spacing: 6) {
+                Image(systemName: "hand.raised.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.red)
+                Text("Critical operation — requires explicit confirmation")
+                    .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.red)
+            }
+
+            // Open confirmation sheet button
+            Button {
+                appVM.presentCriticalApprovalConfirmation(for: approval)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.shield")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text("Open Confirmation")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                }
+                .foregroundStyle(WorkstationTheme.card)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(WorkstationTheme.red)
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            // Raw Terminal fallback
+            Button {
+                appVM.showConsolePane(forIssueID: issueID)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "rectangle.on.rectangle.angled")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text("Handle manually in Raw Terminal")
+                        .font(WorkstationTheme.Fonts.body(10, weight: .medium))
+                }
+                .foregroundStyle(WorkstationTheme.textMuted)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Risk-based Color Helpers
+
+    private func riskHeaderColor(for level: ApprovalRiskLevel) -> Color {
+        switch level {
+        case .low, .medium:
+            return WorkstationTheme.orange
+        case .high:
+            return WorkstationTheme.orange
+        case .critical:
+            return WorkstationTheme.red
+        }
+    }
+
+    private func riskCardBackground(for level: ApprovalRiskLevel) -> Color {
+        switch level {
+        case .low, .medium:
+            return WorkstationTheme.orangeBg
+        case .high:
+            return WorkstationTheme.orangeBg
+        case .critical:
+            return WorkstationTheme.redBg
+        }
+    }
+
+    private func riskCardBorder(for level: ApprovalRiskLevel) -> Color {
+        switch level {
+        case .low, .medium:
+            return WorkstationTheme.orangeBorder
+        case .high:
+            return WorkstationTheme.orangeBorder
+        case .critical:
+            return WorkstationTheme.redBorder
+        }
     }
 
     private func riskLevelBadge(_ level: ApprovalRiskLevel) -> some View {
@@ -449,8 +685,33 @@ struct AgentRunTimelineCompactView: View {
 
     // MARK: - Approval Handling
 
-    private func handleApproval(runID: UUID, approved: Bool) {
-        let input = approved ? "y\n" : "n\n"
-        PTYProcessRegistry.shared.writeInput(for: runID, text: input)
+    /// Handles approval action with proper validation following the safety contract.
+    /// - Validates approval is still active and prompt hash matches
+    /// - Transitions state to responding before writing
+    /// - Updates final state based on PTY write success
+    private func handleApproval(runID: UUID, approved: Bool, forApproval approval: AgentApprovalRequest) {
+        // 1. Validate approval is still active in the store
+        guard let activeApproval = AgentTimelineStore.shared.activeApproval(forRunID: runID) else {
+            return
+        }
+
+        // 2. Validate state is still .active (not stale/expired/already responded)
+        guard activeApproval.state == .active else { return }
+
+        // 3. Validate prompt hash matches (prevent stale approvals)
+        guard activeApproval.promptHash == approval.promptHash else { return }
+
+        // 4. Set state to responding
+        AgentTimelineStore.shared.updateApprovalState(forRunID: runID, newState: .responding)
+
+        // 5. Get the appropriate input
+        let input = approved ? approval.proposedInput : approval.rejectInput
+
+        // 6. Write to PTY
+        let success = PTYProcessRegistry.shared.writeInput(for: runID, text: input)
+
+        // 7. Update final state based on write result
+        let finalState: ApprovalState = success ? (approved ? .accepted : .rejected) : .failedToSend
+        AgentTimelineStore.shared.updateApprovalState(forRunID: runID, newState: finalState)
     }
 }

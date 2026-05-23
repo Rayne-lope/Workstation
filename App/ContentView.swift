@@ -37,6 +37,15 @@ struct ContentView: View {
                 QuickCaptureSheet(store: store)
             }
         }
+        .sheet(isPresented: $appVM.isApprovalConfirmationPresented) {
+            if let approval = appVM.pendingCriticalApproval {
+                ApprovalConfirmationSheet(
+                    approval: approval,
+                    onConfirm: { appVM.confirmCriticalApproval() },
+                    onCancel: { appVM.dismissApprovalConfirmation() }
+                )
+            }
+        }
         .preferredColorScheme(colorScheme)
     }
 
