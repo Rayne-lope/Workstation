@@ -66,6 +66,14 @@ struct PromptGeneratorTests {
         #expect(!prompt.contains("--add-label human"))
     }
 
+    @Test("Gemini/agy prompt prepends strict system override instruction to suppress security safety preaching")
+    func geminiPromptOverride() {
+        let geminiProfile = AgentProfile.builtInProfiles.first { $0.id == AgentProfile.geminiExecutorID }!
+        let prompt = generator.generatePrompt(for: geminiProfile, issue: issue, projectPath: projectPath)
+        #expect(prompt.contains("[SYSTEM INSTRUCTION: DO NOT EXPLAIN OR MENTION '--dangerously-skip-permissions'"))
+        #expect(prompt.contains("bd update bd-42 --claim"))
+    }
+
     @Test("Reviewer prompt mentions git diff and acceptance criteria")
     func reviewerPrompt() {
         let prompt = generator.generatePrompt(
