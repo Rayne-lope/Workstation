@@ -42,8 +42,7 @@ struct LiveTerminalDrawer: View {
 
     private var parsedData: ParsedTerminalData {
         let raw = messages.filter { $0.role == .agent }.map(\.content).joined()
-        let stripped = stripANSI(raw)
-        let lines = stripped.components(separatedBy: .newlines)
+        let lines = renderTerminalText(raw)
         
         let mapped = lines.enumerated().map { UITerminalLine(id: $0.offset, text: $0.element) }
         let totalCount = mapped.filter { !$0.text.isEmpty }.count
@@ -363,13 +362,12 @@ struct LiveTerminalDrawer: View {
 
     // MARK: - Helpers
 
-    /// Minimal ANSI escape code stripper
+    /// Minimal ANSI and OSC escape code stripper
     private func stripANSI(_ input: String) -> String {
         var result = ""
         var i = input.startIndex
         while i < input.endIndex {
             if input[i] == "\u{1B}" {
-                // Skip until final byte (letter in range 0x40–0x7E)
                 i = input.index(after: i)
                 if i < input.endIndex && input[i] == "[" {
                     i = input.index(after: i)
@@ -377,6 +375,23 @@ struct LiveTerminalDrawer: View {
                         let c = input[i]
                         i = input.index(after: i)
                         if c.asciiValue.map({ $0 >= 0x40 && $0 <= 0x7E }) == true { break }
+                    }
+                } else if i < input.endIndex && input[i] == "]" {
+                    // OSC sequence: skip until BEL (\u{07}) or ST (\u{1B}\)
+                    i = input.index(after: i)
+                    while i < input.endIndex {
+                        let c = input[i]
+                        if c == "\u{07}" {
+                            i = input.index(after: i)
+                            break
+                        } else if c == "\u{1B}" {
+                            i = input.index(after: i)
+                            if i < input.endIndex && input[i] == "\\" {
+                                i = input.index(after: i)
+                            }
+                            break
+                        }
+                        i = input.index(after: i)
                     }
                 } else {
                     // Other escape sequences — skip one char
@@ -388,6 +403,112 @@ struct LiveTerminalDrawer: View {
             }
         }
         return result
+    }
+
+    /// Simulates a virtual terminal screen by processing backspaces, carriage returns,
+    /// OSC title sequences, and cursor movement sequences (like Cursor Up) to produce a clean list of lines.
+    private func renderTerminalText(_ rawText: String) -> [String] {
+        var lines: [String] = []
+        var currentLine = ""
+        
+        var i = rawText.startIndex
+        var ansiState = 0 // 0 = normal, 1 = esc, 2 = csi, 3 = osc
+        var csiParams = ""
+        
+        while i < rawText.endIndex {
+            let char = rawText[i]
+            i = rawText.index(after: i)
+            
+            if ansiState == 3 { // OSC
+                if char == "\u{07}" {
+                    ansiState = 0
+                } else if char == "\u{1B}" {
+                    if i < rawText.endIndex && rawText[i] == "\\" {
+                        i = rawText.index(after: i)
+                    }
+                    ansiState = 0
+                }
+                continue
+            }
+            
+            if ansiState == 1 { // ESC
+                if char == "[" {
+                    ansiState = 2
+                    csiParams = ""
+                } else if char == "]" {
+                    ansiState = 3
+                } else {
+                    ansiState = 0
+                }
+                continue
+            }
+            
+            if ansiState == 2 { // CSI
+                if let ascii = char.asciiValue, ascii >= 0x40 && ascii <= 0x7E {
+                    ansiState = 0
+                    // Handle CSI command
+                    if char == "A" { // Cursor Up
+                        let clean = csiParams.trimmingCharacters(in: CharacterSet.decimalDigits.inverted)
+                        let count = clean.isEmpty ? 1 : (Int(clean) ?? 1)
+                        for _ in 0..<count {
+                            if !lines.isEmpty {
+                                currentLine = lines.removeLast()
+                            } else {
+                                currentLine = ""
+                            }
+                        }
+                    } else if char == "K" { // Erase in Line
+                        currentLine = ""
+                    } else if char == "J" { // Erase in Display
+                        let clean = csiParams.trimmingCharacters(in: CharacterSet.decimalDigits.inverted)
+                        let mode = clean.isEmpty ? 0 : (Int(clean) ?? 0)
+                        if mode == 2 {
+                            lines.removeAll()
+                            currentLine = ""
+                        }
+                    }
+                } else {
+                    csiParams.append(char)
+                }
+                continue
+            }
+            
+            if char == "\u{1B}" {
+                ansiState = 1
+                continue
+            }
+            
+            if char == "\u{08}" { // Backspace
+                if !currentLine.isEmpty {
+                    currentLine.removeLast()
+                }
+                continue
+            }
+            
+            if char == "\r" {
+                // If followed by \n, let the \n handle it
+                if i < rawText.endIndex && rawText[i] == "\n" {
+                    // skip
+                } else {
+                    currentLine = ""
+                }
+                continue
+            }
+            
+            if char == "\n" {
+                lines.append(currentLine)
+                currentLine = ""
+                continue
+            }
+            
+            currentLine.append(char)
+        }
+        
+        if !currentLine.isEmpty {
+            lines.append(currentLine)
+        }
+        
+        return lines
     }
 
     /// Heuristic color coding for terminal lines

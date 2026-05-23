@@ -89,12 +89,18 @@ final class AppViewModel {
     var localAIConnectionMessage: String?
     var localAIConnectionMessageIsError = false
     var isTestingLocalAIConnection = false
+
+    // Approval confirmation state for critical risk approvals
+    var pendingCriticalApproval: AgentApprovalRequest?
+    var isApprovalConfirmationPresented: Bool = false
+
     private(set) var activeWorkspace: ProjectWorkspace?
     private var activeWorkspaceStorageKey: String?
 
     @ObservationIgnored private var workspaceCancellable: AnyCancellable?
     @ObservationIgnored private var fileWatcher: IssueFileWatcher?
     @ObservationIgnored private var ptyFlushTimers: [UUID: Timer] = [:]
+    @ObservationIgnored private var timelineIngestors: [UUID: AgentTimelineIngestor] = [:]
 
     init(
         shellRunner: ShellCommandRunner = ShellCommandRunner(),
@@ -780,6 +786,49 @@ final class AppViewModel {
         detailPaneMode = .issue
     }
 
+    // MARK: - Approval Confirmation
+
+    /// Presents the confirmation sheet for critical risk approvals.
+    func presentCriticalApprovalConfirmation(for approval: AgentApprovalRequest) {
+        pendingCriticalApproval = approval
+        isApprovalConfirmationPresented = true
+    }
+
+    /// Dismisses the approval confirmation sheet.
+    func dismissApprovalConfirmation() {
+        pendingCriticalApproval = nil
+        isApprovalConfirmationPresented = false
+    }
+
+    /// Confirms a critical approval after user has typed "APPROVE".
+    func confirmCriticalApproval() {
+        guard let approval = pendingCriticalApproval else { return }
+        let runID = approval.runID
+
+        // Validate approval is still active
+        guard let activeApproval = AgentTimelineStore.shared.activeApproval(forRunID: runID) else {
+            dismissApprovalConfirmation()
+            return
+        }
+
+        guard activeApproval.state == .active && activeApproval.promptHash == approval.promptHash else {
+            dismissApprovalConfirmation()
+            return
+        }
+
+        // Set state to responding
+        AgentTimelineStore.shared.updateApprovalState(forRunID: runID, newState: .responding)
+
+        // Write to PTY
+        let success = PTYProcessRegistry.shared.writeInput(for: runID, text: approval.proposedInput)
+
+        // Update final state
+        let finalState: ApprovalState = success ? .accepted : .failedToSend
+        AgentTimelineStore.shared.updateApprovalState(forRunID: runID, newState: finalState)
+
+        dismissApprovalConfirmation()
+    }
+
     func showIssuePane() {
         detailPaneMode = .issue
     }
@@ -960,17 +1009,39 @@ final class AppViewModel {
             ptyFlushTimers.removeValue(forKey: runID)
             return
         }
-        
+
         let pendingText = buffer.take()
         guard !pendingText.isEmpty else { return }
-        
+
         self.appendTranscriptMessage(runID: runID, role: .agent, content: pendingText)
+
+        // Ingest timeline lines for the compact timeline view
+        ingestTimelineLines(for: runID)
+    }
+
+    private func ingestTimelineLines(for runID: UUID) {
+        guard let streamBuffer = PTYProcessRegistry.shared.streamBuffer(for: runID) else { return }
+        let lines = streamBuffer.takeLines()
+        guard !lines.isEmpty else { return }
+
+        let ingestor = timelineIngestors[runID] ?? {
+            let newIngestor = AgentTimelineIngestor(runID: runID)
+            timelineIngestors[runID] = newIngestor
+            return newIngestor
+        }()
+
+        for line in lines {
+            let deltas = ingestor.ingest(line: line)
+            for delta in deltas {
+                AgentTimelineStore.shared.apply(delta: delta, forRunID: runID)
+            }
+        }
     }
 
     private func flushBufferImmediately(runID: UUID) {
         ptyFlushTimers[runID]?.invalidate()
         ptyFlushTimers.removeValue(forKey: runID)
-        
+
         if let buffer = PTYProcessRegistry.shared.buffer(for: runID) {
             let pendingText = buffer.take()
             if !pendingText.isEmpty {
@@ -978,6 +1049,28 @@ final class AppViewModel {
             }
             PTYProcessRegistry.shared.removeBuffer(for: runID)
         }
+
+        // Flush remaining lines from stream buffer and ingest
+        if let streamBuffer = PTYProcessRegistry.shared.streamBuffer(for: runID) {
+            streamBuffer.flush()
+            let lines = streamBuffer.takeLines()
+            if !lines.isEmpty {
+                let ingestor = timelineIngestors[runID] ?? {
+                    let newIngestor = AgentTimelineIngestor(runID: runID)
+                    timelineIngestors[runID] = newIngestor
+                    return newIngestor
+                }()
+                for line in lines {
+                    let deltas = ingestor.ingest(line: line)
+                    for delta in deltas {
+                        AgentTimelineStore.shared.apply(delta: delta, forRunID: runID)
+                    }
+                }
+            }
+        }
+
+        // Remove ingestor to prevent memory leaks
+        timelineIngestors.removeValue(forKey: runID)
     }
 
     func updateTranscriptMessageContent(id: UUID, content: String) {

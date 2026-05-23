@@ -28,6 +28,7 @@ struct IssueDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     titleSection
                     metadataCard
+                    timelineSection
                     detailTabBar
                     selectedTabContent
                 }
@@ -189,6 +190,16 @@ struct IssueDetailView: View {
                 .stroke(WorkstationTheme.border, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+    }
+
+    // MARK: - Timeline Section
+
+    @ViewBuilder
+    private var timelineSection: some View {
+        if let latestRun = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id) {
+            AgentRunTimelineCompactView(appVM: appVM, runID: latestRun.id, issueID: issue.id)
+                .padding(.bottom, 6)
+        }
     }
 
     private var metadataDivider: some View {

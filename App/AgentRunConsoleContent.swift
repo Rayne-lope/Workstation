@@ -237,6 +237,14 @@ struct AgentRunConsoleContent: View {
                     onRevert: { notesDraft = record.notes ?? "" }
                 )
             }
+
+            sectionCard {
+                AgentRunTimelineFullView(
+                    appVM: appVM,
+                    runID: record.id,
+                    issueID: record.issueID
+                )
+            }
         }
     }
 

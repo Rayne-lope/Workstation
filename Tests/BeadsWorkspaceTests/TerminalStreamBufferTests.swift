@@ -147,4 +147,36 @@ struct TerminalStreamBufferTests {
         #expect(lines.count == 1)
         #expect(lines.first?.text == "Hello World")
     }
+    
+    @Test("Stripping OSC sequences and handling backspaces / cursor up")
+    func backspaceOSCAndCursorUp() {
+        let runID = UUID()
+        let buffer = TerminalStreamBuffer(runID: runID, cleanMode: true)
+        
+        // 1. OSC Title Stripping: \u{1B}]0;✳ Claude Code\u{07} or \u{1B}\
+        let oscText = "Hello\u{1B}]0;Title\u{07} World\n"
+        buffer.append(oscText.data(using: .utf8)!)
+        
+        var lines = buffer.takeLines()
+        #expect(lines.count == 1)
+        #expect(lines.first?.text == "Hello World")
+        
+        // 2. Backspace character \u{08} deletes previous char
+        let backspaceText = "Abc\u{08}d\n"
+        buffer.append(backspaceText.data(using: .utf8)!)
+        lines = buffer.takeLines()
+        #expect(lines.count == 1)
+        #expect(lines.first?.text == "Abd")
+        
+        // 3. Cursor Up \u{1B}[1A pops last emitted line
+        buffer.append("Line 1\n".data(using: .utf8)!)
+        buffer.append("Line 2\n".data(using: .utf8)!)
+        // Go up 1 line (removes Line 2)
+        buffer.append("\u{1B}[1AUpdate\n".data(using: .utf8)!)
+        
+        lines = buffer.takeLines()
+        #expect(lines.count == 2)
+        #expect(lines[0].text == "Line 1")
+        #expect(lines[1].text == "Update")
+    }
 }
