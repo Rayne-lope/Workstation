@@ -65,7 +65,7 @@ struct LiveTerminalDrawer: View {
                     }
                     .frame(maxHeight: .infinity)
                     
-                    if isActive {
+                    if isActive || isPTYActive {
                         terminalInputBar
                     }
                 }
@@ -358,6 +358,14 @@ struct LiveTerminalDrawer: View {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(stripped, forType: .string)
+    }
+
+    private var isPTYActive: Bool {
+        #if canImport(BeadsWorkspace)
+        return PTYProcessRegistry.shared.buffer(for: runID) != nil
+        #else
+        return false
+        #endif
     }
 
     // MARK: - Helpers
