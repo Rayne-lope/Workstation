@@ -24,6 +24,10 @@ struct LocalAISettingsPanelView: View {
                     }
                     Divider().overlay(WorkstationTheme.borderSoft)
                     connectionSection
+                    Divider().overlay(WorkstationTheme.borderSoft)
+                    systemPromptSection
+                    Divider().overlay(WorkstationTheme.borderSoft)
+                    tokenUsageSection
                 }
                 .padding(20)
                 .background(WorkstationTheme.card)
@@ -359,5 +363,211 @@ struct LocalAISettingsPanelView: View {
         set: @escaping @Sendable (Value) -> Void
     ) -> Binding<Value> {
         Binding(get: get, set: set)
+    }
+
+    private var systemPromptSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+                    .font(.system(size: 14))
+                Text("Copilot System Prompt")
+                    .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+            }
+
+            Text("Override the default system prompt to customize the AI's tone, framework versions, or coding styles.")
+                .font(WorkstationTheme.Fonts.body(11))
+                .foregroundStyle(WorkstationTheme.textMuted)
+                .lineSpacing(2)
+
+            TextEditor(text: binding(
+                get: { settings.copilotSystemPrompt },
+                set: { appVM.setLocalAICopilotSystemPrompt($0) }
+            ))
+            .font(.system(size: 12, design: .monospaced))
+            .foregroundStyle(WorkstationTheme.textPrimary)
+            .padding(6)
+            .frame(height: 90)
+            .scrollContentBackground(.hidden)
+            .background(WorkstationTheme.cardAlt)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+
+            // Presets
+            HStack(spacing: 8) {
+                Text("Presets:")
+                    .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+                
+                presetButton(title: "Standard", prompt: "")
+                presetButton(title: "Concise Developer", prompt: "You are a senior developer. Provide concise, direct code solutions with zero conversational filler. Focus entirely on clean Swift code.")
+                presetButton(title: "Detailed Mentor", prompt: "You are an empathetic programming mentor. Provide detailed, step-by-step explanations, call out architectural considerations, and suggest safety improvements.")
+            }
+        }
+        .opacity(settings.isEnabled ? 1 : 0.45)
+        .animation(.easeInOut(duration: 0.2), value: settings.isEnabled)
+    }
+
+    private func presetButton(title: String, prompt: String) -> some View {
+        Button {
+            appVM.setLocalAICopilotSystemPrompt(prompt)
+        } label: {
+            Text(title)
+                .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(settings.copilotSystemPrompt == prompt ? WorkstationTheme.accent.opacity(0.15) : WorkstationTheme.cardAlt)
+                .foregroundStyle(settings.copilotSystemPrompt == prompt ? WorkstationTheme.accent : WorkstationTheme.textSecondary)
+                .cornerRadius(WorkstationTheme.Radius.small)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                        .stroke(settings.copilotSystemPrompt == prompt ? WorkstationTheme.accent : WorkstationTheme.borderSoft, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var tokenUsageSection: some View {
+        let totalConsumed = settings.totalPromptTokens + settings.totalCompletionTokens
+        let budget = settings.copilotTokenBudget > 0 ? settings.copilotTokenBudget : 50000
+        let percent = Double(totalConsumed) / Double(budget)
+        
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "gauge")
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+                    .font(.system(size: 14))
+                Text("Token Usage & Budget")
+                    .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Usage Tracker")
+                            .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                            .foregroundStyle(WorkstationTheme.textSecondary)
+                        HStack(spacing: 8) {
+                            Text("Prompt: \(settings.totalPromptTokens)")
+                            Text("•")
+                                .foregroundStyle(WorkstationTheme.textDisabled)
+                            Text("Completion: \(settings.totalCompletionTokens)")
+                        }
+                        .font(WorkstationTheme.Fonts.body(11))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        appVM.resetLocalAITokenUsage()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 10))
+                            Text("Reset Usage")
+                        }
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.red)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                // Progress Bar
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(WorkstationTheme.cardAlt)
+                            .frame(height: 8)
+                        
+                        Capsule()
+                            .fill(percent >= 1.0 ? WorkstationTheme.red : (percent >= 0.8 ? WorkstationTheme.accent : WorkstationTheme.green))
+                            .frame(width: geo.size.width * CGFloat(min(percent, 1.0)), height: 8)
+                    }
+                }
+                .frame(height: 8)
+
+                HStack {
+                    Text("\(totalConsumed) of \(budget) tokens consumed (\(Int(percent * 100))%)")
+                        .font(WorkstationTheme.Fonts.body(11))
+                        .foregroundStyle(WorkstationTheme.textMuted)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 6) {
+                        Text("Budget Limit:")
+                            .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                            .foregroundStyle(WorkstationTheme.textSecondary)
+                        
+                        TextField("50000", text: binding(
+                            get: { String(settings.copilotTokenBudget) },
+                            set: {
+                                if let val = Int($0) {
+                                    appVM.setLocalAICopilotTokenBudget(max(0, val))
+                                }
+                            }
+                        ))
+                        .font(WorkstationTheme.Fonts.body(11))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .frame(width: 60)
+                        .background(WorkstationTheme.cardAlt)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                                .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                    }
+                }
+
+                if percent >= 1.0 {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "exclamationmark.octagon.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(WorkstationTheme.red)
+                            .padding(.top, 1)
+                        Text("Token budget limit reached! Please increase your budget or reset usage counters.")
+                            .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                            .foregroundStyle(WorkstationTheme.red)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(10)
+                    .background(WorkstationTheme.redBg.opacity(0.15))
+                    .cornerRadius(WorkstationTheme.Radius.medium)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(WorkstationTheme.redBorder.opacity(0.3), lineWidth: 1)
+                    )
+                } else if percent >= 0.8 {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(WorkstationTheme.accent)
+                            .padding(.top, 1)
+                        Text("Approaching token budget limit! (\(Int(percent * 100))% used). You can increase your budget or reset usage counters above.")
+                            .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                            .foregroundStyle(WorkstationTheme.accent)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(10)
+                    .background(WorkstationTheme.accent.opacity(0.1))
+                    .cornerRadius(WorkstationTheme.Radius.medium)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(WorkstationTheme.accentBorder.opacity(0.3), lineWidth: 1)
+                    )
+                }
+            }
+        }
+        .opacity(settings.isEnabled ? 1 : 0.45)
+        .animation(.easeInOut(duration: 0.2), value: settings.isEnabled)
     }
 }

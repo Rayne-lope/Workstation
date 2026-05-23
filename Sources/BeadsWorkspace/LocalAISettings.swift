@@ -37,6 +37,10 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
     public var fastModel: String
     public var strongModel: String
     public var apiKey: String
+    public var copilotSystemPrompt: String
+    public var totalPromptTokens: Int
+    public var totalCompletionTokens: Int
+    public var copilotTokenBudget: Int
 
     public static func loadDefaultAPIKey() -> String {
         let home = NSHomeDirectory()
@@ -56,7 +60,11 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
         baseURL: String = LocalAISettings.defaultBaseURL,
         fastModel: String = LocalAISettings.defaultFastModel,
         strongModel: String = LocalAISettings.defaultStrongModel,
-        apiKey: String = ""
+        apiKey: String = "",
+        copilotSystemPrompt: String = "",
+        totalPromptTokens: Int = 0,
+        totalCompletionTokens: Int = 0,
+        copilotTokenBudget: Int = 50000
     ) {
         self.isEnabled = isEnabled
         self.provider = provider
@@ -64,6 +72,10 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
         self.fastModel = fastModel
         self.strongModel = strongModel
         self.apiKey = apiKey.isEmpty ? Self.loadDefaultAPIKey() : apiKey
+        self.copilotSystemPrompt = copilotSystemPrompt
+        self.totalPromptTokens = totalPromptTokens
+        self.totalCompletionTokens = totalCompletionTokens
+        self.copilotTokenBudget = copilotTokenBudget
     }
 
     enum CodingKeys: String, CodingKey {
@@ -73,6 +85,10 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
         case fastModel
         case strongModel
         case apiKey
+        case copilotSystemPrompt
+        case totalPromptTokens
+        case totalCompletionTokens
+        case copilotTokenBudget
     }
 
     public init(from decoder: Decoder) throws {
@@ -101,6 +117,11 @@ public struct LocalAISettings: Codable, Equatable, Sendable {
         
         let rawKey = try c.decodeIfPresent(String.self, forKey: .apiKey) ?? ""
         apiKey = rawKey.isEmpty ? Self.loadDefaultAPIKey() : rawKey
+        
+        copilotSystemPrompt = try c.decodeIfPresent(String.self, forKey: .copilotSystemPrompt) ?? ""
+        totalPromptTokens = try c.decodeIfPresent(Int.self, forKey: .totalPromptTokens) ?? 0
+        totalCompletionTokens = try c.decodeIfPresent(Int.self, forKey: .totalCompletionTokens) ?? 0
+        copilotTokenBudget = try c.decodeIfPresent(Int.self, forKey: .copilotTokenBudget) ?? 50000
     }
 
     public func apiRootURL() -> URL? {

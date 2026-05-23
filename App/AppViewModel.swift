@@ -46,6 +46,9 @@ final class AppViewModel {
     private let terminalLauncher: any TerminalLaunching
     private let agentLaunchFlowCoordinator: AgentLaunchFlowCoordinator
 
+    var sessionPromptTokens: Int = 0
+    var sessionCompletionTokens: Int = 0
+
     var viewMode: BoardViewMode = .list
     var selectedAgentProfileID: UUID = AgentProfile.codingExecutorID
 
@@ -117,6 +120,25 @@ final class AppViewModel {
             terminalLauncher: terminalLauncher,
             commandRunner: shellRunner
         )
+        
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("ComBeadsAppTokenUsageNotification"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let userInfo = notification.userInfo,
+                  let prompt = userInfo["promptTokens"] as? Int,
+                  let completion = userInfo["completionTokens"] as? Int else {
+                return
+            }
+            self.sessionPromptTokens += prompt
+            self.sessionCompletionTokens += completion
+            self.preferencesStore.update { prefs in
+                prefs.localAI.totalPromptTokens += prompt
+                prefs.localAI.totalCompletionTokens += completion
+            }
+        }
     }
 
     func bind(workspaceVM: WorkspaceViewModel) {
@@ -520,6 +542,21 @@ final class AppViewModel {
     func setLocalAIAPIKey(_ apiKey: String) {
         preferencesStore.update { $0.localAI.apiKey = apiKey }
         clearLocalAIConnectionStatus()
+    }
+
+    func setLocalAICopilotSystemPrompt(_ prompt: String) {
+        preferencesStore.update { $0.localAI.copilotSystemPrompt = prompt }
+    }
+
+    func setLocalAICopilotTokenBudget(_ budget: Int) {
+        preferencesStore.update { $0.localAI.copilotTokenBudget = budget }
+    }
+
+    func resetLocalAITokenUsage() {
+        preferencesStore.update {
+            $0.localAI.totalPromptTokens = 0
+            $0.localAI.totalCompletionTokens = 0
+        }
     }
 
     // MARK: - Settings

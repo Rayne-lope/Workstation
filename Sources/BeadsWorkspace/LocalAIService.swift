@@ -108,11 +108,23 @@ public struct LocalAIService: Sendable {
             throw LocalAIServiceError.missingAPIKey(settings.provider.displayName)
         }
 
+        let systemPrompt: String
+        switch action {
+        case .copilot:
+            if !settings.copilotSystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                systemPrompt = settings.copilotSystemPrompt
+            } else {
+                systemPrompt = action.systemPrompt
+            }
+        default:
+            systemPrompt = action.systemPrompt
+        }
+
         return LocalAIRequest(
             baseURL: apiRootURL,
             model: model,
             prompt: prompt,
-            system: action.systemPrompt,
+            system: systemPrompt,
             stream: stream,
             apiKey: apiKey.isEmpty ? nil : apiKey
         )

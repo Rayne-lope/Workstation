@@ -66,6 +66,15 @@ public final class OpenCodeService: LocalAIProviding, @unchecked Sendable {
             guard !text.isEmpty else {
                 throw OpenCodeServiceError.invalidResponse
             }
+            
+            if let usage = payload.usage {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("ComBeadsAppTokenUsageNotification"),
+                    object: nil,
+                    userInfo: ["promptTokens": usage.promptTokens, "completionTokens": usage.completionTokens]
+                )
+            }
+            
             return text
         } catch let error as OpenCodeServiceError {
             throw error
@@ -138,8 +147,27 @@ public struct OpenCodeMessage: Codable {
     }
 }
 
+public struct OpenCodeUsage: Codable, Equatable, Sendable {
+    public let promptTokens: Int
+    public let completionTokens: Int
+    public let totalTokens: Int
+
+    enum CodingKeys: String, CodingKey {
+        case promptTokens = "prompt_tokens"
+        case completionTokens = "completion_tokens"
+        case totalTokens = "total_tokens"
+    }
+
+    public init(promptTokens: Int, completionTokens: Int, totalTokens: Int) {
+        self.promptTokens = promptTokens
+        self.completionTokens = completionTokens
+        self.totalTokens = totalTokens
+    }
+}
+
 private struct OpenCodeChatCompletionResponse: Decodable {
     let choices: [OpenCodeChoice]
+    let usage: OpenCodeUsage?
 }
 
 private struct OpenCodeChoice: Decodable {

@@ -322,6 +322,25 @@ struct WorkflowCopilotPane: View {
             Text("Copilot")
                 .font(WorkstationTheme.Fonts.display(18, weight: .heavy))
                 .foregroundStyle(WorkstationTheme.textPrimary)
+            
+            if appVM.sessionPromptTokens > 0 || appVM.sessionCompletionTokens > 0 {
+                HStack(spacing: 4) {
+                    Image(systemName: "gauge")
+                        .font(.system(size: 9))
+                    Text("Session: \(appVM.sessionPromptTokens + appVM.sessionCompletionTokens) tkn")
+                }
+                .font(WorkstationTheme.Fonts.body(9, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.textMuted)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(WorkstationTheme.cardAlt)
+                .cornerRadius(WorkstationTheme.Radius.small)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                        .stroke(WorkstationTheme.borderSoft, lineWidth: 1)
+                )
+            }
+            
             Spacer()
             if isSending || isGeneratingPRDDrafts || isCreatingPRDDrafts {
                 ProgressView()
@@ -332,6 +351,8 @@ struct WorkflowCopilotPane: View {
                 Button {
                     appVM.copilotTranscriptStore.clear(forIssueID: currentIssueID)
                     self.messages = []
+                    appVM.sessionPromptTokens = 0
+                    appVM.sessionCompletionTokens = 0
                 } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 11))
