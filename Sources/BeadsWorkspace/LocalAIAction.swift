@@ -231,7 +231,8 @@ public enum LocalAIAction: Equatable, Sendable {
             "- Title: \(issue.title)"
         ]
         if let status = issue.status, !status.isEmpty {
-            lines.append("- Status: \(status)")
+            let displayStatus = (status == "in_progress" && issue.labels?.contains("human") == true) ? "review" : status
+            lines.append("- Status: \(displayStatus)")
         }
         if let priority = issue.priority {
             lines.append("- Priority: \(priority)")

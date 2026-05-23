@@ -44,7 +44,7 @@ struct IssueDetailView: View {
             Text("Issue / ")
                 .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                 .foregroundStyle(WorkstationTheme.textSubtle)
-            + Text(issue.status ?? "open")
+            + Text(displayStatus)
                 .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                 .foregroundStyle(statusColor)
 
@@ -125,7 +125,7 @@ struct IssueDetailView: View {
                     Circle()
                         .fill(statusColor)
                         .frame(width: 7, height: 7)
-                    Text(issue.status ?? "open")
+                    Text(displayStatus)
                         .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
                         .foregroundStyle(statusColor)
                 }
@@ -972,7 +972,17 @@ struct IssueDetailView: View {
         return formatter.string(from: date)
     }
 
+    private var displayStatus: String {
+        if issue.labels?.contains("human") == true {
+            return "review"
+        }
+        return issue.status ?? "open"
+    }
+
     private var statusColor: Color {
+        if issue.labels?.contains("human") == true {
+            return WorkstationTheme.blue
+        }
         switch issue.status {
         case "closed":
             return WorkstationTheme.green
