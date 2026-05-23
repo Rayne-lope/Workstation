@@ -7,6 +7,7 @@ struct IssueCardView: View {
     let isSelected: Bool
     let hasUnknownStatus: Bool
     var isBlockedByDependency: Bool = false
+    var isCompact: Bool = false
 
     @State private var isHovering = false
 
@@ -25,16 +26,16 @@ struct IssueCardView: View {
             }
 
             tagRow
-                .padding(.bottom, 10)
+                .padding(.bottom, isCompact ? 6 : 10)
 
             Text(issue.title)
                 .font(WorkstationTheme.Fonts.display(13, weight: .semibold))
                 .foregroundStyle(WorkstationTheme.textPrimary)
-                .lineLimit(3)
+                .lineLimit(isCompact ? 2 : 3)
                 .lineSpacing(2)
                 .multilineTextAlignment(.leading)
 
-            if let description = issue.description, !description.isEmpty {
+            if !isCompact, let description = issue.description, !description.isEmpty {
                 markdownPreview(description)
                     .foregroundStyle(WorkstationTheme.textMuted)
                     .lineLimit(2)
@@ -44,14 +45,14 @@ struct IssueCardView: View {
 
             if hasUnknownStatus, let status = issue.status {
                 unknownStatusBadge(status)
-                    .padding(.top, 10)
+                    .padding(.top, isCompact ? 6 : 10)
             }
 
             footer
-                .padding(.top, 14)
+                .padding(.top, isCompact ? 10 : 14)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, isCompact ? 12 : 16)
+        .padding(.vertical, isCompact ? 10 : 14)
         .background(WorkstationTheme.card)
         .overlay(
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)

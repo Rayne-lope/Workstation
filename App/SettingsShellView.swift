@@ -49,6 +49,8 @@ struct SettingsShellView: View {
             GeneralSettingsPanelView(appVM: appVM)
         case .defaults:
             DefaultsSettingsPanelView(appVM: appVM)
+        case .board:
+            BoardSettingsPanelView(appVM: appVM)
         case .localAI:
             LocalAISettingsPanelView(appVM: appVM)
         case .agentProfiles:

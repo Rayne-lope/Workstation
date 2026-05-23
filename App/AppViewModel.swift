@@ -586,6 +586,10 @@ final class AppViewModel {
         preferencesStore.update { $0.theme = theme }
     }
 
+    func setKanbanCompactMode(_ value: Bool) {
+        preferencesStore.update { $0.kanbanCompactMode = value }
+    }
+
     func resetSettingsToDefaults() {
         preferencesStore.resetToDefaults()
         agentProfileStore.resetToDefaults()

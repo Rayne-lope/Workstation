@@ -87,4 +87,53 @@ struct SettingsTabTests {
             #expect(tab.id == tab.rawValue)
         }
     }
+
+    @Test("Board tab has correct label and icon")
+    func boardTabHasCorrectLabelAndIcon() {
+        #expect(SettingsTab.board.label == "Board")
+        #expect(SettingsTab.board.icon == "square.grid.2x2")
+    }
+}
+
+@Suite("AppPreferences KanbanCompactMode")
+struct AppPreferencesKanbanCompactModeTests {
+    @Test("Default kanbanCompactMode is false")
+    func defaultIsFalse() {
+        let prefs = AppPreferences()
+        #expect(prefs.kanbanCompactMode == false)
+    }
+
+    @Test("kanbanCompactMode can be set and encoded")
+    func setAndEncode() throws {
+        var prefs = AppPreferences()
+        prefs.kanbanCompactMode = true
+        let data = try JSONEncoder().encode(prefs)
+        let decoded = try JSONDecoder().decode(AppPreferences.self, from: data)
+        #expect(decoded.kanbanCompactMode == true)
+    }
+
+    @Test("Legacy JSON without kanbanCompactMode decodes with false default")
+    func legacyJSONDefaultsToFalse() throws {
+        let json = """
+        {
+            "autoRestoreOnLaunch": true,
+            "autoReloadEnabled": true,
+            "defaultIssueType": "task",
+            "defaultIssuePriority": 2,
+            "defaultCloseReasonTemplate": "",
+            "doneVisibilityWindowSeconds": 86400,
+            "filterState": {},
+            "localAI": {
+                "isEnabled": false,
+                "provider": "ollama",
+                "baseURL": "http://localhost:11434",
+                "fastModel": "qwen2.5-coder:3b",
+                "strongModel": "qwen2.5-coder:7b"
+            }
+        }
+        """
+        let data = json.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(AppPreferences.self, from: data)
+        #expect(decoded.kanbanCompactMode == false)
+    }
 }

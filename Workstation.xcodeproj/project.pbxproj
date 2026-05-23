@@ -123,6 +123,7 @@
 		F6D5AA568EB30667CC8DFFD5 /* AgentLaunchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719C5EBB688AF23196D5730B /* AgentLaunchState.swift */; };
 		F75546CC5E1ECC49645B16A3 /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A058CE86AB9D21A90D4AC4A4 /* IssueDetailView.swift */; };
 		F75F5048B5508E9CF98EACCC /* GitDirtyLaunchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 318566DC37E0E0C6C999E40A /* GitDirtyLaunchSheet.swift */; };
+		F99B6B118AB4906EF1FBDA1F /* BoardSettingsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9763854D4ECC37DED10DA33A /* BoardSettingsPanelView.swift */; };
 		FD95960F5160696403B26C3F /* LocalAISuggestionPreviewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F061841017E55D4A9256432 /* LocalAISuggestionPreviewState.swift */; };
 		FEF2BD0CF88AD11189CC4372 /* DebugPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECE704832A64B678F0BB590 /* DebugPanelView.swift */; };
 /* End PBXBuildFile section */
@@ -205,6 +206,7 @@
 		911B6D15106586722D5B61D2 /* WorkspaceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceDetailView.swift; sourceTree = "<group>"; };
 		91AB24534E62FA06AB8B1E0B /* claude-logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "claude-logo.png"; sourceTree = "<group>"; };
 		96D973E9BF68711E221A24DA /* LocalAISettingsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISettingsPanelView.swift; sourceTree = "<group>"; };
+		9763854D4ECC37DED10DA33A /* BoardSettingsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardSettingsPanelView.swift; sourceTree = "<group>"; };
 		9A30CDDE4D146850577F7904 /* deepseek.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = deepseek.png; sourceTree = "<group>"; };
 		9A88CC42EF5FF51ECCC44DF4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9D1634AE4431DCFC838CA764 /* DMSans-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Variable.ttf"; sourceTree = "<group>"; };
@@ -390,6 +392,7 @@
 				B1E9765ACEE853F40158ABDF /* AssigneeBadgeView.swift */,
 				B01758201DDED6F10E09FA31 /* BadgeView.swift */,
 				888BE52E8A89EAA938999978 /* BlockerPickerSheet.swift */,
+				9763854D4ECC37DED10DA33A /* BoardSettingsPanelView.swift */,
 				ACB1EB4ED6437C458FE5DD39 /* BoardSidebarView.swift */,
 				CACB98D4B69C298D839DA750 /* BoardView.swift */,
 				55633AD1FD16E43D9B4A0EEB /* BulkActionPanel.swift */,
@@ -537,6 +540,7 @@
 				2AD3D55FB0981AF24D6C8C31 /* BeadsJSONDecoder.swift in Sources */,
 				29C2C42B6C5196F53287C343 /* BeadsService.swift in Sources */,
 				1B028222CCA651471B9754F5 /* BlockerPickerSheet.swift in Sources */,
+				F99B6B118AB4906EF1FBDA1F /* BoardSettingsPanelView.swift in Sources */,
 				5C3457B6E50903A055CFD460 /* BoardSidebarView.swift in Sources */,
 				33A66E85475E89220AF64A8C /* BoardView.swift in Sources */,
 				0BF9773E5F52DBBB6AFCAA75 /* BulkActionPanel.swift in Sources */,

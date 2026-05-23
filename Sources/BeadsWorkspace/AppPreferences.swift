@@ -13,6 +13,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
     public var theme: AppTheme
     public var filterState: [String: FilterState]
     public var localAI: LocalAISettings
+    public var kanbanCompactMode: Bool
 
     public init(
         lastSelectedPath: String? = nil,
@@ -24,7 +25,8 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         doneVisibilityWindowSeconds: TimeInterval = AppPreferences.defaultDoneVisibilityWindowSeconds,
         theme: AppTheme = .system,
         filterState: [String: FilterState] = [:],
-        localAI: LocalAISettings = LocalAISettings()
+        localAI: LocalAISettings = LocalAISettings(),
+        kanbanCompactMode: Bool = false
     ) {
         self.lastSelectedPath = lastSelectedPath
         self.autoRestoreOnLaunch = autoRestoreOnLaunch
@@ -36,6 +38,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         self.theme = theme
         self.filterState = filterState
         self.localAI = localAI
+        self.kanbanCompactMode = kanbanCompactMode
     }
 
     enum CodingKeys: String, CodingKey {
@@ -49,6 +52,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         case theme
         case filterState
         case localAI
+        case kanbanCompactMode
     }
 
     public init(from decoder: Decoder) throws {
@@ -64,5 +68,6 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         theme = try c.decodeIfPresent(AppTheme.self, forKey: .theme) ?? .system
         filterState = try c.decodeIfPresent([String: FilterState].self, forKey: .filterState) ?? [:]
         localAI = try c.decodeIfPresent(LocalAISettings.self, forKey: .localAI) ?? LocalAISettings()
+        kanbanCompactMode = try c.decodeIfPresent(Bool.self, forKey: .kanbanCompactMode) ?? false
     }
 }

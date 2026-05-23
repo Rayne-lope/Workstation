@@ -9,6 +9,10 @@ struct KanbanBoardView: View {
 
     @State private var hoverTargetColumn: KanbanColumn?
 
+    private var isCompact: Bool {
+        appVM.preferencesStore.preferences.kanbanCompactMode
+    }
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: true) {
             HStack(alignment: .top, spacing: 16) {
@@ -45,7 +49,8 @@ struct KanbanBoardView: View {
                                 profiles: profiles,
                                 isSelected: store.selectedIssueIDs.contains(issue.id),
                                 hasUnknownStatus: store.hasUnknownStatus(issue),
-                                isBlockedByDependency: store.blockedByDependencyIDs.contains(issue.id)
+                                isBlockedByDependency: store.blockedByDependencyIDs.contains(issue.id),
+                                isCompact: isCompact
                             )
                         }
                         .buttonStyle(.plain)
@@ -57,7 +62,8 @@ struct KanbanBoardView: View {
                                 profiles: profiles,
                                 isSelected: false,
                                 hasUnknownStatus: false,
-                                isBlockedByDependency: false
+                                isBlockedByDependency: false,
+                                isCompact: isCompact
                             )
                             .frame(width: 280)
                             .opacity(0.7)
