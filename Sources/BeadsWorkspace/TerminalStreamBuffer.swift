@@ -10,12 +10,14 @@ public final class TerminalStreamBuffer: @unchecked Sendable {
     private var lineBuffer = ""
     private var pendingCarriageReturn = false
     private var ansiState: ANSIState = .normal
+    private var csiParams = ""
     private var lines: [TerminalLine] = []
     
     private enum ANSIState: Sendable {
         case normal
         case esc
         case csi
+        case osc
     }
     
     public init(runID: UUID, cleanMode: Bool = true) {
@@ -106,7 +108,21 @@ public final class TerminalStreamBuffer: @unchecked Sendable {
             let char = chars[idx]
             idx += 1
             
-            // ANSI Stripping in Clean Mode
+            // OSC state handling
+            if cleanMode && ansiState == .osc {
+                if char == "\u{07}" {
+                    ansiState = .normal
+                } else if char == "\u{1B}" {
+                    // Check if it's followed by \ (ST)
+                    if idx < chars.count && chars[idx] == "\\" {
+                        idx += 1
+                    }
+                    ansiState = .normal
+                }
+                continue
+            }
+            
+            // ESC and CSI state handling
             if cleanMode {
                 switch ansiState {
                 case .normal:
@@ -117,6 +133,9 @@ public final class TerminalStreamBuffer: @unchecked Sendable {
                 case .esc:
                     if char == "[" {
                         ansiState = .csi
+                        csiParams = ""
+                    } else if char == "]" {
+                        ansiState = .osc
                     } else {
                         ansiState = .normal
                     }
@@ -124,9 +143,24 @@ public final class TerminalStreamBuffer: @unchecked Sendable {
                 case .csi:
                     if let ascii = char.asciiValue, ascii >= 0x40 && ascii <= 0x7E {
                         ansiState = .normal
+                        // Handle the CSI command
+                        handleCSICommand(char, params: csiParams)
+                    } else {
+                        csiParams.append(char)
                     }
                     continue
+                case .osc:
+                    // Already handled above
+                    continue
                 }
+            }
+            
+            // Backspace handling
+            if cleanMode && char == "\u{08}" {
+                if !lineBuffer.isEmpty {
+                    lineBuffer.removeLast()
+                }
+                continue
             }
             
             // Carriage return and line feed handling
@@ -158,5 +192,33 @@ public final class TerminalStreamBuffer: @unchecked Sendable {
                 lineBuffer.append(char)
             }
         }
+    }
+    
+    private func handleCSICommand(_ command: Character, params: String) {
+        switch command {
+        case "A": // Cursor Up
+            let count = parseNumericParam(params, defaultVal: 1)
+            for _ in 0..<count {
+                if !lines.isEmpty {
+                    lines.removeLast()
+                }
+            }
+        case "K": // Erase in Line
+            lineBuffer = ""
+        case "J": // Erase in Display
+            let mode = parseNumericParam(params, defaultVal: 0)
+            if mode == 2 {
+                lines.removeAll()
+                lineBuffer = ""
+            }
+        default:
+            break
+        }
+    }
+    
+    private func parseNumericParam(_ params: String, defaultVal: Int) -> Int {
+        let clean = params.trimmingCharacters(in: CharacterSet.decimalDigits.inverted)
+        if clean.isEmpty { return defaultVal }
+        return Int(clean) ?? defaultVal
     }
 }
