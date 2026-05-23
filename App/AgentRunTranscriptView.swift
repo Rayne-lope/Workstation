@@ -221,9 +221,21 @@ private struct AgentRunTranscriptEntryView: View {
                             .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+            } else if message.role == .agent {
+                let lines = message.content.components(separatedBy: .newlines)
+                let displayLines = lines.suffix(300)
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(displayLines.enumerated()), id: \.offset) { _, line in
+                        Text(line)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(WorkstationTheme.textPrimary)
+                            .textSelection(.enabled)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 Text(message.content)
-                    .font(.system(size: 12, design: message.role == .agent ? .monospaced : .default))
+                    .font(.system(size: 12, design: .default))
                     .foregroundStyle(WorkstationTheme.textPrimary)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)

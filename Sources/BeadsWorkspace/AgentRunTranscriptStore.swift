@@ -6,6 +6,7 @@ import Observation
 public final class AgentRunTranscriptStore {
     public private(set) var messages: [AgentRunMessage] = []
     public private(set) var errorMessage: String?
+    public var skipPersist: Bool = false
 
     private let fileManager: FileManager
     private let fileURL: URL
@@ -103,6 +104,13 @@ public final class AgentRunTranscriptStore {
         errorMessage = nil
     }
 
+    public func forcePersist() {
+        let original = skipPersist
+        skipPersist = false
+        persist()
+        skipPersist = original
+    }
+
     private func load() {
         guard fileManager.fileExists(atPath: fileURL.path) else {
             messages = []
@@ -121,6 +129,7 @@ public final class AgentRunTranscriptStore {
     }
 
     private func persist() {
+        guard !skipPersist else { return }
         do {
             let directory = fileURL.deletingLastPathComponent()
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)

@@ -157,6 +157,7 @@ final class AppViewModel {
                   let text = userInfo["text"] as? String else {
                 return
             }
+            self.agentRunTranscriptStore.skipPersist = true
             self.bufferAndScheduleFlush(runID: runID, text: text)
         }
 
@@ -171,6 +172,8 @@ final class AppViewModel {
                 return
             }
             self.flushBufferImmediately(runID: runID)
+            self.agentRunTranscriptStore.skipPersist = false
+            self.agentRunTranscriptStore.forcePersist()
             let exitCode = userInfo["exitCode"] as? Int ?? 0
             if exitCode == 0 {
                 self.updateAgentRunStatus(id: runID, status: .needsReview)
