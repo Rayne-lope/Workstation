@@ -139,8 +139,12 @@ public final class PTYRunner: @unchecked Sendable {
         process.currentDirectoryURL = projectURL
         
         var env = ProcessInfo.processInfo.environment
-        env["TERM"] = "xterm-256color"
-        env["CLAUDE_COLOR"] = "1"
+        env["TERM"] = "dumb"
+        env["NO_COLOR"] = "1"
+        env["CLICOLOR"] = "0"
+        env["CLICOLOR_FORCE"] = "0"
+        env["FORCE_COLOR"] = "0"
+        env["CLAUDE_COLOR"] = "0"
         process.environment = env
         
         // Connect FDs using FileHandle

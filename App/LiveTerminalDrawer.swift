@@ -16,10 +16,11 @@ struct LiveTerminalDrawer: View {
     @State private var autoScroll: Bool = true
     @State private var scrollProxy: ScrollViewProxy? = nil
 
-    // Pull all agent log lines from coalesced messages
+    // Pull all agent log lines from coalesced messages and strip ANSI escape sequences
     private var logLines: [String] {
         let raw = messages.filter { $0.role == .agent }.map(\.content).joined()
-        return raw.components(separatedBy: .newlines)
+        let stripped = stripANSI(raw)
+        return stripped.components(separatedBy: .newlines)
     }
 
     var body: some View {
@@ -161,13 +162,12 @@ struct LiveTerminalDrawer: View {
 
     @ViewBuilder
     private func terminalLine(_ line: String, index: Int) -> some View {
-        let stripped = stripANSI(line)
-        if stripped.isEmpty && line.isEmpty {
+        if line.isEmpty {
             Color.clear.frame(height: 4)
         } else {
-            Text(stripped.isEmpty ? " " : stripped)
+            Text(line)
                 .font(.system(size: 11, weight: .regular, design: .monospaced))
-                .foregroundStyle(terminalLineColor(line: stripped, raw: line))
+                .foregroundStyle(terminalLineColor(line: line, raw: line))
                 .lineSpacing(2)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
