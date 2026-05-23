@@ -227,6 +227,58 @@ struct LocalAIServiceTests {
         let body3 = OpenCodeChatCompletionRequestBody(from: request3)
         #expect(body3.model == "custom-model")
     }
+
+    @Test("buildRequest routes draftCommitMessage to the strong model tier")
+    func buildRequestRoutesDraftCommitMessage() throws {
+        let settings = LocalAISettings(
+            isEnabled: true,
+            baseURL: "https://opencode.ai/zen/go/v1",
+            fastModel: "fast-model",
+            strongModel: "strong-model",
+            apiKey: "dummy-key"
+        )
+        let service = LocalAIService(provider: RecordingProvider())
+
+        let request = try service.buildRequest(
+            for: .draftCommitMessage(
+                worktreeURL: "/path/to/worktree",
+                diffSummary: "M Sources/App.swift\nA Sources/New.swift",
+                diff: "diff --git a/Sources/App.swift b/Sources/App.swift\n--- a/Sources/App.swift\n+++ b/Sources/App.swift\n@@ -1,5 +1,7 @@\n+import NewModule",
+                lastCommit: "feat: add auth module"
+            ),
+            settings: settings
+        )
+
+        #expect(request.model == "strong-model")
+        #expect(request.prompt.contains("Generate a commit message for this worktree"))
+        #expect(request.prompt.contains("/path/to/worktree"))
+        #expect(request.prompt.contains("M Sources/App.swift"))
+        #expect(request.prompt.contains("feat: add auth module"))
+        #expect(request.prompt.contains("Conventional Commits"))
+        #expect(request.system?.contains("professional commit message generator") == true)
+    }
+
+    @Test("draftCommitMessage system prompt has strict formatting rules")
+    func draftCommitMessageSystemPromptIsStrict() throws {
+        let settings = LocalAISettings(
+            isEnabled: true,
+            apiKey: "dummy-key"
+        )
+        let service = LocalAIService(provider: RecordingProvider())
+
+        let request = try service.buildRequest(
+            for: .draftCommitMessage(
+                worktreeURL: "/test/worktree",
+                diffSummary: "M README.md",
+                diff: "diff content",
+                lastCommit: nil
+            ),
+            settings: settings
+        )
+
+        #expect(request.system?.contains("type(scope): short description") == true)
+        #expect(request.system?.contains("Do not wrap output in markdown fences") == true)
+    }
 }
 
 private struct RecordingProvider: LocalAIProviding {

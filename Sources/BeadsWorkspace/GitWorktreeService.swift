@@ -22,6 +22,10 @@ public enum GitWorktreeServiceError: LocalizedError, Sendable {
     case branchAlreadyExists(name: String)
     case worktreeCreationFailed(detail: String)
     case symlinkFailed(detail: String)
+    case noChangesToCommit(worktreePath: String)
+    case commitFailed(detail: String)
+    case pushFailed(detail: String)
+    case worktreeRemovalFailed(detail: String)
 
     public var errorDescription: String? {
         switch self {
@@ -41,6 +45,14 @@ public enum GitWorktreeServiceError: LocalizedError, Sendable {
             return "Failed to create git worktree: \(detail)"
         case let .symlinkFailed(detail):
             return "Failed to prepare worktree Beads link: \(detail)"
+        case let .noChangesToCommit(worktreePath):
+            return "No changes to commit in worktree at \(worktreePath)."
+        case let .commitFailed(detail):
+            return "Git commit failed: \(detail)"
+        case let .pushFailed(detail):
+            return "Git push failed: \(detail)"
+        case let .worktreeRemovalFailed(detail):
+            return "Failed to remove worktree: \(detail)"
         }
     }
 }
@@ -314,5 +326,163 @@ public struct GitWorktreeService: @unchecked Sendable {
         if !stdout.isEmpty { return stdout }
 
         return "git worktree add exited with code \(result.exitCode)."
+    }
+
+    // MARK: - Commit & Push
+
+    /// Get the diff of all changed files in the worktree.
+    public func getDiff(in worktreeURL: URL) async throws -> String {
+        let result = try await commandRunner.run(
+            command: "git",
+            arguments: ["diff", "--no-color"],
+            workingDirectory: worktreeURL
+        )
+        guard result.exitCode == 0 else {
+            throw GitWorktreeServiceError.commitFailed(detail: Self.detailMessage(for: result))
+        }
+        return result.stdout
+    }
+
+    /// Get the diff of staged files only.
+    public func getStagedDiff(in worktreeURL: URL) async throws -> String {
+        let result = try await commandRunner.run(
+            command: "git",
+            arguments: ["diff", "--cached", "--no-color"],
+            workingDirectory: worktreeURL
+        )
+        guard result.exitCode == 0 else {
+            throw GitWorktreeServiceError.commitFailed(detail: Self.detailMessage(for: result))
+        }
+        return result.stdout
+    }
+
+    /// Get a summary of changed file paths and statuses.
+    public func getChangedFilesSummary(in worktreeURL: URL) async throws -> String {
+        let result = try await commandRunner.run(
+            command: "git",
+            arguments: ["status", "--porcelain"],
+            workingDirectory: worktreeURL
+        )
+        guard result.exitCode == 0 else {
+            throw GitWorktreeServiceError.commitFailed(detail: Self.detailMessage(for: result))
+        }
+        let lines = result.stdout
+            .split(whereSeparator: \.isNewline)
+            .map { line -> String in
+                let parts = line.split(separator: " ", maxSplits: 1)
+                if parts.count >= 2 {
+                    return "\(parts[0]) \(parts[1])"
+                }
+                return String(line)
+            }
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        return lines.isEmpty ? "" : lines.joined(separator: "\n")
+    }
+
+    /// Get the last commit message on the current branch.
+    public func getLastCommitMessage(in worktreeURL: URL) async throws -> String? {
+        let result = try await commandRunner.run(
+            command: "git",
+            arguments: ["log", "-1", "--pretty=format:%s", "HEAD"],
+            workingDirectory: worktreeURL
+        )
+        guard result.exitCode == 0 else { return nil }
+        let message = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        return message.isEmpty ? nil : message
+    }
+
+    /// Stage all changes and commit with the given message.
+    public func commitChanges(
+        message: String,
+        in worktreeURL: URL
+    ) async throws {
+        // Stage all changes
+        let stageResult = try await commandRunner.run(
+            command: "git",
+            arguments: ["add", "-A"],
+            workingDirectory: worktreeURL
+        )
+        guard stageResult.exitCode == 0 else {
+            throw GitWorktreeServiceError.commitFailed(detail: Self.detailMessage(for: stageResult))
+        }
+
+        // Check if there are staged changes
+        let statusResult = try await commandRunner.run(
+            command: "git",
+            arguments: ["status", "--porcelain"],
+            workingDirectory: worktreeURL
+        )
+        guard statusResult.exitCode == 0 else {
+            throw GitWorktreeServiceError.commitFailed(detail: Self.detailMessage(for: statusResult))
+        }
+        let hasChanges = !statusResult.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if !hasChanges {
+            throw GitWorktreeServiceError.noChangesToCommit(worktreePath: worktreeURL.path)
+        }
+
+        // Commit
+        let commitResult = try await commandRunner.run(
+            command: "git",
+            arguments: ["commit", "-m", message],
+            workingDirectory: worktreeURL
+        )
+        guard commitResult.exitCode == 0 else {
+            throw GitWorktreeServiceError.commitFailed(detail: Self.detailMessage(for: commitResult))
+        }
+    }
+
+    /// Push the current branch to the origin remote.
+    public func pushCurrentBranch(from worktreeURL: URL) async throws {
+        let result = try await commandRunner.run(
+            command: "git",
+            arguments: ["push", "-u", "origin", "HEAD"],
+            workingDirectory: worktreeURL
+        )
+        guard result.exitCode == 0 else {
+            throw GitWorktreeServiceError.pushFailed(detail: Self.detailMessage(for: result))
+        }
+    }
+
+    /// Execute commit and push in one operation.
+    /// - Parameters:
+    ///   - message: The commit message to use.
+    ///   - worktreeURL: The worktree directory to commit and push from.
+    /// - Throws: GitWorktreeServiceError if commit or push fails.
+    public func commitAndPush(
+        message: String,
+        in worktreeURL: URL
+    ) async throws {
+        try await commitChanges(message: message, in: worktreeURL)
+        try await pushCurrentBranch(from: worktreeURL)
+    }
+
+    /// Remove the git worktree folder and delete the associated branch.
+    /// This is used after successfully committing and pushing to clean up.
+    /// - Parameters:
+    ///   - location: The worktree location to remove.
+    ///   - workingDirectory: The root git repository (not the worktree) for branch deletion.
+    /// - Throws: GitWorktreeServiceError if removal fails.
+    public func removeWorktree(location: GitWorktreeLocation, workingDirectory: URL) async throws {
+        // Remove worktree folder
+        let removeResult = try await commandRunner.run(
+            command: "git",
+            arguments: ["worktree", "remove", "--force", location.worktreeURL.path],
+            workingDirectory: workingDirectory
+        )
+        guard removeResult.exitCode == 0 else {
+            throw GitWorktreeServiceError.worktreeRemovalFailed(detail: Self.detailMessage(for: removeResult))
+        }
+
+        // Delete the branch (safe because we already pushed)
+        let branchResult = try await commandRunner.run(
+            command: "git",
+            arguments: ["branch", "-D", location.branchName],
+            workingDirectory: workingDirectory
+        )
+        if branchResult.exitCode != 0 {
+            // Non-fatal: branch may already be gone or not fully pushed
+            // Log but don't throw — the worktree folder removal is the primary concern
+            NSLog("Failed to delete branch %@: %@", location.branchName, Self.detailMessage(for: branchResult))
+        }
     }
 }
