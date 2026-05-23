@@ -16,6 +16,10 @@ struct IssueDetailView: View {
     @State private var timer: Timer? = nil
     @State private var hoveredFileID: String? = nil
 
+    @State private var aiCommitState: AICommitState = .idle
+    @State private var commitMessageText: String = ""
+    @State private var hoveredCommitRow: String? = nil
+
     var body: some View {
         VStack(spacing: 0) {
             panelHeader
@@ -348,6 +352,7 @@ struct IssueDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             textSections
             modifiedFilesSection
+            aiCommitSection
             dependenciesSection
         }
     }
@@ -1008,6 +1013,265 @@ struct IssueDetailView: View {
             return WorkstationTheme.accent
         default:
             return WorkstationTheme.textSecondary
+        }
+    }
+
+    // MARK: - AI Commit Section (Workstation-uhwd)
+
+    private enum AICommitState: Equatable {
+        case idle
+        case drafting
+        case drafted
+        case committing
+        case success
+        case error(String)
+    }
+
+    @ViewBuilder
+    private var aiCommitSection: some View {
+        if hasActiveWorktree && !changedFiles.isEmpty && filesError == nil {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(WorkstationTheme.accent)
+                    uppercaseLabel("AI Commit")
+                    Spacer()
+                }
+
+                switch aiCommitState {
+                case .idle:
+                    aiCommitIdleContent
+                case .drafting:
+                    aiCommitDraftingContent
+                case .drafted:
+                    aiCommitDraftedContent
+                case .committing:
+                    aiCommitCommittingContent
+                case .success:
+                    aiCommitSuccessContent
+                case .error(let message):
+                    aiCommitErrorContent(message)
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(WorkstationTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                    .stroke(WorkstationTheme.accentBorder, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+        }
+    }
+
+    private var aiCommitIdleContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text("\(changedFiles.count) file\(changedFiles.count == 1 ? "" : "s") changed")
+                    .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+                Spacer()
+            }
+
+            Button {
+                draftCommitMessage()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("Draft Commit Message with AI")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(WorkstationGhostButtonStyle())
+        }
+    }
+
+    private var aiCommitDraftingContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(WorkstationTheme.accent)
+                Text("Drafting commit message...")
+                    .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 12)
+        }
+    }
+
+    private var aiCommitDraftedContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(spacing: 0) {
+                TextEditor(text: $commitMessageText)
+                    .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.textPrimary)
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 60, maxHeight: 160)
+                    .padding(10)
+                    .background(WorkstationTheme.inputBg)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+            }
+
+            HStack(spacing: 8) {
+                Button {
+                    aiCommitState = .idle
+                    commitMessageText = ""
+                } label: {
+                    Text("Cancel")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(WorkstationGhostButtonStyle())
+                .help("Discard the drafted message")
+
+                Button {
+                    commitAndPush()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Commit & Push")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(WorkstationPrimaryButtonStyle())
+                .disabled(commitMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .help("Commit all changes and push to remote")
+            }
+        }
+    }
+
+    private var aiCommitCommittingContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(WorkstationTheme.accent)
+                Text("Committing and pushing...")
+                    .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 12)
+        }
+    }
+
+    private var aiCommitSuccessContent: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.green)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Changes committed & pushed")
+                    .font(WorkstationTheme.Fonts.body(13, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.green)
+                Text("Worktree cleaned up successfully.")
+                    .font(WorkstationTheme.Fonts.body(11))
+                    .foregroundStyle(WorkstationTheme.textSecondary)
+            }
+            Spacer()
+            Button {
+                aiCommitState = .idle
+                commitMessageText = ""
+                refreshModifiedFiles()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+                    .frame(width: 20, height: 20)
+                    .background(WorkstationTheme.hover)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .help("Dismiss")
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func aiCommitErrorContent(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(WorkstationTheme.red)
+                Text(message)
+                    .font(WorkstationTheme.Fonts.body(11, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.red)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+
+            HStack(spacing: 8) {
+                Button {
+                    aiCommitState = .idle
+                    commitMessageText = ""
+                } label: {
+                    Text("Dismiss")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(WorkstationGhostButtonStyle())
+
+                Button {
+                    draftCommitMessage()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Retry")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(WorkstationGhostButtonStyle())
+            }
+        }
+    }
+
+    private func draftCommitMessage() {
+        aiCommitState = .drafting
+        commitMessageText = ""
+        let currentAppVM = appVM
+        let currentIssue = issue
+        Task {
+            do {
+                let message = try await currentAppVM.draftCommitMessage(for: currentIssue)
+                await MainActor.run {
+                    self.commitMessageText = message
+                    self.aiCommitState = .drafted
+                }
+            } catch {
+                await MainActor.run {
+                    self.aiCommitState = .error(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func commitAndPush() {
+        let message = commitMessageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !message.isEmpty else { return }
+        aiCommitState = .committing
+        let currentAppVM = appVM
+        let currentIssue = issue
+        Task {
+            do {
+                try await currentAppVM.commitAndPushWorktree(for: currentIssue, message: message)
+                await MainActor.run {
+                    self.commitMessageText = ""
+                    self.aiCommitState = .success
+                }
+            } catch {
+                await MainActor.run {
+                    self.aiCommitState = .error(error.localizedDescription)
+                }
+            }
         }
     }
 
