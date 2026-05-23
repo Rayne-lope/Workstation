@@ -13,17 +13,19 @@ struct WelcomeView: View {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 20) {
                     heroCard
+                    workspaceCard
                     localAISettingsCard
+                    validationCard
 
                     ViewThatFits(in: .horizontal) {
                         HStack(alignment: .top, spacing: 16) {
-                            leftColumn
-                            rightColumn
+                            recentsCard
+                            historyCard
                         }
 
                         VStack(alignment: .leading, spacing: 16) {
-                            leftColumn
-                            rightColumn
+                            recentsCard
+                            historyCard
                         }
                     }
 
@@ -43,22 +45,7 @@ struct WelcomeView: View {
         .background(WorkstationTheme.background)
     }
 
-    private var leftColumn: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            workspaceCard
-            validationCard
-        }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-    }
-
-    private var rightColumn: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            recentsCard
-            historyCard
-        }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-    }
-
+    
     private var heroCard: some View {
         dashboardCard(padding: 18) {
             HStack(alignment: .top, spacing: 16) {
