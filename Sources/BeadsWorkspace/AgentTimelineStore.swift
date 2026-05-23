@@ -11,7 +11,7 @@ public final class AgentTimelineStore: @unchecked Sendable {
     private var commandsMap: [UUID: [TimelineCommandRun]] = [:]
     private var activeApprovalMap: [UUID: AgentApprovalRequest] = [:]
 
-    private init() {}
+    public init() {}
 
     public func clearAll() {
         lock.lock()

@@ -7,8 +7,7 @@ struct AgentTimelineStoreTests {
     
     @Test("Initial store is empty")
     func initialStoreEmpty() {
-        let store = AgentTimelineStore.shared
-        store.clearAll()
+        let store = AgentTimelineStore()
         
         let runID = UUID()
         #expect(store.events(forRunID: runID).isEmpty)
@@ -20,8 +19,7 @@ struct AgentTimelineStoreTests {
     
     @Test("apply insert deltas and prevent duplicates")
     func applyInsertDeltas() {
-        let store = AgentTimelineStore.shared
-        store.clearAll()
+        let store = AgentTimelineStore()
         let runID = UUID()
         
         let event1 = AgentTimelineEvent(
@@ -69,8 +67,7 @@ struct AgentTimelineStoreTests {
     
     @Test("apply update deltas")
     func applyUpdateDeltas() {
-        let store = AgentTimelineStore.shared
-        store.clearAll()
+        let store = AgentTimelineStore()
         let runID = UUID()
         
         let event = AgentTimelineEvent(
@@ -107,8 +104,7 @@ struct AgentTimelineStoreTests {
     
     @Test("apply problem deltas")
     func applyProblemDeltas() {
-        let store = AgentTimelineStore.shared
-        store.clearAll()
+        let store = AgentTimelineStore()
         let runID = UUID()
         
         let problem = AgentRunProblem(
@@ -130,8 +126,7 @@ struct AgentTimelineStoreTests {
     
     @Test("apply active approval deltas")
     func applyApprovalDeltas() {
-        let store = AgentTimelineStore.shared
-        store.clearAll()
+        let store = AgentTimelineStore()
         let runID = UUID()
         
         let request = AgentApprovalRequest(
@@ -153,8 +148,7 @@ struct AgentTimelineStoreTests {
     
     @Test("register command starts and ends")
     func commandRegistration() {
-        let store = AgentTimelineStore.shared
-        store.clearAll()
+        let store = AgentTimelineStore()
         let runID = UUID()
         
         let cmd = TimelineCommandRun(
@@ -175,8 +169,7 @@ struct AgentTimelineStoreTests {
     
     @Test("clear and clearAll purges state")
     func clearAndClearAll() {
-        let store = AgentTimelineStore.shared
-        store.clearAll()
+        let store = AgentTimelineStore()
         let runID1 = UUID()
         let runID2 = UUID()
         
