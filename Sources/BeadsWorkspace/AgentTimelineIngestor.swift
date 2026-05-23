@@ -9,6 +9,7 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
     private var activeCommandRun: TimelineCommandRun? = nil
     private var activeApprovalRequest: AgentApprovalRequest? = nil
     private var seenStableKeys = Set<String>()
+    private var activePhase: String? = nil
     
     public init(runID: UUID) {
         self.runID = runID
@@ -25,6 +26,17 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
         var deltas: [TimelineDelta] = []
         let cleanText = line.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanText.isEmpty else { return [] }
+        
+        // 0. Detect and process structured Workstation JSON Markers
+        if cleanText.hasPrefix("::workstation-json::") {
+            let jsonString = String(cleanText.dropFirst("::workstation-json::".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+            if let marker = parseWorkstationMarker(jsonString) {
+                return processMarker(marker, line: line)
+            } else {
+                // Malformed marker is ignored by the timeline parser and preserved in Raw Log
+                return []
+            }
+        }
         
         // 1. Process "Started" on the very first sequence
         if line.sequence == 1 {
@@ -504,5 +516,341 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
     private func isDoneLine(_ text: String) -> Bool {
         let lower = text.lowercased()
         return lower.contains("completed the session") || lower.contains("closed workstation-")
+    }
+    
+    // MARK: - Workstation JSON Annotation Markers
+    
+    public struct WorkstationMarker: Codable, Sendable {
+        public let type: String
+        public let title: String?
+        public let command: String?
+        public let cwd: String?
+        public let exitCode: Int32?
+        public let file: String?
+        public let line: Int?
+        public let column: Int?
+        public let message: String?
+        public let severity: String?
+        public let prompt: String?
+        public let proposedInput: String?
+        public let rejectInput: String?
+        public let riskLevel: String?
+        public let totalCount: Int?
+        
+        public init(
+            type: String,
+            title: String? = nil,
+            command: String? = nil,
+            cwd: String? = nil,
+            exitCode: Int32? = nil,
+            file: String? = nil,
+            line: Int? = nil,
+            column: Int? = nil,
+            message: String? = nil,
+            severity: String? = nil,
+            prompt: String? = nil,
+            proposedInput: String? = nil,
+            rejectInput: String? = nil,
+            riskLevel: String? = nil,
+            totalCount: Int? = nil
+        ) {
+            self.type = type
+            self.title = title
+            self.command = command
+            self.cwd = cwd
+            self.exitCode = exitCode
+            self.file = file
+            self.line = line
+            self.column = column
+            self.message = message
+            self.severity = severity
+            self.prompt = prompt
+            self.proposedInput = proposedInput
+            self.rejectInput = rejectInput
+            self.riskLevel = riskLevel
+            self.totalCount = totalCount
+        }
+    }
+    
+    private func parseWorkstationMarker(_ jsonString: String) -> WorkstationMarker? {
+        guard let data = jsonString.data(using: .utf8) else { return nil }
+        // Defensive size limit (8KB)
+        guard data.count <= 8192 else { return nil }
+        
+        do {
+            let decoder = JSONDecoder()
+            return try decoder.decode(WorkstationMarker.self, from: data)
+        } catch {
+            return nil
+        }
+    }
+    
+    private func processMarker(_ marker: WorkstationMarker, line: TerminalLine) -> [TimelineDelta] {
+        var deltas: [TimelineDelta] = []
+        let type = marker.type
+        
+        switch type {
+        case "group":
+            let phaseTitle = marker.title ?? "Phase"
+            let groupKey = "group-\(runID)-\(phaseTitle)"
+            self.activePhase = phaseTitle
+            
+            let phaseEvent = AgentTimelineEvent(
+                stableKey: groupKey,
+                runID: runID,
+                sequence: line.sequence,
+                type: .phase,
+                title: phaseTitle,
+                status: .working,
+                source: .workstationMarker,
+                confidence: .high,
+                rawExcerpt: line.text,
+                rawLineStart: line.sequence,
+                rawLineEnd: line.sequence
+            )
+            deltas.append(.insert(phaseEvent))
+            
+        case "endgroup":
+            let phaseTitle = marker.title ?? self.activePhase ?? "Phase"
+            let groupKey = "group-\(runID)-\(phaseTitle)"
+            
+            let successEvent = AgentTimelineEvent(
+                stableKey: groupKey,
+                runID: runID,
+                sequence: line.sequence,
+                type: .phase,
+                title: phaseTitle,
+                status: .success,
+                source: .workstationMarker,
+                confidence: .high,
+                rawExcerpt: line.text,
+                rawLineStart: line.sequence,
+                rawLineEnd: line.sequence
+            )
+            deltas.append(.update(stableKey: groupKey, successEvent))
+            if self.activePhase == phaseTitle {
+                self.activePhase = nil
+            }
+            
+        case "command":
+            let cmdText = marker.command ?? ""
+            let cmdKey = "cmd-\(runID)-\(line.sequence)"
+            let cmdRun = TimelineCommandRun(
+                stableKey: cmdKey,
+                runID: runID,
+                command: cmdText,
+                workingDirectory: marker.cwd,
+                startedAt: line.timestamp,
+                status: .working
+            )
+            self.activeCommandRun = cmdRun
+            
+            let cmdEvent = AgentTimelineEvent(
+                stableKey: cmdKey,
+                runID: runID,
+                sequence: line.sequence,
+                type: .command,
+                title: "Running command",
+                subtitle: cmdText,
+                status: .working,
+                source: .workstationMarker,
+                confidence: .high,
+                rawExcerpt: line.text,
+                rawLineStart: line.sequence,
+                rawLineEnd: line.sequence,
+                relatedCommand: cmdText
+            )
+            deltas.append(.insert(cmdEvent))
+            
+            if activeApprovalRequest != nil {
+                activeApprovalRequest = nil
+                deltas.append(.updateApproval(nil))
+            }
+            
+        case "commandEnd":
+            let exitCode = marker.exitCode ?? 0
+            if let active = activeCommandRun {
+                var updated = active
+                updated.endedAt = line.timestamp
+                updated.exitCode = exitCode
+                updated.status = exitCode == 0 ? .success : .failure
+                
+                let cmdKey = active.stableKey
+                let cmdEvent = AgentTimelineEvent(
+                    stableKey: cmdKey,
+                    runID: runID,
+                    sequence: line.sequence,
+                    type: .command,
+                    title: exitCode == 0 ? "Command succeeded" : "Command failed",
+                    subtitle: active.command,
+                    status: exitCode == 0 ? .success : .failure,
+                    source: .workstationMarker,
+                    confidence: .high,
+                    rawExcerpt: line.text,
+                    rawLineStart: line.sequence,
+                    rawLineEnd: line.sequence,
+                    relatedCommand: active.command
+                )
+                deltas.append(.update(stableKey: cmdKey, cmdEvent))
+                activeCommandRun = nil
+            }
+            
+        case "fileChanged":
+            let file = marker.file ?? ""
+            let fileKey = "file-\(runID)-\(line.sequence)"
+            let fileEvent = AgentTimelineEvent(
+                stableKey: fileKey,
+                runID: runID,
+                sequence: line.sequence,
+                type: .fileChange,
+                title: "File modified",
+                subtitle: file,
+                status: .info,
+                source: .workstationMarker,
+                confidence: .high,
+                rawExcerpt: line.text,
+                rawLineStart: line.sequence,
+                rawLineEnd: line.sequence,
+                relatedFile: file
+            )
+            deltas.append(.insert(fileEvent))
+            
+        case "problem":
+            let severity: ProblemSeverity = {
+                switch marker.severity ?? "" {
+                case "warning": return .warning
+                case "notice": return .notice
+                default: return .error
+                }
+            }()
+            let message = marker.message ?? ""
+            let probKey = "prob-\(runID)-\(line.sequence)"
+            
+            let problem = AgentRunProblem(
+                stableKey: probKey,
+                runID: runID,
+                severity: severity,
+                message: message,
+                filePath: marker.file,
+                line: marker.line,
+                column: marker.column,
+                source: .workstationMarker,
+                confidence: .high,
+                rawLine: line.sequence
+            )
+            deltas.append(.appendProblem(problem))
+            
+            let probEvent = AgentTimelineEvent(
+                stableKey: probKey,
+                runID: runID,
+                sequence: line.sequence,
+                type: .problem,
+                title: severity == .error ? "Error detected" : "Warning detected",
+                subtitle: message,
+                status: severity == .error ? .failure : .warning,
+                source: .workstationMarker,
+                confidence: .high,
+                rawExcerpt: line.text,
+                rawLineStart: line.sequence,
+                rawLineEnd: line.sequence,
+                relatedFile: marker.file
+            )
+            deltas.append(.insert(probEvent))
+            
+        case "approval":
+            let prompt = marker.prompt ?? ""
+            let proposed = marker.proposedInput ?? "y\n"
+            let reject = marker.rejectInput ?? "n\n"
+            let risk: ApprovalRiskLevel = {
+                switch marker.riskLevel ?? "" {
+                case "critical": return .critical
+                case "high": return .high
+                case "medium": return .medium
+                default: return .low
+                }
+            }()
+            let appKey = "approval-\(runID)-\(line.sequence)"
+            let promptHash = String(prompt.hashValue)
+            
+            let request = AgentApprovalRequest(
+                stableKey: appKey,
+                runID: runID,
+                promptHash: promptHash,
+                prompt: prompt,
+                proposedInput: proposed,
+                rejectInput: reject,
+                riskLevel: risk,
+                state: .active
+            )
+            activeApprovalRequest = request
+            deltas.append(.updateApproval(request))
+            
+            let approvalEvent = AgentTimelineEvent(
+                stableKey: appKey,
+                runID: runID,
+                sequence: line.sequence,
+                type: .needsApproval,
+                title: "Approval required",
+                subtitle: prompt,
+                status: .warning,
+                source: .workstationMarker,
+                confidence: .high,
+                rawExcerpt: line.text,
+                rawLineStart: line.sequence,
+                rawLineEnd: line.sequence
+            )
+            deltas.append(.insert(approvalEvent))
+            
+        case "testSummary":
+            let message = marker.message ?? "Tests executed"
+            let status: TimelineEventStatus = (marker.exitCode ?? 0) == 0 ? .success : .failure
+            let testKey = "test-\(runID)-\(line.sequence)"
+            
+            let testEvent = AgentTimelineEvent(
+                stableKey: testKey,
+                runID: runID,
+                sequence: line.sequence,
+                type: .test,
+                title: "Tests executed",
+                subtitle: message,
+                status: status,
+                source: .workstationMarker,
+                confidence: .high,
+                rawExcerpt: line.text,
+                rawLineStart: line.sequence,
+                rawLineEnd: line.sequence
+            )
+            deltas.append(.insert(testEvent))
+            
+        case "done":
+            let message = marker.message ?? "Agent completed the session"
+            let doneKey = "done-\(runID)-\(line.sequence)"
+            
+            let doneEvent = AgentTimelineEvent(
+                stableKey: doneKey,
+                runID: runID,
+                sequence: line.sequence,
+                type: .done,
+                title: "Agent finished",
+                subtitle: message,
+                status: .success,
+                source: .workstationMarker,
+                confidence: .high,
+                rawExcerpt: line.text,
+                rawLineStart: line.sequence,
+                rawLineEnd: line.sequence
+            )
+            deltas.append(.insert(doneEvent))
+            
+            if activeApprovalRequest != nil {
+                activeApprovalRequest = nil
+                deltas.append(.updateApproval(nil))
+            }
+            
+        default:
+            break
+        }
+        
+        return deltas
     }
 }
