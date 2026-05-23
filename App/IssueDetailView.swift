@@ -347,9 +347,7 @@ struct IssueDetailView: View {
     private var detailsTabContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             textSections
-            if hasActiveWorktree {
-                modifiedFilesSection
-            }
+            modifiedFilesSection
             dependenciesSection
         }
     }
@@ -1066,7 +1064,7 @@ struct IssueDetailView: View {
             HStack(spacing: 8) {
                 uppercaseLabel("Modified Files")
                 
-                if !changedFiles.isEmpty {
+                if hasActiveWorktree && !changedFiles.isEmpty {
                     Text("\(changedFiles.count)")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(WorkstationTheme.textPrimary)
@@ -1078,28 +1076,59 @@ struct IssueDetailView: View {
                 
                 Spacer()
                 
-                if isLoadingFiles {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(WorkstationTheme.accent)
-                } else {
-                    Button {
-                        refreshModifiedFiles()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(WorkstationTheme.accent)
-                            .frame(width: 24, height: 24)
-                            .background(WorkstationTheme.hover)
-                            .clipShape(Circle())
+                if hasActiveWorktree {
+                    if isLoadingFiles {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(WorkstationTheme.accent)
+                    } else {
+                        Button {
+                            refreshModifiedFiles()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(WorkstationTheme.accent)
+                                .frame(width: 24, height: 24)
+                                .background(WorkstationTheme.hover)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Refresh file status")
                     }
-                    .buttonStyle(.plain)
-                    .help("Refresh file status")
                 }
             }
             .padding(.bottom, 2)
 
-            if let filesError {
+            if !hasActiveWorktree {
+                HStack(spacing: 10) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                            .fill(WorkstationTheme.borderSoft)
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "folder.badge.gearshape")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("No active worktree found")
+                            .font(WorkstationTheme.Fonts.body(12, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.textSecondary)
+                        Text("Launch an agent to start tracking changes.")
+                            .font(WorkstationTheme.Fonts.body(10))
+                            .foregroundStyle(WorkstationTheme.textDisabled)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(WorkstationTheme.card)
+                .overlay(
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                        .stroke(WorkstationTheme.border, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+            } else if let filesError {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 11))
