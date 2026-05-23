@@ -69,11 +69,13 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         let masterFd: Int32
         let slaveFd: Int32
         let buffer: TerminalBuffer
+        let streamBuffer: TerminalStreamBuffer
     }
     
     private let lock = NSLock()
     private var activeSessions: [UUID: ActiveSession] = [:]
     private var deadBuffers: [UUID: TerminalBuffer] = [:]
+    private var deadStreamBuffers: [UUID: TerminalStreamBuffer] = [:]
     
     private init() {}
     
@@ -81,8 +83,10 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         let buffer = TerminalBuffer()
-        activeSessions[runID] = ActiveSession(process: process, masterFd: masterFd, slaveFd: slaveFd, buffer: buffer)
+        let streamBuffer = TerminalStreamBuffer(runID: runID, cleanMode: true)
+        activeSessions[runID] = ActiveSession(process: process, masterFd: masterFd, slaveFd: slaveFd, buffer: buffer, streamBuffer: streamBuffer)
         deadBuffers.removeValue(forKey: runID)
+        deadStreamBuffers.removeValue(forKey: runID)
     }
     
     public func deregister(runID: UUID) {
@@ -91,6 +95,7 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         if let session = activeSessions.removeValue(forKey: runID) {
             close(session.slaveFd)
             deadBuffers[runID] = session.buffer
+            deadStreamBuffers[runID] = session.streamBuffer
         }
     }
     
@@ -108,6 +113,7 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         session.process.terminate()
         close(session.slaveFd)
         deadBuffers[runID] = session.buffer
+        deadStreamBuffers[runID] = session.streamBuffer
     }
 
     public func buffer(for runID: UUID) -> TerminalBuffer? {
@@ -116,10 +122,17 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         return activeSessions[runID]?.buffer ?? deadBuffers[runID]
     }
 
+    public func streamBuffer(for runID: UUID) -> TerminalStreamBuffer? {
+        lock.lock()
+        defer { lock.unlock() }
+        return activeSessions[runID]?.streamBuffer ?? deadStreamBuffers[runID]
+    }
+
     public func removeBuffer(for runID: UUID) {
         lock.lock()
         defer { lock.unlock() }
         deadBuffers.removeValue(forKey: runID)
+        deadStreamBuffers.removeValue(forKey: runID)
     }
 
     /// Notify the subprocess of a new terminal column/row size (TIOCSWINSZ).
@@ -252,10 +265,12 @@ public final class PTYRunner: @unchecked Sendable {
             defer { buffer.deallocate() }
             
             var shouldCancel = false
+            var newBytesData = Data()
             while true {
                 let bytesRead = read(masterFd, buffer, bufferSize)
                 if bytesRead > 0 {
                     combined.append(buffer, count: bytesRead)
+                    newBytesData.append(buffer, count: bytesRead)
                 } else if bytesRead == 0 {
                     // EOF
                     shouldCancel = true
@@ -300,9 +315,18 @@ public final class PTYRunner: @unchecked Sendable {
                 }
             }
             
+            if !newBytesData.isEmpty {
+                if let streamBuf = PTYProcessRegistry.shared.streamBuffer(for: runID) {
+                    streamBuf.append(newBytesData)
+                }
+            }
+            
             if shouldCancel {
                 readSource.cancel()
                 utf8Carry.deallocate()
+                if let streamBuf = PTYProcessRegistry.shared.streamBuffer(for: runID) {
+                    streamBuf.flush()
+                }
             }
         }
         
@@ -313,6 +337,11 @@ public final class PTYRunner: @unchecked Sendable {
         // Set termination handler
         process.terminationHandler = { _ in
             readSource.cancel()
+            
+            if let streamBuf = PTYProcessRegistry.shared.streamBuffer(for: runID) {
+                streamBuf.flush()
+            }
+            
             PTYProcessRegistry.shared.deregister(runID: runID)
             
             NotificationCenter.default.post(

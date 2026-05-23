@@ -5,7 +5,7 @@ import BeadsWorkspace
 
 // MARK: - Live Terminal Drawer
 
-struct TerminalLine: Identifiable, Equatable {
+struct UITerminalLine: Identifiable, Equatable {
     let id: Int
     let text: String
 }
@@ -37,7 +37,7 @@ struct LiveTerminalDrawer: View {
 
     private struct ParsedTerminalData {
         let allLinesCount: Int
-        let visibleLines: [TerminalLine]
+        let visibleLines: [UITerminalLine]
     }
 
     private var parsedData: ParsedTerminalData {
@@ -45,7 +45,7 @@ struct LiveTerminalDrawer: View {
         let stripped = stripANSI(raw)
         let lines = stripped.components(separatedBy: .newlines)
         
-        let mapped = lines.enumerated().map { TerminalLine(id: $0.offset, text: $0.element) }
+        let mapped = lines.enumerated().map { UITerminalLine(id: $0.offset, text: $0.element) }
         let totalCount = mapped.filter { !$0.text.isEmpty }.count
         let visible = Array(mapped.suffix(300))
         
@@ -262,7 +262,7 @@ struct LiveTerminalDrawer: View {
     }
 
     @ViewBuilder
-    private func terminalLine(_ line: TerminalLine) -> some View {
+    private func terminalLine(_ line: UITerminalLine) -> some View {
         if line.text.isEmpty {
             Color.clear.frame(height: 4)
         } else {

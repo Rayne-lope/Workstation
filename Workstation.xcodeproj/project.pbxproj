@@ -129,6 +129,9 @@
 		F99B6B118AB4906EF1FBDA1F /* BoardSettingsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9763854D4ECC37DED10DA33A /* BoardSettingsPanelView.swift */; };
 		FD95960F5160696403B26C3F /* LocalAISuggestionPreviewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F061841017E55D4A9256432 /* LocalAISuggestionPreviewState.swift */; };
 		FEF2BD0CF88AD11189CC4372 /* DebugPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECE704832A64B678F0BB590 /* DebugPanelView.swift */; };
+		AA0000000000000000000002 /* AgentTimelineEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* AgentTimelineEvent.swift */; };
+		AA0000000000000000000004 /* AgentTimelineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* AgentTimelineStore.swift */; };
+		AA0000000000000000000006 /* TerminalStreamBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* TerminalStreamBuffer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -255,6 +258,9 @@
 		FBAA02860BC78ECF5A22D762 /* CreateIssueInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateIssueInput.swift; sourceTree = "<group>"; };
 		FE5282CF1F6FD222BC46AD2D /* robot_logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = robot_logo.png; sourceTree = "<group>"; };
 		FE6B7461351447EB9564CA77 /* GitStatusSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusSummary.swift; sourceTree = "<group>"; };
+		AA0000000000000000000001 /* AgentTimelineEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTimelineEvent.swift; sourceTree = "<group>"; };
+		AA0000000000000000000003 /* AgentTimelineStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTimelineStore.swift; sourceTree = "<group>"; };
+		AA0000000000000000000005 /* TerminalStreamBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalStreamBuffer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -304,6 +310,8 @@
 				0A0A1CBE6105A8946FE64715 /* AgentRunRecord.swift */,
 				539D23D5A48E3C6D6129CCD2 /* AgentRunStatus.swift */,
 				0EB07A4DAE97C487B1BBB698 /* AgentRunTranscriptStore.swift */,
+				AA0000000000000000000001 /* AgentTimelineEvent.swift */,
+				AA0000000000000000000003 /* AgentTimelineStore.swift */,
 				2D5AB344D5A4D3F85B094889 /* AppPreferences.swift */,
 				2DE4BAAABA3B24747611E458 /* AppTheme.swift */,
 				BE35D8FF2D8242C64CC61835 /* ArchiveStore.swift */,
@@ -341,6 +349,7 @@
 				6C11A2CEA9744AED76B10DCF /* ShellCommandRunner.swift */,
 				03283DC3CD3FD64E6152BBCB /* TerminalLauncher.swift */,
 				BFBE229256C1C4F0F2D77BCF /* TerminalLaunching.swift */,
+				AA0000000000000000000005 /* TerminalStreamBuffer.swift */,
 				577CDDC714F1C8C5E07746BD /* UpdateIssueInput.swift */,
 				816CB71D780855351A7B0945 /* WorkspaceCheck.swift */,
 				14069CE24B8C10020B9420B2 /* WorkspaceCheckState.swift */,
@@ -538,6 +547,8 @@
 				4192B3D625B3B2546381E5BE /* AgentRunStatus.swift in Sources */,
 				A7D93288EE987302E1DFF8A6 /* AgentRunTranscriptStore.swift in Sources */,
 				434F3A7547E49627055FD4AC /* AgentRunTranscriptView.swift in Sources */,
+				AA0000000000000000000002 /* AgentTimelineEvent.swift in Sources */,
+				AA0000000000000000000004 /* AgentTimelineStore.swift in Sources */,
 				BC1A02D14A7A47D3DDD9A8B0 /* AppFontRegistrar.swift in Sources */,
 				2301A9AA47A99AFEF3B5278F /* AppPreferences.swift in Sources */,
 				E92441B38FE0898B98CB4C4B /* AppTheme.swift in Sources */,
@@ -618,6 +629,7 @@
 				9926BC17F1066C0C699D12A6 /* StatusBarView.swift in Sources */,
 				B21D0C88B305BDF1829258DB /* TerminalLauncher.swift in Sources */,
 				7F8A60638B110146BF3C9739 /* TerminalLaunching.swift in Sources */,
+				AA0000000000000000000006 /* TerminalStreamBuffer.swift in Sources */,
 				234B36538B05A7413D790F5C /* UpdateIssueInput.swift in Sources */,
 				21D25424584B277730496E43 /* WelcomeView.swift in Sources */,
 				B442AA6C1654A5089CBDB034 /* WorkspaceCheck.swift in Sources */,
