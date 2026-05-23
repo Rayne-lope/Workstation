@@ -77,13 +77,13 @@ struct LiveTerminalDrawer: View {
         .background(Color(hex: "#0A0A0A"))
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(WorkstationTheme.borderSoft)
+                .fill(Color(hex: "#1A1A1A"))
                 .frame(height: 1)
         }
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
-                .stroke(isActive ? WorkstationTheme.accent.opacity(0.3) : WorkstationTheme.borderSoft, lineWidth: 1)
+                .stroke(isActive ? Color(hex: "#ECC864").opacity(0.3) : Color(hex: "#1A1A1A"), lineWidth: 1)
         )
     }
 
@@ -97,12 +97,12 @@ struct LiveTerminalDrawer: View {
                     PulsingDot()
                 } else {
                     Circle()
-                        .fill(WorkstationTheme.textSubtle)
+                        .fill(Color(hex: "#666666"))
                         .frame(width: 6, height: 6)
                 }
                 Text(isActive ? "Terminal · Live" : "Terminal · Inactive")
                     .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
-                    .foregroundStyle(isActive ? WorkstationTheme.accent : WorkstationTheme.textMuted)
+                    .foregroundStyle(isActive ? Color(hex: "#ECC864") : Color(hex: "#555555"))
                     .textCase(.uppercase)
                     .tracking(0.6)
             }
@@ -114,7 +114,7 @@ struct LiveTerminalDrawer: View {
             if totalCount > 0 {
                 Text("\(totalCount) lines")
                     .font(WorkstationTheme.Fonts.body(10, weight: .medium))
-                    .foregroundStyle(WorkstationTheme.textSubtle)
+                    .foregroundStyle(Color(hex: "#666666"))
                     .monospacedDigit()
             }
 
@@ -127,7 +127,7 @@ struct LiveTerminalDrawer: View {
                 Label(lineWrap ? "Wrap Off" : "Wrap On", systemImage: lineWrap ? "text.alignleft" : "text.justify.left")
                     .labelStyle(.iconOnly)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(lineWrap ? WorkstationTheme.accent : WorkstationTheme.textSubtle)
+                    .foregroundStyle(lineWrap ? Color(hex: "#ECC864") : Color(hex: "#666666"))
             }
             .buttonStyle(TerminalHeaderButtonStyle())
             .help(lineWrap ? "Disable line wrapping" : "Enable line wrapping")
@@ -174,7 +174,7 @@ struct LiveTerminalDrawer: View {
             } label: {
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.up")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(WorkstationTheme.textMuted)
+                    .foregroundStyle(Color(hex: "#555555"))
             }
             .buttonStyle(.plain)
             .frame(width: 22, height: 22)
@@ -289,13 +289,13 @@ struct LiveTerminalDrawer: View {
         } label: {
             Label("↓ Auto-scroll", systemImage: "arrow.down")
                 .font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(WorkstationTheme.textPrimary)
+                .foregroundStyle(Color(hex: "#F0ECE4"))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .background(Color(hex: "#1A1A1A").opacity(0.96))
                 .overlay(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                        .stroke(Color(hex: "#2A2A2A"), lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
@@ -311,12 +311,12 @@ struct LiveTerminalDrawer: View {
         HStack(spacing: 8) {
             Text(">")
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundStyle(WorkstationTheme.accent)
+                .foregroundStyle(Color(hex: "#ECC864"))
             
             TextField("Type response (e.g. y/n, option #) or command...", text: $terminalInput)
                 .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .textFieldStyle(.plain)
-                .foregroundStyle(WorkstationTheme.textPrimary)
+                .foregroundStyle(Color(hex: "#F0ECE4"))
                 .focused($isInputFocused)
                 .onSubmit {
                     sendInput()
@@ -328,7 +328,7 @@ struct LiveTerminalDrawer: View {
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(WorkstationTheme.accent)
+                        .foregroundStyle(Color(hex: "#ECC864"))
                 }
                 .buttonStyle(.plain)
             }
@@ -338,7 +338,7 @@ struct LiveTerminalDrawer: View {
         .background(Color(hex: "#080808"))
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(WorkstationTheme.borderSoft)
+                .fill(Color(hex: "#1A1A1A"))
                 .frame(height: 1)
         }
     }
@@ -415,11 +415,11 @@ private struct PulsingDot: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(WorkstationTheme.accent.opacity(0.3))
+                .fill(Color(hex: "#ECC864").opacity(0.3))
                 .frame(width: 10, height: 10)
                 .scaleEffect(scale)
             Circle()
-                .fill(WorkstationTheme.accent)
+                .fill(Color(hex: "#ECC864"))
                 .frame(width: 6, height: 6)
         }
         .onAppear {
