@@ -169,6 +169,7 @@ struct BoardView: View {
                 viewModeTab(.kanban, systemName: "rectangle.grid.1x2")
                 viewModeTab(.list, systemName: "list.bullet")
                 viewModeTab(.workspaceDetail, systemName: "building.2")
+                viewModeTab(.archive, systemName: "archivebox")
 
                 Spacer()
 
@@ -230,6 +231,8 @@ struct BoardView: View {
             )
         case .workspaceDetail:
             WorkspaceDetailView(appVM: appVM, store: store)
+        case .archive:
+            ArchiveHistoryView(appVM: appVM, store: store)
         }
     }
 

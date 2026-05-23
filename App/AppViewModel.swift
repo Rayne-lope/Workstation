@@ -9,6 +9,7 @@ enum BoardViewMode: String, CaseIterable, Identifiable, Hashable {
     case list
     case kanban
     case workspaceDetail
+    case archive
 
     var id: String { rawValue }
     var label: String {
@@ -16,6 +17,7 @@ enum BoardViewMode: String, CaseIterable, Identifiable, Hashable {
         case .list: return "List"
         case .kanban: return "Kanban"
         case .workspaceDetail: return "Workspace"
+        case .archive: return "Archive"
         }
     }
 }
@@ -33,6 +35,7 @@ final class AppViewModel {
     var issueStore: IssueStore?
     var recurringStore: RecurringStore?
     var focusSessionStore: FocusSessionStore?
+    var archiveStore: ArchiveStore?
     let agentProfileStore: AgentProfileStore
     let recentProjectsStore: RecentProjectsStore
     let preferencesStore: PreferencesStore
@@ -161,6 +164,7 @@ final class AppViewModel {
                 issueStore = nil
                 recurringStore = nil
                 focusSessionStore = nil
+                archiveStore = nil
                 activeWorkspace = nil
                 activeWorkspaceStorageKey = nil
                 worktreeMessage = nil
@@ -190,6 +194,9 @@ final class AppViewModel {
         let focusStore = FocusSessionStore(workingDirectory: workspace.inspectionURL)
         focusStore.load()
         focusSessionStore = focusStore
+        let archive = ArchiveStore(workingDirectory: workspace.inspectionURL)
+        archive.load()
+        archiveStore = archive
         Task { await store.reload() }
         startFileWatcher(for: workspace)
     }
@@ -197,6 +204,18 @@ final class AppViewModel {
     func reloadIssues() {
         guard let store = issueStore else { return }
         Task { await store.reload() }
+    }
+
+    func archiveClosedIssues() async {
+        guard let store = issueStore, let archive = archiveStore else { return }
+        do {
+            let closed = try await store.service.closedIssues(in: store.workingDirectory)
+            guard !closed.isEmpty else { return }
+            await archive.archiveIssues(closed, service: store.service)
+            await store.reload()
+        } catch {
+            NSLog("Archive sweep failed: %@", error.localizedDescription)
+        }
     }
 
     private func startFileWatcher(for workspace: ProjectWorkspace) {

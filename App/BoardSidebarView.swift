@@ -179,6 +179,14 @@ struct BoardSidebarView: View {
             }
             .buttonStyle(SidebarNavButtonStyle(isActive: appVM.viewMode == .workspaceDetail))
             .help("View workspace statistics and overview")
+
+            Button {
+                appVM.viewMode = .archive
+            } label: {
+                Label("Archive & History", systemImage: "archivebox")
+            }
+            .buttonStyle(SidebarNavButtonStyle(isActive: appVM.viewMode == .archive))
+            .help("View archived closed issues")
         }
     }
 
@@ -198,6 +206,9 @@ struct BoardSidebarView: View {
             counterRow(label: "Review", count: store.reviewIssues.count)
             counterRow(label: "Blocked", count: store.blockedIssues.count)
             counterRow(label: "Done", count: store.doneIssues.count)
+            if let archiveStore = appVM.archiveStore {
+                counterRow(label: "Archived", count: archiveStore.archivedIssues.count)
+            }
         }
         .padding(.top, 6)
     }
@@ -237,6 +248,8 @@ struct BoardSidebarView: View {
             return WorkstationTheme.red
         case "Done":
             return WorkstationTheme.green
+        case "Archived":
+            return WorkstationTheme.textDisabled
         default:
             return WorkstationTheme.textMuted
         }

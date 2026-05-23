@@ -230,6 +230,14 @@ public struct BeadsService: Sendable {
         )
     }
 
+    public func deleteIssues(ids: [String], in workingDirectory: URL) async throws {
+        guard !ids.isEmpty else { return }
+        _ = try await runExpectingSuccess(
+            arguments: ["delete"] + ids + ["--force"],
+            in: workingDirectory
+        )
+    }
+
     // MARK: - Private helpers
 
     private static func validateID(_ id: String) throws {
