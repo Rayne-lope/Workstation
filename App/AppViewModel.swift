@@ -969,6 +969,10 @@ final class AppViewModel {
                 worktree = created
                 worktreeMessage = "Worktree created at \(created.worktreeURL.path)"
             }
+            
+            // Automatically trust the worktree folder to bypass agy interactive trust prompt
+            trustWorktreeWorkspace(at: worktree.worktreeURL.path)
+
             let session = await agentLaunchFlowCoordinator.prepareLaunchSession(
                 for: issue,
                 profile: profile,
@@ -1007,6 +1011,9 @@ final class AppViewModel {
         profile: AgentProfile,
         workspace: ProjectWorkspace
     ) async {
+        // Automatically trust the workspace folder to bypass agy interactive trust prompt
+        trustWorktreeWorkspace(at: workspace.inspectionURL.path)
+
         guard let session = await agentLaunchFlowCoordinator.prepareLaunchSession(
             for: issue,
             profile: profile,
@@ -1105,6 +1112,36 @@ final class AppViewModel {
         guard let id = activeFocusIssueID, !isFocusPaused else { return }
         if let session = focusSessionStore?.session(for: id) {
             focusElapsedMs = session.currentElapsedMs()
+        }
+    }
+
+    private func trustWorktreeWorkspace(at path: String) {
+        let fileManager = FileManager.default
+        let home = fileManager.homeDirectoryForCurrentUser
+        let settingsURL = home.appendingPathComponent(".gemini/antigravity-cli/settings.json")
+        
+        let targetPath = URL(fileURLWithPath: path).standardized.path
+        
+        guard fileManager.fileExists(atPath: settingsURL.path) else { return }
+        
+        do {
+            let data = try Data(contentsOf: settingsURL)
+            guard var json = try JSONSerialization.jsonObject(with: data, options: [.mutableContainers]) as? [String: Any] else {
+                return
+            }
+            
+            var trusted = json["trustedWorkspaces"] as? [String] ?? []
+            let standardizedTrusted = trusted.map { URL(fileURLWithPath: $0).standardized.path }
+            
+            if !standardizedTrusted.contains(targetPath) {
+                trusted.append(targetPath)
+                json["trustedWorkspaces"] = trusted
+                
+                let updatedData = try JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted])
+                try updatedData.write(to: settingsURL, options: [.atomic])
+            }
+        } catch {
+            print("Failed to trust workspace: \(error.localizedDescription)")
         }
     }
 }
