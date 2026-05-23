@@ -22,8 +22,8 @@ public final class IssueStore {
     public private(set) var lastReloadedAt: Date?
     public private(set) var lastDecodeFailureRawJSON: String?
 
-    private let service: BeadsService
-    private let workingDirectory: URL
+    public let service: BeadsService
+    public let workingDirectory: URL
     private let nowProvider: @MainActor () -> Date
     private var reloadTask: Task<Void, Never>?
     private var detailTask: Task<Void, Never>?
