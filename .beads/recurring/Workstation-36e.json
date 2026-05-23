@@ -1,6 +1,12 @@
 {
-  "isRecurring" : true,
-  "issueID" : "Workstation-36e",
   "cadenceDays" : 30,
-  "history" : []
+  "history" : [
+    {
+      "completedAt" : "2026-05-23T03:43:01Z",
+      "completedBy" : "gemini",
+      "id" : "DEE1F544-C1EB-448C-BA18-B58652A43A77"
+    }
+  ],
+  "isRecurring" : true,
+  "issueID" : "Workstation-36e"
 }
