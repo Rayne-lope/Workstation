@@ -661,18 +661,27 @@ struct AgentRunTimelineCompactView: View {
 
     private func startTimer() {
         // Initialize elapsed time from run record
-        let startedAt = runRecord?.startedAt
-        if let start = startedAt {
-            let elapsed = Int(Date().timeIntervalSince(start))
-            elapsedSeconds = max(0, elapsed)
+        if let record = runRecord {
+            if let completed = record.completedAt {
+                elapsedSeconds = max(0, Int(completed.timeIntervalSince(record.startedAt)))
+            } else {
+                elapsedSeconds = max(0, Int(Date().timeIntervalSince(record.startedAt)))
+            }
         }
 
         // Start 1-second ticker
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [self] _ in
             Task { @MainActor in
-                if let startedAt = self.runRecord?.startedAt {
-                    let elapsed = Int(Date().timeIntervalSince(startedAt))
-                    self.elapsedSeconds = max(0, elapsed)
+                if let record = self.runRecord {
+                    if record.status.isFinalized {
+                        if let completed = record.completedAt {
+                            self.elapsedSeconds = max(0, Int(completed.timeIntervalSince(record.startedAt)))
+                        }
+                        self.stopTimer()
+                    } else {
+                        let elapsed = Int(Date().timeIntervalSince(record.startedAt))
+                        self.elapsedSeconds = max(0, elapsed)
+                    }
                 }
             }
         }

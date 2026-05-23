@@ -322,3 +322,8 @@
 {"id":"int-ec08c6df","kind":"field_change","created_at":"2026-05-23T12:37:47.114383Z","actor":"Rayne-lope","issue_id":"Workstation-beq","extra":{"field":"assignee","new_value":"gemini","old_value":""}}
 {"id":"int-e4ccca3e","kind":"field_change","created_at":"2026-05-23T12:53:32.322571Z","actor":"Rayne-lope","issue_id":"Workstation-g4k","extra":{"field":"assignee","new_value":"gemini","old_value":""}}
 {"id":"int-d1f91e73","kind":"field_change","created_at":"2026-05-23T13:03:30.682434Z","actor":"Rayne-lope","issue_id":"Workstation-d5v","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-3c33c21c","kind":"field_change","created_at":"2026-05-23T18:38:52.571739Z","actor":"Rayne-lope","issue_id":"Workstation-g4k","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
+{"id":"int-ed516ade","kind":"field_change","created_at":"2026-05-23T18:38:54.397047Z","actor":"Rayne-lope","issue_id":"Workstation-beq","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"done"}}
+{"id":"int-1e546186","kind":"field_change","created_at":"2026-05-23T18:39:08.965207Z","actor":"Rayne-lope","issue_id":"Workstation-9el","extra":{"field":"assignee","new_value":"gemini","old_value":""}}
+{"id":"int-27f4a4eb","kind":"field_change","created_at":"2026-05-23T18:44:19.795867Z","actor":"Rayne-lope","issue_id":"Workstation-9el","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
+{"id":"int-3de81096","kind":"field_change","created_at":"2026-05-23T18:55:15.690742Z","actor":"Rayne-lope","issue_id":"Workstation-d5v","extra":{"field":"assignee","new_value":"kimi","old_value":"claude"}}
