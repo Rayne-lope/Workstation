@@ -34,6 +34,33 @@ public extension Notification.Name {
     static let ptyProcessTerminated = Notification.Name("beads.pty.processTerminated")
 }
 
+public final class TerminalBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var buffer = ""
+    
+    public init() {}
+    
+    public func append(_ text: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        buffer += text
+    }
+    
+    public func take() -> String {
+        lock.lock()
+        defer { lock.unlock() }
+        let current = buffer
+        buffer = ""
+        return current
+    }
+    
+    public var isEmpty: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return buffer.isEmpty
+    }
+}
+
 public final class PTYProcessRegistry: @unchecked Sendable {
     public static let shared = PTYProcessRegistry()
     
@@ -41,17 +68,21 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         let process: Process
         let masterFd: Int32
         let slaveFd: Int32
+        let buffer: TerminalBuffer
     }
     
     private let lock = NSLock()
     private var activeSessions: [UUID: ActiveSession] = [:]
+    private var deadBuffers: [UUID: TerminalBuffer] = [:]
     
     private init() {}
     
     public func register(runID: UUID, process: Process, masterFd: Int32, slaveFd: Int32) {
         lock.lock()
         defer { lock.unlock() }
-        activeSessions[runID] = ActiveSession(process: process, masterFd: masterFd, slaveFd: slaveFd)
+        let buffer = TerminalBuffer()
+        activeSessions[runID] = ActiveSession(process: process, masterFd: masterFd, slaveFd: slaveFd, buffer: buffer)
+        deadBuffers.removeValue(forKey: runID)
     }
     
     public func deregister(runID: UUID) {
@@ -59,6 +90,7 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         defer { lock.unlock() }
         if let session = activeSessions.removeValue(forKey: runID) {
             close(session.slaveFd)
+            deadBuffers[runID] = session.buffer
         }
     }
     
@@ -75,6 +107,19 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         
         session.process.terminate()
         close(session.slaveFd)
+        deadBuffers[runID] = session.buffer
+    }
+
+    public func buffer(for runID: UUID) -> TerminalBuffer? {
+        lock.lock()
+        defer { lock.unlock() }
+        return activeSessions[runID]?.buffer ?? deadBuffers[runID]
+    }
+
+    public func removeBuffer(for runID: UUID) {
+        lock.lock()
+        defer { lock.unlock() }
+        deadBuffers.removeValue(forKey: runID)
     }
 
     /// Notify the subprocess of a new terminal column/row size (TIOCSWINSZ).
@@ -132,6 +177,12 @@ public final class PTYRunner: @unchecked Sendable {
             throw PTYError.openSlaveFailed
         }
         
+        // Make masterFd non-blocking
+        let flags = fcntl(masterFd, F_GETFL, 0)
+        if flags >= 0 {
+            _ = fcntl(masterFd, F_SETFL, flags | O_NONBLOCK)
+        }
+        
         // 5. Configure Process
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
@@ -168,53 +219,73 @@ public final class PTYRunner: @unchecked Sendable {
         let utf8Carry = UnsafeMutablePointer<UInt8>.allocate(capacity: 4)
         utf8Carry.initialize(repeating: 0, count: 4)
         var carryCount = 0
+        
         // 6. Asynchronous reading loop
         let readSource = DispatchSource.makeReadSource(fileDescriptor: masterFd, queue: DispatchQueue.global(qos: .userInteractive))
 
         readSource.setEventHandler {
-            let bufferSize = 4096
-            let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
-            defer { buffer.deallocate() }
-
-            let bytesRead = read(masterFd, buffer, bufferSize)
-            guard bytesRead > 0 else {
-                readSource.cancel()
-                utf8Carry.deallocate()
-                return
-            }
-
-            // Prepend any leftover bytes from previous chunk
             var combined = Data()
             if carryCount > 0 {
                 combined.append(utf8Carry, count: carryCount)
                 carryCount = 0
             }
-            combined.append(Data(bytes: buffer, count: bytesRead))
-
-            // Attempt to decode; if trailing bytes are incomplete, stash them
-            if let string = String(data: combined, encoding: .utf8) {
-                NotificationCenter.default.post(
-                    name: .ptyOutputReceived,
-                    object: nil,
-                    userInfo: ["runID": runID, "text": string]
-                )
-            } else {
-                // Try stripping 1-3 trailing bytes until valid UTF-8
-                var truncated = combined
-                for drop in 1...min(3, truncated.count) {
-                    let candidate = truncated.dropLast(drop)
-                    if let str = String(data: Data(candidate), encoding: .utf8) {
-                        let tail = truncated.suffix(drop)
-                        carryCount = min(drop, 4)
-                        tail.copyBytes(to: utf8Carry, count: carryCount)
-                        NotificationCenter.default.post(
-                            name: .ptyOutputReceived,
-                            object: nil,
-                            userInfo: ["runID": runID, "text": str]
-                        )
+            
+            let bufferSize = 8192
+            let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+            defer { buffer.deallocate() }
+            
+            var shouldCancel = false
+            while true {
+                let bytesRead = read(masterFd, buffer, bufferSize)
+                if bytesRead > 0 {
+                    combined.append(buffer, count: bytesRead)
+                } else if bytesRead == 0 {
+                    // EOF
+                    shouldCancel = true
+                    break
+                } else {
+                    let err = errno
+                    if err == EAGAIN || err == EWOULDBLOCK {
+                        // No more data available right now
+                        break
+                    } else if err == EINTR {
+                        // Interrupted, try again
+                        continue
+                    } else {
+                        // Error
+                        shouldCancel = true
                         break
                     }
                 }
+            }
+            
+            if !combined.isEmpty {
+                // Attempt to decode; if trailing bytes are incomplete, stash them
+                if let string = String(data: combined, encoding: .utf8) {
+                    if let buffer = PTYProcessRegistry.shared.buffer(for: runID) {
+                        buffer.append(string)
+                    }
+                } else {
+                    // Try stripping 1-3 trailing bytes until valid UTF-8
+                    var truncated = combined
+                    for drop in 1...min(3, truncated.count) {
+                        let candidate = truncated.dropLast(drop)
+                        if let str = String(data: Data(candidate), encoding: .utf8) {
+                            let tail = truncated.suffix(drop)
+                            carryCount = min(drop, 4)
+                            tail.copyBytes(to: utf8Carry, count: carryCount)
+                            if let buffer = PTYProcessRegistry.shared.buffer(for: runID) {
+                                buffer.append(str)
+                            }
+                            break
+                        }
+                    }
+                }
+            }
+            
+            if shouldCancel {
+                readSource.cancel()
+                utf8Carry.deallocate()
             }
         }
         

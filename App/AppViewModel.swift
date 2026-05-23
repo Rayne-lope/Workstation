@@ -94,7 +94,6 @@ final class AppViewModel {
 
     @ObservationIgnored private var workspaceCancellable: AnyCancellable?
     @ObservationIgnored private var fileWatcher: IssueFileWatcher?
-    @ObservationIgnored private var ptyBuffers: [UUID: String] = [:]
     @ObservationIgnored private var ptyFlushTimers: [UUID: Timer] = [:]
 
     init(
@@ -146,20 +145,7 @@ final class AppViewModel {
             }
         }
 
-        NotificationCenter.default.addObserver(
-            forName: .ptyOutputReceived,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self,
-                  let userInfo = notification.userInfo,
-                  let runID = userInfo["runID"] as? UUID,
-                  let text = userInfo["text"] as? String else {
-                return
-            }
-            self.agentRunTranscriptStore.skipPersist = true
-            self.bufferAndScheduleFlush(runID: runID, text: text)
-        }
+
 
         NotificationCenter.default.addObserver(
             forName: .ptyProcessTerminated,
@@ -953,27 +939,41 @@ final class AppViewModel {
         agentRunTranscriptStore.append(runID: runID, role: role, content: content)
     }
 
-    private func bufferAndScheduleFlush(runID: UUID, text: String) {
-        let current = ptyBuffers[runID] ?? ""
-        ptyBuffers[runID] = current + text
+    private func startRepeatingFlushTimer(for runID: UUID) {
+        ptyFlushTimers[runID]?.invalidate()
         
-        if ptyFlushTimers[runID] == nil {
-            let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { [weak self] _ in
-                guard let self = self else { return }
-                self.flushBufferImmediately(runID: runID)
-            }
-            ptyFlushTimers[runID] = timer
+        let timer = Timer(timeInterval: 1.0 / 20.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            self.flushBuffer(for: runID)
         }
+        RunLoop.main.add(timer, forMode: .default)
+        ptyFlushTimers[runID] = timer
+    }
+
+    private func flushBuffer(for runID: UUID) {
+        guard let buffer = PTYProcessRegistry.shared.buffer(for: runID) else {
+            ptyFlushTimers[runID]?.invalidate()
+            ptyFlushTimers.removeValue(forKey: runID)
+            return
+        }
+        
+        let pendingText = buffer.take()
+        guard !pendingText.isEmpty else { return }
+        
+        self.appendTranscriptMessage(runID: runID, role: .agent, content: pendingText)
     }
 
     private func flushBufferImmediately(runID: UUID) {
         ptyFlushTimers[runID]?.invalidate()
         ptyFlushTimers.removeValue(forKey: runID)
         
-        guard let text = ptyBuffers.removeValue(forKey: runID), !text.isEmpty else {
-            return
+        if let buffer = PTYProcessRegistry.shared.buffer(for: runID) {
+            let pendingText = buffer.take()
+            if !pendingText.isEmpty {
+                self.appendTranscriptMessage(runID: runID, role: .agent, content: pendingText)
+            }
+            PTYProcessRegistry.shared.removeBuffer(for: runID)
         }
-        self.appendTranscriptMessage(runID: runID, role: .agent, content: text)
     }
 
     func updateTranscriptMessageContent(id: UUID, content: String) {
@@ -1131,6 +1131,8 @@ final class AppViewModel {
                     terminalCommand: session.payload.command
                 )
                 terminalErrorMessage = nil
+                agentRunTranscriptStore.skipPersist = true
+                startRepeatingFlushTimer(for: session.id)
             } catch {
                 terminalErrorMessage = error.localizedDescription
             }
@@ -1167,6 +1169,8 @@ final class AppViewModel {
                 terminalCommand: session.payload.command
             )
             terminalErrorMessage = nil
+            agentRunTranscriptStore.skipPersist = true
+            startRepeatingFlushTimer(for: session.id)
         } catch {
             terminalErrorMessage = error.localizedDescription
         }
