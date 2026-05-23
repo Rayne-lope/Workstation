@@ -39,6 +39,25 @@ public final class AgentRunTranscriptStore {
         role: AgentRunMessageRole,
         content: String
     ) -> AgentRunMessage? {
+        if role == .agent {
+            if let lastIndex = messages.lastIndex(where: { $0.runID == runID }),
+               messages[lastIndex].role == .agent {
+                messages[lastIndex].content += content
+                persist()
+                return messages[lastIndex]
+            }
+            guard !content.isEmpty else { return nil }
+            let message = AgentRunMessage(
+                runID: runID,
+                role: role,
+                content: content,
+                createdAt: clock()
+            )
+            messages.append(message)
+            persist()
+            return message
+        }
+
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         let message = AgentRunMessage(
