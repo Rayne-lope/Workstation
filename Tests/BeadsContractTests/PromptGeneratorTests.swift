@@ -63,7 +63,7 @@ struct PromptGeneratorTests {
         )
         let prompt = generator.generatePrompt(for: closer, issue: issue, projectPath: projectPath)
         #expect(prompt.contains("bd close bd-42 --reason"))
-        #expect(!prompt.contains("--add-label human"))
+        #expect(prompt.contains("--add-label human"))
     }
 
     @Test("Gemini/agy prompt prepends strict system override instruction to suppress security safety preaching")

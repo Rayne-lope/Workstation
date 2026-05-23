@@ -94,6 +94,8 @@ public struct PromptGenerator: Sendable {
         Constraints:
         - Stay scoped to the feedback above; do not introduce unrelated refactors.
         - If feedback is ambiguous, leave a `bd update \(issue.id) --notes=...` question and stop.
+        - CRITICAL DON'T: Do NOT run `bd close` or close the issue under any circumstances. You MUST instead submit it for review by adding the `human` label: `bd update \(issue.id) --add-label human`.
+        - CRITICAL DO: If the build is successful and all tests pass, you MUST follow the Git Worktree Merge & Push Protocol below to merge your worktree branch into `master` and push to remote so the changes go live.
         - Rules for completion `--notes` summary (MANDATORY):
           * The notes MUST be written in Indonesian (Bahasa Indonesia).
           * Do NOT just write a generic "implementation complete" or list files changed.
@@ -193,6 +195,8 @@ public struct PromptGenerator: Sendable {
         Constraints:
         - Follow project conventions; do not introduce unrelated refactors.
         - If a blocker appears, leave a note via `bd update \(issue.id) --notes=...` and stop instead of guessing.
+        - CRITICAL DON'T: Do NOT run `bd close` or close the issue under any circumstances. Even if your profile indicates shouldCloseIssue, you MUST instead submit it for review by adding the `human` label: `bd update \(issue.id) --add-label human`.
+        - CRITICAL DO: If the build is successful and all tests pass, you MUST follow the Git Worktree Merge & Push Protocol below to merge your worktree branch into `master` and push to remote so the changes go live.
         - Rules for completion `--notes` / `--reason` summary (MANDATORY):
           * The notes/reason MUST be written in Indonesian (Bahasa Indonesia).
           * Do NOT just write a generic "implementation complete" or list files changed.
@@ -286,6 +290,10 @@ public struct PromptGenerator: Sendable {
     2. Read `GUIDE.md` and `AGENTS.md` for repo, Beads, and worktree rules.
     3. Run `bd show {{issue_id}} --json` to read the issue.
     4. Perform the work described by your role and record progress via `bd update {{issue_id}} --notes=...`.
+
+    Constraints:
+    - CRITICAL DON'T: Do NOT run `bd close` or close the issue under any circumstances. You MUST instead submit it for review by adding the `human` label: `bd update {{issue_id}} --add-label human`.
+    - CRITICAL DO: If the build is successful and all tests pass, you MUST merge your worktree branch into `master` and push to remote.
 
     Assignee convention:
     - Use `claude` for Claude Code Executor.
