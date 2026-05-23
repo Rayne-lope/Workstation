@@ -64,7 +64,7 @@ struct LiveTerminalDrawer: View {
                             resumeScrollBadge
                         }
                     }
-                    .frame(height: isActive ? 204 : 240)
+                    .frame(maxHeight: .infinity)
                     
                     if isActive {
                         terminalInputBar
