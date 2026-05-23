@@ -32,6 +32,9 @@ struct LiveTerminalDrawer: View {
     @State private var scrollViewHeight: CGFloat = 240
     @State private var lastProgrammaticScrollTime: Date = Date.distantPast
 
+    @State private var terminalInput: String = ""
+    @FocusState private var isInputFocused: Bool
+
     private struct ParsedTerminalData {
         let allLinesCount: Int
         let visibleLines: [TerminalLine]
@@ -54,10 +57,17 @@ struct LiveTerminalDrawer: View {
             drawerHeader
 
             if isExpanded {
-                ZStack(alignment: .bottomTrailing) {
-                    terminalScrollView
-                    if !autoScroll {
-                        resumeScrollBadge
+                VStack(spacing: 0) {
+                    ZStack(alignment: .bottomTrailing) {
+                        terminalScrollView
+                        if !autoScroll {
+                            resumeScrollBadge
+                        }
+                    }
+                    .frame(height: isActive ? 204 : 240)
+                    
+                    if isActive {
+                        terminalInputBar
                     }
                 }
                 .frame(height: 240)
@@ -121,6 +131,17 @@ struct LiveTerminalDrawer: View {
             }
             .buttonStyle(TerminalHeaderButtonStyle())
             .help(lineWrap ? "Disable line wrapping" : "Enable line wrapping")
+
+            // Copy button
+            Button {
+                copyLogsToClipboard()
+            } label: {
+                Label("Copy Logs", systemImage: "doc.on.doc")
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .buttonStyle(TerminalHeaderButtonStyle())
+            .help("Copy clean logs to clipboard")
 
             // Clear button
             Button {
@@ -222,6 +243,9 @@ struct LiveTerminalDrawer: View {
                     autoScroll = false
                 }
             )
+            .onTapGesture {
+                isInputFocused = true
+            }
             .onChange(of: parsedData.visibleLines.last?.id) { _, _ in
                 if autoScroll {
                     lastProgrammaticScrollTime = Date()
@@ -279,6 +303,62 @@ struct LiveTerminalDrawer: View {
         .padding(.trailing, 10)
         .padding(.bottom, 8)
         .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .bottomTrailing)))
+    }
+
+    // MARK: - Interactive Inputs
+
+    private var terminalInputBar: some View {
+        HStack(spacing: 8) {
+            Text(">")
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundStyle(WorkstationTheme.accent)
+            
+            TextField("Type response (e.g. y/n, option #) or command...", text: $terminalInput)
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .textFieldStyle(.plain)
+                .foregroundStyle(WorkstationTheme.textPrimary)
+                .focused($isInputFocused)
+                .onSubmit {
+                    sendInput()
+                }
+            
+            if !terminalInput.isEmpty {
+                Button {
+                    sendInput()
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(WorkstationTheme.accent)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Color(hex: "#080808"))
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(WorkstationTheme.borderSoft)
+                .frame(height: 1)
+        }
+    }
+
+    private func sendInput() {
+        let textToSend = terminalInput
+        guard !textToSend.isEmpty else { return }
+        terminalInput = ""
+        
+        #if canImport(BeadsWorkspace)
+        PTYProcessRegistry.shared.writeInput(for: runID, text: textToSend + "\n")
+        #endif
+    }
+
+    private func copyLogsToClipboard() {
+        let raw = messages.filter { $0.role == .agent }.map(\.content).joined()
+        let stripped = stripANSI(raw)
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(stripped, forType: .string)
     }
 
     // MARK: - Helpers

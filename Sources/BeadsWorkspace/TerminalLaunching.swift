@@ -135,6 +135,23 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         ws.ws_ypixel = 0
         _ = ioctl(session.masterFd, TIOCSWINSZ, &ws)
     }
+
+    /// Send input string (stdin) directly to the running process master FD.
+    @discardableResult
+    public func writeInput(for runID: UUID, text: String) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let session = activeSessions[runID] else { return false }
+        
+        guard let data = text.data(using: .utf8), !data.isEmpty else { return true }
+        
+        let masterFd = session.masterFd
+        return data.withUnsafeBytes { buffer in
+            guard let baseAddress = buffer.baseAddress else { return false }
+            let bytesWritten = write(masterFd, baseAddress, data.count)
+            return bytesWritten >= 0
+        }
+    }
 }
 
 public final class PTYRunner: @unchecked Sendable {

@@ -918,6 +918,10 @@ final class AppViewModel {
         agentRunTranscriptStore.deleteAll(forRunID: runID)
     }
 
+    func sendTerminalInput(runID: UUID, text: String) {
+        PTYProcessRegistry.shared.writeInput(for: runID, text: text)
+    }
+
     func updateAgentRunStatus(id: UUID, status: AgentRunStatus) {
         agentRunHistoryStore.updateStatus(id: id, status: status)
     }
