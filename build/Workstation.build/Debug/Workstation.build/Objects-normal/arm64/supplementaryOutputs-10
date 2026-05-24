@@ -1,0 +1,86 @@
+{
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/AgentRunNotesView.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunNotesView.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunNotesView.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunNotesView.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunNotesView.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunNotesView.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/AgentRunPromptPreviewView.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunPromptPreviewView.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunPromptPreviewView.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunPromptPreviewView.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunPromptPreviewView.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunPromptPreviewView.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/AgentRunTimelineCompactView.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineCompactView.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineCompactView.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineCompactView.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineCompactView.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineCompactView.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/AgentRunTimelineFullView.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineFullView.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineFullView.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineFullView.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineFullView.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTimelineFullView.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/AgentRunTranscriptView.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptView.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptView.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptView.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptView.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptView.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/AppFontRegistrar.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AppFontRegistrar.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AppFontRegistrar.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AppFontRegistrar.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AppFontRegistrar.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AppFontRegistrar.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/AgentRunRecord.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunRecord.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunRecord.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunRecord.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunRecord.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunRecord.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/AgentRunStatus.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunStatus.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunStatus.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunStatus.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunStatus.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunStatus.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/AgentRunTranscriptStore.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptStore.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptStore.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptStore.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptStore.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentRunTranscriptStore.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/AgentTimelineEvent.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineEvent.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineEvent.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineEvent.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineEvent.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineEvent.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/AgentTimelineIngestor.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineIngestor.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineIngestor.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineIngestor.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineIngestor.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineIngestor.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/AgentTimelineStore.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineStore.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineStore.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineStore.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineStore.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/arm64/AgentTimelineStore.swiftdeps"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/WelcomeView.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WelcomeView.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WelcomeView.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WelcomeView.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WelcomeView.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WelcomeView.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/WorkflowCopilotPane.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkflowCopilotPane.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkflowCopilotPane.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkflowCopilotPane.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkflowCopilotPane.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkflowCopilotPane.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/WorkspaceDetailView.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceDetailView.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceDetailView.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceDetailView.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceDetailView.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceDetailView.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/WorkspaceViewModel.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceViewModel.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceViewModel.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceViewModel.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceViewModel.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceViewModel.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/WorkstationApp.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkstationApp.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkstationApp.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkstationApp.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkstationApp.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkstationApp.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/WorkspaceCheck.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheck.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheck.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheck.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheck.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheck.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/WorkspaceCheckState.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheckState.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheckState.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheckState.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheckState.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceCheckState.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/WorkspaceSelectionError.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceSelectionError.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceSelectionError.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceSelectionError.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceSelectionError.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceSelectionError.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/WorkspaceValidationState.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidationState.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidationState.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidationState.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidationState.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidationState.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/WorkspaceValidator.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidator.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidator.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidator.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidator.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/WorkspaceValidator.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/GeneratedAssetSymbols.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftdeps"
+  }
+}

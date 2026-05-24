@@ -1,0 +1,86 @@
+{
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/KanbanBoardView.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanBoardView.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanBoardView.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanBoardView.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanBoardView.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanBoardView.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/LiveTerminalDrawer.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LiveTerminalDrawer.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LiveTerminalDrawer.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LiveTerminalDrawer.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LiveTerminalDrawer.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LiveTerminalDrawer.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/LocalAISettingsPanelView.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettingsPanelView.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettingsPanelView.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettingsPanelView.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettingsPanelView.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettingsPanelView.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/App/LocalAISuggestionPreviewSheet.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISuggestionPreviewSheet.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISuggestionPreviewSheet.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISuggestionPreviewSheet.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISuggestionPreviewSheet.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISuggestionPreviewSheet.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsContract/KanbanColumn.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanColumn.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanColumn.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanColumn.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanColumn.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanColumn.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsContract/KanbanDropResolver.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanDropResolver.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanDropResolver.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanDropResolver.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanDropResolver.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanDropResolver.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsContract/KanbanStateMapper.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanStateMapper.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanStateMapper.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanStateMapper.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanStateMapper.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/KanbanStateMapper.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/IssueStore.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/IssueStore.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/IssueStore.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/IssueStore.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/IssueStore.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/IssueStore.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/LocalAIAction.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIAction.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIAction.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIAction.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIAction.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIAction.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/LocalAIConnectionTester.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIConnectionTester.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIConnectionTester.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIConnectionTester.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIConnectionTester.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIConnectionTester.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/LocalAIService.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIService.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIService.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIService.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIService.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAIService.swiftdeps"
+  },
+  "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/Sources/BeadsWorkspace/LocalAISettings.swift" : {
+    "const-values" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettings.swiftconstvalues",
+    "dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettings.d",
+    "diagnostics" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettings.dia",
+    "object" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettings.o",
+    "swift-dependencies" : "/Users/apple/Programming/Projects/Personal/workstation-worktrees/workstation-workstation-d5v/build/Workstation.build/Debug/Workstation.build/Objects-normal/x86_64/LocalAISettings.swiftdeps"
+  }
+}

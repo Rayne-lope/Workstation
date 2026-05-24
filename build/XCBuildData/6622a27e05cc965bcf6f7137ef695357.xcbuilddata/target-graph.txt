@@ -1,0 +1,2 @@
+Target dependency graph (1 target)
+Target 'Workstation' in project 'Workstation' (no dependencies)
