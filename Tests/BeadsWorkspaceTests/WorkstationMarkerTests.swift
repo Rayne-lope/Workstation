@@ -149,6 +149,31 @@ struct WorkstationMarkerTests {
         #expect(foundEvent)
     }
     
+    @Test("Interactive approvals parse extended JSON fields correctly")
+    func interactiveApprovalExtendedFields() {
+        let runID = UUID()
+        let ingestor = AgentTimelineIngestor(runID: runID)
+        
+        let json = """
+        ::workstation-json::{"type":"approval","prompt":"Erase disk?","proposedInput":"y\\n","rejectInput":"n\\n","riskLevel":"critical","commandPreview":"rm -rf /","fallbackInstruction":"do not erase","denialBehavior":"continueWithFallback"}
+        """
+        let appLine = TerminalLine(runID: runID, sequence: 2, text: json)
+        let deltas = ingestor.ingest(line: appLine)
+        #expect(deltas.count == 2)
+        
+        var foundRequest = false
+        for delta in deltas {
+            if case .updateApproval(let request) = delta {
+                #expect(request?.prompt == "Erase disk?")
+                #expect(request?.commandPreview == "rm -rf /")
+                #expect(request?.fallbackInstruction == "do not erase")
+                #expect(request?.denialBehavior == .continueWithFallback)
+                foundRequest = true
+            }
+        }
+        #expect(foundRequest)
+    }
+    
     @Test("Done and test summaries parse correctly")
     func doneAndTestsParsing() {
         let runID = UUID()

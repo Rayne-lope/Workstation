@@ -419,6 +419,7 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
                     proposedInput: "y\n",
                     rejectInput: "n\n",
                     riskLevel: classifyRisk(approvalPrompt),
+                    commandPreview: activeCommandRun?.command,
                     state: .active
                 )
                 activeApprovalRequest = request
@@ -648,6 +649,9 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
         public let rejectInput: String?
         public let riskLevel: String?
         public let totalCount: Int?
+        public let commandPreview: String?
+        public let fallbackInstruction: String?
+        public let denialBehavior: String?
         
         public init(
             type: String,
@@ -664,7 +668,10 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
             proposedInput: String? = nil,
             rejectInput: String? = nil,
             riskLevel: String? = nil,
-            totalCount: Int? = nil
+            totalCount: Int? = nil,
+            commandPreview: String? = nil,
+            fallbackInstruction: String? = nil,
+            denialBehavior: String? = nil
         ) {
             self.type = type
             self.title = title
@@ -681,6 +688,9 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
             self.rejectInput = rejectInput
             self.riskLevel = riskLevel
             self.totalCount = totalCount
+            self.commandPreview = commandPreview
+            self.fallbackInstruction = fallbackInstruction
+            self.denialBehavior = denialBehavior
         }
     }
     
@@ -881,6 +891,13 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
                 default: return .low
                 }
             }()
+            let denial: DenialBehavior = {
+                switch marker.denialBehavior ?? "" {
+                case "continueWithFallback": return .continueWithFallback
+                case "askForAlternative": return .askForAlternative
+                default: return .stopRun
+                }
+            }()
             let appKey = "approval-\(runID)-\(line.sequence)"
             let promptHash = String(prompt.hashValue)
             
@@ -892,6 +909,9 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
                 proposedInput: proposed,
                 rejectInput: reject,
                 riskLevel: risk,
+                commandPreview: marker.commandPreview,
+                fallbackInstruction: marker.fallbackInstruction,
+                denialBehavior: denial,
                 state: .active
             )
             activeApprovalRequest = request

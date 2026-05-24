@@ -49,6 +49,12 @@ public enum ApprovalRiskLevel: String, Codable, Sendable {
     case critical
 }
 
+public enum DenialBehavior: String, Codable, Sendable {
+    case continueWithFallback
+    case askForAlternative
+    case stopRun
+}
+
 public enum ApprovalState: String, Codable, Sendable {
     case active
     case responding
@@ -232,12 +238,14 @@ public struct AgentApprovalRequest: Identifiable, Equatable, Sendable {
     public let id: UUID
     public let stableKey: String
     public let runID: UUID
-    public let promptHash: String
+    public let promptHash: String?
     public let prompt: String
     public let proposedInput: String
     public let rejectInput: String
     public let riskLevel: ApprovalRiskLevel
     public let commandPreview: String?
+    public let fallbackInstruction: String?
+    public let denialBehavior: DenialBehavior
     public let filePreview: [String]
     public let createdAt: Date
     public var expiresAt: Date?
@@ -247,12 +255,14 @@ public struct AgentApprovalRequest: Identifiable, Equatable, Sendable {
         id: UUID = UUID(),
         stableKey: String,
         runID: UUID,
-        promptHash: String,
+        promptHash: String? = nil,
         prompt: String,
         proposedInput: String,
         rejectInput: String,
         riskLevel: ApprovalRiskLevel,
         commandPreview: String? = nil,
+        fallbackInstruction: String? = nil,
+        denialBehavior: DenialBehavior = .stopRun,
         filePreview: [String] = [],
         createdAt: Date = Date(),
         expiresAt: Date? = nil,
@@ -267,6 +277,8 @@ public struct AgentApprovalRequest: Identifiable, Equatable, Sendable {
         self.rejectInput = rejectInput
         self.riskLevel = riskLevel
         self.commandPreview = commandPreview
+        self.fallbackInstruction = fallbackInstruction
+        self.denialBehavior = denialBehavior
         self.filePreview = filePreview
         self.createdAt = createdAt
         self.expiresAt = expiresAt
