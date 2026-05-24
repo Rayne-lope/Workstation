@@ -93,7 +93,6 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         if let session = activeSessions.removeValue(forKey: runID) {
-            close(session.slaveFd)
             deadBuffers[runID] = session.buffer
             deadStreamBuffers[runID] = session.streamBuffer
         }
@@ -111,7 +110,6 @@ public final class PTYProcessRegistry: @unchecked Sendable {
         }
         
         session.process.terminate()
-        close(session.slaveFd)
         deadBuffers[runID] = session.buffer
         deadStreamBuffers[runID] = session.streamBuffer
     }
@@ -153,16 +151,66 @@ public final class PTYProcessRegistry: @unchecked Sendable {
     @discardableResult
     public func writeInput(for runID: UUID, text: String) -> Bool {
         lock.lock()
-        defer { lock.unlock() }
-        guard let session = activeSessions[runID] else { return false }
+        let session = activeSessions[runID]
+        lock.unlock()
         
-        guard let data = text.data(using: .utf8), !data.isEmpty else { return true }
+        guard let session = session else {
+            NSLog("PTY writeInput failed: no active session for %@", runID.uuidString)
+            return false
+        }
+        
+        guard session.process.isRunning else {
+            NSLog("PTY writeInput failed: process not running for %@", runID.uuidString)
+            return false
+        }
+        
+        guard let data = text.data(using: .utf8) else {
+            NSLog("PTY writeInput failed: utf8 encoding failed for %@", runID.uuidString)
+            return false
+        }
+        
+        if data.isEmpty { return true }
         
         let masterFd = session.masterFd
-        return data.withUnsafeBytes { buffer in
-            guard let baseAddress = buffer.baseAddress else { return false }
-            let bytesWritten = write(masterFd, baseAddress, data.count)
-            return bytesWritten >= 0
+        
+        return data.withUnsafeBytes { rawBuffer in
+            guard let base = rawBuffer.baseAddress else { return false }
+            
+            var totalWritten = 0
+            let totalCount = data.count
+            
+            while totalWritten < totalCount {
+                let written = Darwin.write(
+                    masterFd,
+                    base.advanced(by: totalWritten),
+                    totalCount - totalWritten
+                )
+                
+                if written > 0 {
+                    totalWritten += written
+                    continue
+                }
+                
+                if written == -1 {
+                    let err = errno
+                    if err == EINTR {
+                        continue
+                    }
+                    
+                    if err == EAGAIN || err == EWOULDBLOCK {
+                        usleep(1_000)
+                        continue
+                    }
+                    
+                    NSLog("PTY writeInput failed runID=%@ errno=%d", runID.uuidString, err)
+                    return false
+                }
+                
+                NSLog("PTY writeInput failed runID=%@ zero-byte write", runID.uuidString)
+                return false
+            }
+            
+            return true
         }
     }
 }
@@ -228,11 +276,23 @@ public final class PTYRunner: @unchecked Sendable {
         env["CLAUDE_COLOR"] = "0"
         process.environment = env
         
-        // Connect FDs using FileHandle
-        let slaveHandle = FileHandle(fileDescriptor: slaveFd, closeOnDealloc: true)
-        process.standardInput = slaveHandle
-        process.standardOutput = slaveHandle
-        process.standardError = slaveHandle
+        // Connect FDs using duplicated FileHandles to prevent double-closing or deallocation conflicts
+        let stdinFd = dup(slaveFd)
+        let stdoutFd = dup(slaveFd)
+        let stderrFd = dup(slaveFd)
+        
+        guard stdinFd >= 0 && stdoutFd >= 0 && stderrFd >= 0 else {
+            if stdinFd >= 0 { close(stdinFd) }
+            if stdoutFd >= 0 { close(stdoutFd) }
+            if stderrFd >= 0 { close(stderrFd) }
+            close(slaveFd)
+            close(masterFd)
+            throw PTYError.openSlaveFailed
+        }
+        
+        process.standardInput = FileHandle(fileDescriptor: stdinFd, closeOnDealloc: true)
+        process.standardOutput = FileHandle(fileDescriptor: stdoutFd, closeOnDealloc: true)
+        process.standardError = FileHandle(fileDescriptor: stderrFd, closeOnDealloc: true)
         
         // Register in active processes registry
         PTYProcessRegistry.shared.register(runID: runID, process: process, masterFd: masterFd, slaveFd: slaveFd)
@@ -358,6 +418,8 @@ public final class PTYRunner: @unchecked Sendable {
         do {
             try process.run()
             readSource.resume()
+            // Parent side original slaveFd is no longer needed after successful spawn
+            close(slaveFd)
         } catch {
             readSource.cancel()
             close(slaveFd)

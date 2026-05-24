@@ -416,8 +416,8 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
                     runID: runID,
                     promptHash: promptHash,
                     prompt: approvalPrompt,
-                    proposedInput: "y\n",
-                    rejectInput: "n\n",
+                    proposedInput: "y\r",
+                    rejectInput: "n\r",
                     riskLevel: classifyRisk(approvalPrompt),
                     state: .active
                 )
@@ -871,8 +871,8 @@ public final class AgentTimelineIngestor: @unchecked Sendable {
             
         case "approval":
             let prompt = marker.prompt ?? ""
-            let proposed = marker.proposedInput ?? "y\n"
-            let reject = marker.rejectInput ?? "n\n"
+            let proposed = (marker.proposedInput ?? "y\r").replacingOccurrences(of: "\n", with: "\r")
+            let reject = (marker.rejectInput ?? "n\r").replacingOccurrences(of: "\n", with: "\r")
             let risk: ApprovalRiskLevel = {
                 switch marker.riskLevel ?? "" {
                 case "critical": return .critical
