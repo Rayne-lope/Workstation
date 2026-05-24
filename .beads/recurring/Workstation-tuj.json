@@ -15,6 +15,11 @@
       "completedAt" : "2026-05-22T12:29:15Z",
       "completedBy" : "gemini",
       "id" : "649D43DC-61A3-44E1-A835-9C74ABB651D1"
+    },
+    {
+      "completedAt" : "2026-05-24T00:00:00Z",
+      "completedBy" : "opencode",
+      "id" : "03548170-3222-45E2-BB1A-330166D5C843"
     }
   ],
   "isRecurring" : true,

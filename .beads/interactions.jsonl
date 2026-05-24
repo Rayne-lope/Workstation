@@ -327,3 +327,11 @@
 {"id":"int-1e546186","kind":"field_change","created_at":"2026-05-23T18:39:08.965207Z","actor":"Rayne-lope","issue_id":"Workstation-9el","extra":{"field":"assignee","new_value":"gemini","old_value":""}}
 {"id":"int-27f4a4eb","kind":"field_change","created_at":"2026-05-23T18:44:19.795867Z","actor":"Rayne-lope","issue_id":"Workstation-9el","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
 {"id":"int-3de81096","kind":"field_change","created_at":"2026-05-23T18:55:15.690742Z","actor":"Rayne-lope","issue_id":"Workstation-d5v","extra":{"field":"assignee","new_value":"kimi","old_value":"claude"}}
+{"id":"int-d92f5717","kind":"field_change","created_at":"2026-05-24T03:09:01.685672Z","actor":"Rayne-lope","issue_id":"Workstation-tuj","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-c6307f94","kind":"field_change","created_at":"2026-05-24T03:17:35.457328Z","actor":"Rayne-lope","issue_id":"Workstation-tuj","extra":{"field":"assignee","new_value":"kimi","old_value":"gemini"}}
+{"id":"int-aee2b6c5","kind":"field_change","created_at":"2026-05-24T03:37:10.819863Z","actor":"Rayne-lope","issue_id":"Workstation-vh8","extra":{"field":"assignee","new_value":"gemini","old_value":""}}
+{"id":"int-68fddfb8","kind":"field_change","created_at":"2026-05-24T04:05:33.344371Z","actor":"Rayne-lope","issue_id":"Workstation-vh8","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"done"}}
+{"id":"int-22b13687","kind":"field_change","created_at":"2026-05-24T04:07:13.274439Z","actor":"Rayne-lope","issue_id":"Workstation-3hh","extra":{"field":"assignee","new_value":"gemini","old_value":""}}
+{"id":"int-be2fb408","kind":"field_change","created_at":"2026-05-24T06:43:23.288499Z","actor":"Rayne-lope","issue_id":"Workstation-c9u","extra":{"field":"assignee","new_value":"claude","old_value":""}}
+{"id":"int-2581e70c","kind":"field_change","created_at":"2026-05-24T07:01:31.381212Z","actor":"Rayne-lope","issue_id":"Workstation-98z","extra":{"field":"assignee","new_value":"claude","old_value":""}}
+{"id":"int-7a87ac79","kind":"field_change","created_at":"2026-05-24T07:23:35.382232Z","actor":"Rayne-lope","issue_id":"Workstation-gf0","extra":{"field":"assignee","new_value":"kimi","old_value":""}}
