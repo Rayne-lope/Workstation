@@ -213,6 +213,12 @@ public final class PTYProcessRegistry: @unchecked Sendable {
             return true
         }
     }
+
+    @discardableResult
+    public func sendFallbackInstruction(for runID: UUID, message: String) -> Bool {
+        let textToSend = message.hasSuffix("\r") ? message : message + "\r"
+        return writeInput(for: runID, text: textToSend)
+    }
 }
 
 public final class PTYRunner: @unchecked Sendable {

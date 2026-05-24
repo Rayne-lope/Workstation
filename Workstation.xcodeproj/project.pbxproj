@@ -121,6 +121,7 @@
 		E2E40DF2A4201F7470C7E7AE /* AgentRunConsoleContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01C85CDBD0FA8B298BA457F8 /* AgentRunConsoleContent.swift */; };
 		E5362CA604F5B254AE646B6F /* CommandSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4443CBD3C4BF13C6EFF81D5B /* CommandSnapshot.swift */; };
 		E56E5F5F393AD83F9307135A /* KanbanStateMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA5B6A2791C35889C81C87D9 /* KanbanStateMapper.swift */; };
+		E5C90D0F81259A27E13AA53D /* FallbackRuleRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ADB79F4CA59F6EB55C3E388 /* FallbackRuleRegistry.swift */; };
 		E5EAE5E56F935C87F949AE2E /* minimax.png in Resources */ = {isa = PBXBuildFile; fileRef = D7A712E04C5859F87AEB14AA /* minimax.png */; };
 		E6C5AE505010DC2FF4DA3348 /* Syne-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 19B349ADD57DB191D4A95184 /* Syne-Variable.ttf */; };
 		E8892FEAC40F2D9F2DCCDA12 /* AgentLaunchFlowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FD61717604607BEB12CCC4 /* AgentLaunchFlowCoordinator.swift */; };
@@ -158,6 +159,7 @@
 		14069CE24B8C10020B9420B2 /* WorkspaceCheckState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCheckState.swift; sourceTree = "<group>"; };
 		172FE67FF2659FDC69E0219B /* GitStatusService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitStatusService.swift; sourceTree = "<group>"; };
 		19B349ADD57DB191D4A95184 /* Syne-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Syne-Variable.ttf"; sourceTree = "<group>"; };
+		1ADB79F4CA59F6EB55C3E388 /* FallbackRuleRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FallbackRuleRegistry.swift; sourceTree = "<group>"; };
 		21136495113009F87FFC43FA /* AgentRunHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunHistoryStore.swift; sourceTree = "<group>"; };
 		239C206157EBCBC3009E7622 /* IssueRightPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueRightPane.swift; sourceTree = "<group>"; };
 		24C70366E2909BEEDC4FE54A /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
@@ -332,6 +334,7 @@
 				13DC880F7A30532C29D6BA48 /* CopilotConversationMessage.swift */,
 				AB3DD32D6387F9A782FF7253 /* CopilotTranscriptStore.swift */,
 				FBAA02860BC78ECF5A22D762 /* CreateIssueInput.swift */,
+				1ADB79F4CA59F6EB55C3E388 /* FallbackRuleRegistry.swift */,
 				072B084321C41D7E7A900DF0 /* FocusSession.swift */,
 				29E75029744ADEBC7A72F65B /* FocusSessionStore.swift */,
 				172FE67FF2659FDC69E0219B /* GitStatusService.swift */,
@@ -595,6 +598,7 @@
 				2E73D3EA428BEDD1D1F50226 /* CreateIssueSheet.swift in Sources */,
 				FEF2BD0CF88AD11189CC4372 /* DebugPanelView.swift in Sources */,
 				26FA2B55B26965A43CE7D934 /* DefaultsSettingsPanelView.swift in Sources */,
+				E5C90D0F81259A27E13AA53D /* FallbackRuleRegistry.swift in Sources */,
 				D32B834DCACC4E649936E374 /* FocusSession.swift in Sources */,
 				839DF9C967F0EEFB03E6469C /* FocusSessionStore.swift in Sources */,
 				93C54C1F493139C7481EC5B4 /* FocusStripView.swift in Sources */,
