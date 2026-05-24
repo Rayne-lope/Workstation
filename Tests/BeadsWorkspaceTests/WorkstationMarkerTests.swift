@@ -131,8 +131,8 @@ struct WorkstationMarkerTests {
             switch delta {
             case .updateApproval(let request):
                 #expect(request?.prompt == "Erase disk?")
-                #expect(request?.proposedInput == "y\n")
-                #expect(request?.rejectInput == "n\n")
+                #expect(request?.proposedInput == "y\r")
+                #expect(request?.rejectInput == "n\r")
                 #expect(request?.riskLevel == .critical)
                 foundRequest = true
             case .insert(let event):

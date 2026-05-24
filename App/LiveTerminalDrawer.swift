@@ -348,7 +348,10 @@ struct LiveTerminalDrawer: View {
         terminalInput = ""
         
         #if canImport(BeadsWorkspace)
-        PTYProcessRegistry.shared.writeInput(for: runID, text: textToSend + "\n")
+        let success = PTYProcessRegistry.shared.writeInput(for: runID, text: textToSend + "\r")
+        if !success {
+            NSLog("LiveTerminalDrawer: PTY writeInput failed for runID %@", runID.uuidString)
+        }
         #endif
     }
 
