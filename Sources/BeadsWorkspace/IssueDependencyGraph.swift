@@ -130,3 +130,148 @@ public struct IssueDependencyGraph: Sendable, Hashable {
         return critical
     }
 }
+
+public struct IssueDependencyGraphLayout: Sendable, Hashable {
+    public struct Node: Identifiable, Sendable, Hashable {
+        public let id: String
+        public let x: Double
+        public let y: Double
+        public let layer: Int
+        public let incomingCount: Int
+        public let outgoingCount: Int
+        public let isCriticalPath: Bool
+        public let isIsolated: Bool
+
+        public init(
+            id: String,
+            x: Double,
+            y: Double,
+            layer: Int,
+            incomingCount: Int,
+            outgoingCount: Int,
+            isCriticalPath: Bool,
+            isIsolated: Bool
+        ) {
+            self.id = id
+            self.x = x
+            self.y = y
+            self.layer = layer
+            self.incomingCount = incomingCount
+            self.outgoingCount = outgoingCount
+            self.isCriticalPath = isCriticalPath
+            self.isIsolated = isIsolated
+        }
+    }
+
+    public static func compute(
+        issues: [BeadIssue],
+        graph: IssueDependencyGraph,
+        columnSpacing: Double = 260,
+        rowSpacing: Double = 126,
+        originX: Double = 80,
+        originY: Double = 70
+    ) -> [Node] {
+        let issueIDs = Set(issues.map(\.id))
+        let sortedIDs = issues.map(\.id).sorted()
+        let criticalIDs = Set(graph.criticalPath)
+
+        var layerMemo: [String: Int] = [:]
+
+        func knownBlockers(for id: String) -> [String] {
+            (graph.blockersMap[id] ?? []).filter { issueIDs.contains($0) }.sorted()
+        }
+
+        func layer(for id: String, visiting: Set<String> = []) -> Int {
+            if let cached = layerMemo[id] {
+                return cached
+            }
+            if visiting.contains(id) {
+                return 0
+            }
+
+            let blockers = knownBlockers(for: id)
+            let resolvedLayer: Int
+            if blockers.isEmpty {
+                resolvedLayer = 0
+            } else {
+                let nextVisiting = visiting.union([id])
+                resolvedLayer = (blockers.map { layer(for: $0, visiting: nextVisiting) }.max() ?? -1) + 1
+            }
+            layerMemo[id] = resolvedLayer
+            return resolvedLayer
+        }
+
+        for id in sortedIDs {
+            _ = layer(for: id)
+        }
+
+        let connectedIDs = sortedIDs.filter { id in
+            let incoming = knownBlockers(for: id).count
+            let outgoing = (graph.adjacencyList[id] ?? []).filter { issueIDs.contains($0) }.count
+            return incoming > 0 || outgoing > 0
+        }
+        let isolatedIDs = sortedIDs.filter { !connectedIDs.contains($0) }
+        let maxConnectedLayer = connectedIDs.map { layerMemo[$0] ?? 0 }.max() ?? 0
+
+        var rowsByLayer: [Int: [String]] = [:]
+        for id in connectedIDs {
+            rowsByLayer[layerMemo[id] ?? 0, default: []].append(id)
+        }
+
+        var nodes: [Node] = []
+        for layerIndex in rowsByLayer.keys.sorted() {
+            let ids = (rowsByLayer[layerIndex] ?? []).sorted { lhs, rhs in
+                let lhsCritical = criticalIDs.contains(lhs)
+                let rhsCritical = criticalIDs.contains(rhs)
+                if lhsCritical != rhsCritical {
+                    return lhsCritical && !rhsCritical
+                }
+                let lhsDegree = knownBlockers(for: lhs).count + (graph.adjacencyList[lhs] ?? []).filter { issueIDs.contains($0) }.count
+                let rhsDegree = knownBlockers(for: rhs).count + (graph.adjacencyList[rhs] ?? []).filter { issueIDs.contains($0) }.count
+                if lhsDegree != rhsDegree {
+                    return lhsDegree > rhsDegree
+                }
+                return lhs < rhs
+            }
+
+            for (rowIndex, id) in ids.enumerated() {
+                let outgoingCount = (graph.adjacencyList[id] ?? []).filter { issueIDs.contains($0) }.count
+                let incomingCount = knownBlockers(for: id).count
+                nodes.append(Node(
+                    id: id,
+                    x: originX + Double(layerIndex) * columnSpacing,
+                    y: originY + Double(rowIndex) * rowSpacing,
+                    layer: layerIndex,
+                    incomingCount: incomingCount,
+                    outgoingCount: outgoingCount,
+                    isCriticalPath: criticalIDs.contains(id),
+                    isIsolated: false
+                ))
+            }
+        }
+
+        let isolatedLayer = maxConnectedLayer + 1
+        for (rowIndex, id) in isolatedIDs.enumerated() {
+            nodes.append(Node(
+                id: id,
+                x: originX + Double(isolatedLayer) * columnSpacing,
+                y: originY + Double(rowIndex) * rowSpacing,
+                layer: isolatedLayer,
+                incomingCount: 0,
+                outgoingCount: 0,
+                isCriticalPath: criticalIDs.contains(id),
+                isIsolated: true
+            ))
+        }
+
+        return nodes.sorted { lhs, rhs in
+            if lhs.layer != rhs.layer {
+                return lhs.layer < rhs.layer
+            }
+            if lhs.y != rhs.y {
+                return lhs.y < rhs.y
+            }
+            return lhs.id < rhs.id
+        }
+    }
+}

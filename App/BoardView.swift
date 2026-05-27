@@ -168,6 +168,7 @@ struct BoardView: View {
             HStack(spacing: 26) {
                 viewModeTab(.kanban, systemName: "rectangle.grid.1x2")
                 viewModeTab(.list, systemName: "list.bullet")
+                viewModeTab(.graph, systemName: "point.3.connected.trianglepath.dotted")
                 viewModeTab(.workspaceDetail, systemName: "building.2")
                 viewModeTab(.archive, systemName: "archivebox")
 
@@ -229,6 +230,8 @@ struct BoardView: View {
                 profiles: appVM.agentProfileStore.profiles,
                 onRequestClose: { appVM.presentCloseSheet(for: $0) }
             )
+        case .graph:
+            IssueDependencyGraphCanvasView(appVM: appVM, store: store)
         case .workspaceDetail:
             WorkspaceDetailView(appVM: appVM, store: store)
         case .archive:

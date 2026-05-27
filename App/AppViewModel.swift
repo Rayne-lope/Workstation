@@ -8,6 +8,7 @@ import BeadsWorkspace
 enum BoardViewMode: String, CaseIterable, Identifiable, Hashable {
     case list
     case kanban
+    case graph
     case workspaceDetail
     case archive
 
@@ -16,6 +17,7 @@ enum BoardViewMode: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .list: return "List"
         case .kanban: return "Kanban"
+        case .graph: return "Graph"
         case .workspaceDetail: return "Workspace"
         case .archive: return "Archive"
         }

@@ -18,6 +18,33 @@ struct IssueDependencyGraphTests {
         )
     }
 
+    private func makeGraph(issues: [BeadIssue]) -> IssueDependencyGraph {
+        var adj: [String: [String]] = [:]
+        var incoming: [String: [String]] = [:]
+        for issue in issues {
+            adj[issue.id] = []
+            incoming[issue.id] = []
+        }
+        for issue in issues {
+            incoming[issue.id] = issue.blockedBy ?? []
+            for blocker in issue.blockedBy ?? [] {
+                adj[blocker, default: []].append(issue.id)
+            }
+        }
+        for (key, value) in adj {
+            adj[key] = value.sorted()
+        }
+        for (key, value) in incoming {
+            incoming[key] = value.sorted()
+        }
+        return IssueDependencyGraph(
+            adjacencyList: adj,
+            blockersMap: incoming,
+            detectedCycles: IssueDependencyGraph.detectCycles(issues: issues),
+            criticalPath: IssueDependencyGraph.findCriticalPath(issues: issues)
+        )
+    }
+
     @Test("Adjacency list and blockers map are correctly constructed")
     func testGraphConstruction() {
         let issueA = makeIssue(id: "A", blockedBy: ["B", "C"])
@@ -27,11 +54,6 @@ struct IssueDependencyGraphTests {
         
         let issues = [issueA, issueB, issueC, issueD]
         
-        // Use a dummy store to resolve the graph
-        let store = IssueStore(
-            service: BeadsService(commandRunner: StubCommandRunner()),
-            workingDirectory: URL(fileURLWithPath: "/tmp")
-        )
         // Since resolveDependencyGraph is private, we can construct the graph directly
         // using the underlying algorithms in IssueDependencyGraph
         let cycles = IssueDependencyGraph.detectCycles(issues: issues)
@@ -133,5 +155,53 @@ struct IssueDependencyGraphTests {
         let critical = IssueDependencyGraph.findCriticalPath(issues: [issueA, issueB, issueC])
         // Should not crash or infinite loop
         #expect(critical.count > 0)
+    }
+
+    @Test("Graph layout places blockers before blocked issues")
+    func testLayoutPlacesBlockersBeforeBlockedIssues() {
+        let issueA = makeIssue(id: "A", blockedBy: ["B"])
+        let issueB = makeIssue(id: "B", blockedBy: ["C"])
+        let issueC = makeIssue(id: "C")
+        let graph = makeGraph(issues: [issueA, issueB, issueC])
+
+        let nodes = Dictionary(uniqueKeysWithValues: IssueDependencyGraphLayout.compute(issues: [issueA, issueB, issueC], graph: graph).map { ($0.id, $0) })
+
+        #expect((nodes["C"]?.layer ?? -1) < (nodes["B"]?.layer ?? -1))
+        #expect((nodes["B"]?.layer ?? -1) < (nodes["A"]?.layer ?? -1))
+        #expect((nodes["C"]?.x ?? 0) < (nodes["B"]?.x ?? 0))
+        #expect((nodes["B"]?.x ?? 0) < (nodes["A"]?.x ?? 0))
+    }
+
+    @Test("Graph layout keeps isolated issues stable")
+    func testLayoutKeepsIsolatedIssuesStable() {
+        let issueA = makeIssue(id: "A", blockedBy: ["B"])
+        let issueB = makeIssue(id: "B")
+        let issueC = makeIssue(id: "C")
+        let graph = makeGraph(issues: [issueC, issueA, issueB])
+
+        let first = IssueDependencyGraphLayout.compute(issues: [issueC, issueA, issueB], graph: graph)
+        let second = IssueDependencyGraphLayout.compute(issues: [issueB, issueC, issueA], graph: graph)
+        let firstC = first.first { $0.id == "C" }
+        let secondC = second.first { $0.id == "C" }
+
+        #expect(firstC?.isIsolated == true)
+        #expect(firstC?.incomingCount == 0)
+        #expect(firstC?.outgoingCount == 0)
+        #expect(firstC?.x == secondC?.x)
+        #expect(firstC?.y == secondC?.y)
+    }
+
+    @Test("Graph layout marks critical path nodes")
+    func testLayoutMarksCriticalPathNodes() {
+        let issueA = makeIssue(id: "A", blockedBy: ["B", "D"])
+        let issueB = makeIssue(id: "B", blockedBy: ["C"])
+        let issueC = makeIssue(id: "C")
+        let issueD = makeIssue(id: "D")
+        let graph = makeGraph(issues: [issueA, issueB, issueC, issueD])
+
+        let nodes = IssueDependencyGraphLayout.compute(issues: [issueA, issueB, issueC, issueD], graph: graph)
+        let criticalIDs = Set(nodes.filter(\.isCriticalPath).map(\.id))
+
+        #expect(criticalIDs == Set(["A", "B", "C"]))
     }
 }

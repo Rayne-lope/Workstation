@@ -81,6 +81,7 @@
 		83732800378670E8A9ED4945 /* PriorityDifficulty.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFB5BD82F9980E27DDE77E4A /* PriorityDifficulty.swift */; };
 		839DF9C967F0EEFB03E6469C /* FocusSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E75029744ADEBC7A72F65B /* FocusSessionStore.swift */; };
 		86EE84A1901F3D1D705B5C86 /* IssueCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6F1CB226FDF9300F9A69AE /* IssueCardView.swift */; };
+		871A8826E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 871A8825E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift */; };
 		88D9FBEE6AD787588C414A68 /* IssueFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 284D14F10FAD954DE8084E98 /* IssueFilterState.swift */; };
 		8FBFD5658AFC82CD57BBC344 /* ProjectRootDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6224D67B91244DA59C02E583 /* ProjectRootDiscovery.swift */; };
 		90FCF8C268D3F27869C35625 /* CommandRunning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD22E8AD06D83B420E333A0 /* CommandRunning.swift */; };
@@ -235,6 +236,7 @@
 		9A88CC42EF5FF51ECCC44DF4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9D1634AE4431DCFC838CA764 /* DMSans-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Variable.ttf"; sourceTree = "<group>"; };
 		A058CE86AB9D21A90D4AC4A4 /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
+		871A8825E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDependencyGraphCanvasView.swift; sourceTree = "<group>"; };
 		A28C106C6E459CF2B46667A8 /* IssueDependencyGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDependencyGraph.swift; sourceTree = "<group>"; };
 		A426C3CF17A97D5D9A653E94 /* StatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarView.swift; sourceTree = "<group>"; };
 		A9D17E8ECAB8F8236106375E /* AgentRunPromptPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunPromptPreviewView.swift; sourceTree = "<group>"; };
@@ -448,6 +450,7 @@
 				318566DC37E0E0C6C999E40A /* GitDirtyLaunchSheet.swift */,
 				27751D07AAD59803026AEADA /* GoalChecklistView.swift */,
 				BC6F1CB226FDF9300F9A69AE /* IssueCardView.swift */,
+				871A8825E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift */,
 				F890105154924D319CFE485F /* IssueDetailRecurringSection.swift */,
 				A058CE86AB9D21A90D4AC4A4 /* IssueDetailView.swift */,
 				876B61BCEC422CC1BB78AA8A /* IssueFilterBarView.swift */,
@@ -619,6 +622,7 @@
 				220E255E25EDD57D3D6CCEB7 /* GoalChecklistView.swift in Sources */,
 				34931793876EDBF58BAC151E /* GoalParser.swift in Sources */,
 				86EE84A1901F3D1D705B5C86 /* IssueCardView.swift in Sources */,
+				871A8826E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift in Sources */,
 				11AD643DECCB3B4165F081CE /* IssueDependencyGraph.swift in Sources */,
 				1090C560748AD4C05E9E2BE8 /* IssueDetailRecurringSection.swift in Sources */,
 				F75546CC5E1ECC49645B16A3 /* IssueDetailView.swift in Sources */,
