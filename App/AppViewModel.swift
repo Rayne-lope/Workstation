@@ -1228,6 +1228,7 @@ final class AppViewModel {
                     terminalCommand: session.payload.command
                 )
                 terminalErrorMessage = nil
+                updateAgentRunStatus(id: session.id, status: .accepted)
             } catch {
                 terminalErrorMessage = error.localizedDescription
             }
@@ -1264,6 +1265,7 @@ final class AppViewModel {
                 terminalCommand: session.payload.command
             )
             terminalErrorMessage = nil
+            updateAgentRunStatus(id: session.id, status: .accepted)
         } catch {
             terminalErrorMessage = error.localizedDescription
         }
