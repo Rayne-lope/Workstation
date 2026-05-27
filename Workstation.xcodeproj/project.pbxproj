@@ -25,6 +25,7 @@
 		1E82711CB134527950F605D6 /* AssigneeBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E9765ACEE853F40158ABDF /* AssigneeBadgeView.swift */; };
 		20A20344FE5ED057E49A3BE1 /* LiveTerminalDrawer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C8B23B400081B497D0ED65E /* LiveTerminalDrawer.swift */; };
 		21D25424584B277730496E43 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A774C9D9CA5BFF52912BC2A /* WelcomeView.swift */; };
+		220E255E25EDD57D3D6CCEB7 /* GoalChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27751D07AAD59803026AEADA /* GoalChecklistView.swift */; };
 		2301A9AA47A99AFEF3B5278F /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D5AB344D5A4D3F85B094889 /* AppPreferences.swift */; };
 		234B36538B05A7413D790F5C /* UpdateIssueInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 577CDDC714F1C8C5E07746BD /* UpdateIssueInput.swift */; };
 		26B7E023EA5BEFFBAC714259 /* GitStatusSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE6B7461351447EB9564CA77 /* GitStatusSummary.swift */; };
@@ -40,6 +41,7 @@
 		307333C6210BFC9243666ED1 /* IssueListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E024339F6709086B129865 /* IssueListView.swift */; };
 		32993856C442FC02097AB25E /* MarkdownTextRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55778B25F81A4161985826B3 /* MarkdownTextRenderer.swift */; };
 		33A66E85475E89220AF64A8C /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CACB98D4B69C298D839DA750 /* BoardView.swift */; };
+		34931793876EDBF58BAC151E /* GoalParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D681CE6C86EDAE8338D0E24 /* GoalParser.swift */; };
 		3545528E858BDB87D32E6D20 /* AgentTimelineEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF61879F7CAD15B80A61FA3 /* AgentTimelineEvent.swift */; };
 		35980171BB540A2D762DD505 /* ArchiveHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C07FC05E5DFAE454494EDE /* ArchiveHistoryView.swift */; };
 		368C328B40B6D82F36FD406A /* WorkspaceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 911B6D15106586722D5B61D2 /* WorkspaceDetailView.swift */; };
@@ -163,6 +165,7 @@
 		21136495113009F87FFC43FA /* AgentRunHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunHistoryStore.swift; sourceTree = "<group>"; };
 		239C206157EBCBC3009E7622 /* IssueRightPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueRightPane.swift; sourceTree = "<group>"; };
 		24C70366E2909BEEDC4FE54A /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		27751D07AAD59803026AEADA /* GoalChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalChecklistView.swift; sourceTree = "<group>"; };
 		284D14F10FAD954DE8084E98 /* IssueFilterState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFilterState.swift; sourceTree = "<group>"; };
 		288D0C65A25FE0A694A13C38 /* LocalAIConnectionTester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIConnectionTester.swift; sourceTree = "<group>"; };
 		29E75029744ADEBC7A72F65B /* FocusSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionStore.swift; sourceTree = "<group>"; };
@@ -179,6 +182,7 @@
 		38B98FF907C967F3561B56B6 /* AgentRunTimelineCompactView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunTimelineCompactView.swift; sourceTree = "<group>"; };
 		3AD22E8AD06D83B420E333A0 /* CommandRunning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRunning.swift; sourceTree = "<group>"; };
 		3C8B23B400081B497D0ED65E /* LiveTerminalDrawer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTerminalDrawer.swift; sourceTree = "<group>"; };
+		3D681CE6C86EDAE8338D0E24 /* GoalParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalParser.swift; sourceTree = "<group>"; };
 		3EBDFB2F92EA5F5964227D36 /* SettingsShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsShellView.swift; sourceTree = "<group>"; };
 		412453999B9BCF926556D33A /* RecurringMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringMetadata.swift; sourceTree = "<group>"; };
 		4443CBD3C4BF13C6EFF81D5B /* CommandSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandSnapshot.swift; sourceTree = "<group>"; };
@@ -381,6 +385,7 @@
 				7F33F1DA015B079DD64713C6 /* BeadIssue.swift */,
 				769302AC4630DBE23ADC0E6B /* BeadsJSONDecoder.swift */,
 				4443CBD3C4BF13C6EFF81D5B /* CommandSnapshot.swift */,
+				3D681CE6C86EDAE8338D0E24 /* GoalParser.swift */,
 				E9AE6DEA5AB2C1092356E825 /* KanbanColumn.swift */,
 				BC94C6308D78DB176B7985FD /* KanbanDropResolver.swift */,
 				EA5B6A2791C35889C81C87D9 /* KanbanStateMapper.swift */,
@@ -438,6 +443,7 @@
 				D27F04B1AC6BCDE59657C6B5 /* FocusStripView.swift */,
 				828B13449CC3B4C9E1667F4B /* GeneralSettingsPanelView.swift */,
 				318566DC37E0E0C6C999E40A /* GitDirtyLaunchSheet.swift */,
+				27751D07AAD59803026AEADA /* GoalChecklistView.swift */,
 				BC6F1CB226FDF9300F9A69AE /* IssueCardView.swift */,
 				F890105154924D319CFE485F /* IssueDetailRecurringSection.swift */,
 				A058CE86AB9D21A90D4AC4A4 /* IssueDetailView.swift */,
@@ -607,6 +613,8 @@
 				695395B3EBB5BFCB9F06BFAF /* GitStatusService.swift in Sources */,
 				26B7E023EA5BEFFBAC714259 /* GitStatusSummary.swift in Sources */,
 				EED8DF1BA8C8C66017D39C24 /* GitWorktreeService.swift in Sources */,
+				220E255E25EDD57D3D6CCEB7 /* GoalChecklistView.swift in Sources */,
+				34931793876EDBF58BAC151E /* GoalParser.swift in Sources */,
 				86EE84A1901F3D1D705B5C86 /* IssueCardView.swift in Sources */,
 				1090C560748AD4C05E9E2BE8 /* IssueDetailRecurringSection.swift in Sources */,
 				F75546CC5E1ECC49645B16A3 /* IssueDetailView.swift in Sources */,

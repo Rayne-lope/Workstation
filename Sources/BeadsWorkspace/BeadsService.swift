@@ -138,6 +138,13 @@ public struct BeadsService: Sendable {
         if let assignee = input.assignee {
             arguments.append(contentsOf: ["--assignee", assignee])
         }
+        if let acceptance = input.acceptanceCriteria {
+            arguments.append(contentsOf: ["--acceptance", acceptance])
+        }
+        if let parentID = input.parentID {
+            // Pass the value even when empty — empty string clears the parent in beads.
+            arguments.append(contentsOf: ["--parent", parentID])
+        }
         arguments.append("--json")
 
         return try await runDecodingIssue(arguments: arguments, in: workingDirectory)

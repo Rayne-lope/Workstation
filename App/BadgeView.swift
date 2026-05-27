@@ -33,6 +33,8 @@ enum BadgeStyle {
     case warning
     case recurring(isOverdue: Bool)
     case focus
+    case epic       // gold — for the epic container issue
+    case childOf    // green — for child issues that belong to an epic
 
     var foreground: Color {
         switch self {
@@ -54,6 +56,10 @@ enum BadgeStyle {
             return isOverdue ? WorkstationTheme.orange : WorkstationTheme.purple
         case .focus:
             return WorkstationTheme.background
+        case .epic:
+            return WorkstationTheme.accent
+        case .childOf:
+            return WorkstationTheme.green
         }
     }
 
@@ -77,6 +83,10 @@ enum BadgeStyle {
             return isOverdue ? WorkstationTheme.orangeBg : WorkstationTheme.purpleBg
         case .focus:
             return WorkstationTheme.accent
+        case .epic:
+            return WorkstationTheme.accentBg
+        case .childOf:
+            return WorkstationTheme.greenBg
         }
     }
 
@@ -100,6 +110,10 @@ enum BadgeStyle {
             return isOverdue ? WorkstationTheme.orangeBorder : WorkstationTheme.purpleBorder
         case .focus:
             return WorkstationTheme.accent
+        case .epic:
+            return WorkstationTheme.accentBorder
+        case .childOf:
+            return WorkstationTheme.greenBorder
         }
     }
 }

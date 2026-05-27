@@ -362,6 +362,7 @@ struct IssueDetailView: View {
     private var detailsTabContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             textSections
+            epicSection
             modifiedFilesSection
             aiCommitSection
             dependenciesSection
@@ -562,7 +563,11 @@ struct IssueDetailView: View {
             section(title: "Description", body: description)
         }
         if let acceptance = issue.acceptanceCriteria, !acceptance.isEmpty {
-            section(title: "Acceptance Criteria", body: acceptance)
+            if GoalParser.hasGoals(acceptance) {
+                goalChecklistSection(source: acceptance)
+            } else {
+                section(title: "Acceptance Criteria", body: acceptance)
+            }
         }
         if let detail = store.selectedIssueDetail ?? store.selectedIssue,
            let notes = detail.notes, !notes.isEmpty {
@@ -864,6 +869,162 @@ struct IssueDetailView: View {
             .foregroundStyle(WorkstationTheme.textMuted)
             .textCase(.uppercase)
             .tracking(0.7)
+    }
+
+    // MARK: - Goal Checklist
+
+    private func goalChecklistSection(source: String) -> some View {
+        let (done, total) = GoalParser.progress(source)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                uppercaseLabel("Acceptance Criteria")
+                Spacer()
+                if total > 0 {
+                    Text("\(done)/\(total)")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                        .foregroundStyle(done == total ? WorkstationTheme.green : WorkstationTheme.textMuted)
+                }
+            }
+            GoalChecklistView(source: source) { updated in
+                Task { await store.update(id: issue.id, UpdateIssueInput(acceptanceCriteria: updated)) }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(WorkstationTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(WorkstationTheme.border, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+        }
+    }
+
+    // MARK: - Epic
+
+    @ViewBuilder
+    private var epicSection: some View {
+        if issue.issueType == "epic" {
+            epicChildrenSection
+        } else if let parentID = issue.parentID, !parentID.isEmpty {
+            epicParentRow(parentID: parentID)
+        }
+    }
+
+    private var epicChildrenSection: some View {
+        let children = store.children(of: issue.id)
+        let (done, total) = store.epicProgress(id: issue.id)
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                uppercaseLabel("Children")
+                Spacer()
+                if total > 0 {
+                    Text("\(done)/\(total) done")
+                        .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                        .foregroundStyle(done == total ? WorkstationTheme.green : WorkstationTheme.accent)
+                }
+            }
+
+            if children.isEmpty {
+                Text("No child issues yet. Create issues and assign this as their parent.")
+                    .font(WorkstationTheme.Fonts.body(12))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(children) { child in
+                        epicChildRow(child)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(WorkstationTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                .stroke(WorkstationTheme.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+    }
+
+    private func epicChildRow(_ child: BeadIssue) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: child.status == "closed" ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(
+                    child.status == "closed" ? WorkstationTheme.green : WorkstationTheme.textMuted
+                )
+                .frame(width: 16)
+
+            Text(child.id)
+                .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+                .foregroundStyle(WorkstationTheme.textMuted)
+
+            Text(child.title)
+                .font(WorkstationTheme.Fonts.body(12))
+                .foregroundStyle(
+                    child.status == "closed"
+                        ? WorkstationTheme.textMuted
+                        : WorkstationTheme.textPrimary
+                )
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let status = child.status {
+                Text(status.replacingOccurrences(of: "_", with: " "))
+                    .font(WorkstationTheme.Fonts.body(10, weight: .medium))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.vertical, 3)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            store.selectIssue(id: child.id)
+        }
+    }
+
+    private func epicParentRow(parentID: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "diamond.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(WorkstationTheme.accent)
+
+            uppercaseLabel("Part of Epic")
+
+            Spacer()
+
+            if let title = appVM.epicTitle(for: parentID) {
+                Button {
+                    store.selectIssue(id: parentID)
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(parentID)
+                            .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                        Text(title)
+                            .font(WorkstationTheme.Fonts.body(11))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                    .foregroundStyle(WorkstationTheme.accent)
+                }
+                .buttonStyle(.plain)
+            } else {
+                Text(parentID)
+                    .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.textMuted)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(WorkstationTheme.accentBg)
+        .overlay(
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                .stroke(WorkstationTheme.accentBorder, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
     }
 
     // MARK: - Focus Mode

@@ -383,6 +383,19 @@ public final class IssueStore {
     public var blockedIssues: [BeadIssue] { issues(in: .blocked) }
     public var doneIssues: [BeadIssue] { issues(in: .done) }
 
+    // ── Epic helpers ──────────────────────────────────────────────────────────
+
+    /// All issues whose `parentID == epicID`.
+    public func children(of epicID: String) -> [BeadIssue] {
+        issues.filter { $0.parentID == epicID }
+    }
+
+    /// `(done, total)` count of children for an epic issue.
+    public func epicProgress(id: String) -> (done: Int, total: Int) {
+        let kids = children(of: id)
+        return (kids.filter { $0.status == "closed" }.count, kids.count)
+    }
+
     public var filteredIssues: [BeadIssue] {
         sorted(issues.filter { matchesFilters($0) })
     }

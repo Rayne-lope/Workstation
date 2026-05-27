@@ -17,6 +17,7 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
     public let blockedBy: [String]?
     public let dependencies: [BeadIssue]?
     public let dependents: [BeadIssue]?
+    public let parentID: String?
 
     public init(
         id: String,
@@ -34,7 +35,8 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
         assignee: String? = nil,
         blockedBy: [String]? = nil,
         dependencies: [BeadIssue]? = nil,
-        dependents: [BeadIssue]? = nil
+        dependents: [BeadIssue]? = nil,
+        parentID: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -52,6 +54,7 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
         self.blockedBy = blockedBy
         self.dependencies = dependencies
         self.dependents = dependents
+        self.parentID = parentID
     }
 
     public enum CodingKeys: String, CodingKey {
@@ -71,6 +74,7 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
         case blockedBy = "blocked_by"
         case dependencies
         case dependents
+        case parentID = "parent_id"
     }
 
     public init(from decoder: Decoder) throws {
@@ -94,5 +98,6 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
         // shape, ignore the edge shape silently.
         self.dependencies = try? container.decodeIfPresent([BeadIssue].self, forKey: .dependencies)
         self.dependents = try? container.decodeIfPresent([BeadIssue].self, forKey: .dependents)
+        self.parentID = try container.decodeIfPresent(String.self, forKey: .parentID)
     }
 }

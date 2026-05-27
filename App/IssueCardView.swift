@@ -107,6 +107,14 @@ struct IssueCardView: View {
                 focusBadge()
             }
 
+            if issue.issueType == "epic", let progress = appVM.epicProgress(for: issue.id) {
+                epicProgressBadge(done: progress.done, total: progress.total)
+            }
+
+            if let parentID = issue.parentID, let title = appVM.epicTitle(for: parentID) {
+                childOfBadge(epicTitle: title)
+            }
+
             Spacer(minLength: 0)
         }
     }
@@ -157,6 +165,34 @@ struct IssueCardView: View {
             .lineLimit(1)
         }
         .help("Currently in focus mode")
+    }
+
+    private func epicProgressBadge(done: Int, total: Int) -> some View {
+        BadgeView(style: .epic, horizontalPadding: 6, verticalPadding: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "diamond.fill")
+                    .font(.system(size: 8, weight: .bold))
+                Text(total == 0 ? "Epic" : "\(done)/\(total)")
+            }
+            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+            .lineLimit(1)
+        }
+        .help(total == 0 ? "Epic — no children yet" : "Epic: \(done) of \(total) done")
+    }
+
+    private func childOfBadge(epicTitle: String) -> some View {
+        BadgeView(style: .childOf, horizontalPadding: 6, verticalPadding: 2) {
+            HStack(spacing: 3) {
+                Image(systemName: "arrow.up.square.fill")
+                    .font(.system(size: 8, weight: .bold))
+                Text(epicTitle)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 72)
+            }
+            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+        }
+        .help("Part of Epic: \(epicTitle)")
     }
 
     private var blockerBadge: some View {

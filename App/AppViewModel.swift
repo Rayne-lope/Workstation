@@ -460,6 +460,26 @@ final class AppViewModel {
         }
     }
 
+    // ── Epic helpers ──────────────────────────────────────────────────────────
+
+    /// Progress for an epic issue. Returns `nil` if the issue isn't an epic or isn't found.
+    func epicProgress(for id: String) -> (done: Int, total: Int)? {
+        guard let store = issueStore,
+              store.issues.first(where: { $0.id == id })?.issueType == "epic" else { return nil }
+        return store.epicProgress(id: id)
+    }
+
+    /// Title of the parent epic, if any.
+    func epicTitle(for parentID: String) -> String? {
+        issueStore?.issues.first(where: { $0.id == parentID })?.title
+    }
+
+    /// Set (or clear) the parent of an issue. Pass `nil` epicID to remove parent.
+    func setParent(childID: String, epicID: String?) async {
+        guard let store = issueStore else { return }
+        await store.update(id: childID, UpdateIssueInput(parentID: epicID ?? ""))
+    }
+
     /// Mark a recurring issue's run as complete: append history entry then reset the issue
     /// back to Ready (status=open) so it shows up again on the board. Does NOT call `bd close`.
     /// Returns true on success.
