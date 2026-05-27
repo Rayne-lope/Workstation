@@ -943,6 +943,14 @@ final class AppViewModel {
         terminalErrorMessage = nil
         worktreeMessage = nil
 
+        // Compile and copy bulk prompts to clipboard first so they are all preserved together!
+        let total = selectedIssues.count
+        let blocks = selectedIssues.enumerated().map { idx, issue -> String in
+            let payload = agentLaunchPayload(for: issue)
+            return "--- ISSUE \(idx + 1)/\(total): \(issue.id) ---\n\(payload.prompt)"
+        }
+        Clipboard.copy(blocks.joined(separator: "\n\n"))
+
         // Clear multi-selection and hide the bulk action panel
         store.clearSelection()
         detailPaneMode = .issue
@@ -958,7 +966,8 @@ final class AppViewModel {
                     for: issue,
                     profile: profile,
                     workspace: workspace,
-                    preflight: freshPreflight
+                    preflight: freshPreflight,
+                    copyToClipboard: false
                 )
             }
         }
@@ -1207,7 +1216,8 @@ final class AppViewModel {
         for issue: BeadIssue,
         profile: AgentProfile,
         workspace: ProjectWorkspace,
-        preflight: GitWorktreeLaunchPreflight? = nil
+        preflight: GitWorktreeLaunchPreflight? = nil,
+        copyToClipboard: Bool = true
     ) async {
         do {
             let sourceRunID = activeConsoleRunID
@@ -1241,7 +1251,9 @@ final class AppViewModel {
 
             activeConsoleRunID = session.id
             detailPaneMode = .console
-            Clipboard.copy(session.payload.prompt)
+            if copyToClipboard {
+                Clipboard.copy(session.payload.prompt)
+            }
             do {
                 try agentLaunchFlowCoordinator.openTerminal(
                     for: session,
