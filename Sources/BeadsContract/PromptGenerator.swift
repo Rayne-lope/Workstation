@@ -168,13 +168,18 @@ public struct PromptGenerator: Sendable {
     }
 
     private static func executorTemplate(profile: AgentProfile, issue: BeadIssue, projectPath: String) -> String {
-        let finishStep: String
+        // Profiles with shouldRequestHumanReview = true get a hard lock so they can never self-close.
+        // Profiles with shouldCloseIssue = true (and shouldRequestHumanReview = false) let the
+        // Completion Protocol decide based on what was actually changed.
+        let hardLockLine: String
         if profile.shouldRequestHumanReview {
-            finishStep = "When done, run relevant tests one more time, then `bd update \(issue.id) --add-label human` and leave a `--notes=...` summary. Do NOT close the issue — a human will review and close it."
-        } else if profile.shouldCloseIssue {
-            finishStep = "When done, run relevant tests one more time, then `bd close \(issue.id) --reason=\"...\"` summarizing what changed."
+            hardLockLine = """
+        - CRITICAL DON'T: This profile requires human review for every change. Do NOT run \
+`bd close` under any circumstances. You MUST submit for review: \
+`bd update \(issue.id) --add-label human --notes="<summary>"`.
+"""
         } else {
-            finishStep = "When done, run relevant tests one more time and report status via `bd update \(issue.id) --notes=...`. The user will decide what to do next."
+            hardLockLine = ""
         }
 
         return """
@@ -190,18 +195,54 @@ public struct PromptGenerator: Sendable {
         4. Run `bd show \(issue.id) --json` to read the spec.
         5. Run `bd update \(issue.id) --claim` to claim the issue.
         6. Implement the change end-to-end. Run relevant tests after each meaningful step.
-        7. \(finishStep)
+        7. Follow the Completion Protocol below to decide how to finish.
+
+        ── COMPLETION PROTOCOL ────────────────────────────────────────────────
+
+        Step A — Self-check
+        Run: git diff --name-only HEAD~1
+        Inspect every changed file against the triggers below.
+
+        Step B — Classify
+
+        REQUIRES HUMAN REVIEW — trigger if ANY changed file matches:
+        • File name/path contains: View, Screen, Component, Widget, Page, Layout, Template
+        • Extension: .jsx  .tsx  .vue  .html  .htm  .css  .scss  .sass  .less
+        • Extension (native): .storyboard  .xib
+        • Path contains: assets/  images/  icons/  resources/  public/  static/  res/
+        • Localisation files: *.strings  *.stringsdict  *.arb  *.po  *.pot  *Localizable*
+        • The change introduces new user-visible text, icons, colours, animations, or layout
+        • A new user-facing feature whose correctness cannot be verified by automated tests alone
+        • You are uncertain — when in doubt, always go to review
+
+        CAN SELF-CLOSE — only if ALL of the following are true:
+        ✓ Build passes (zero errors)
+        ✓ All relevant tests pass
+        ✓ No file in the diff matches any trigger above
+        ✓ Changes are limited to: logic, models, data layer, utilities, services,
+          tests, configs, scripts, tooling, or documentation
+
+        Step C — Act
+
+        IF any REVIEW trigger matched, or you are uncertain:
+          `bd update \(issue.id) --add-label human --notes="<summary>"`
+          Notes MUST be in Indonesian (Bahasa Indonesia) and MUST include:
+          (1) Exactly where the new/changed elements appear in the UI
+              (screen, sidebar, button, menu item, etc.)
+          (2) A clear step-by-step manual testing guide
+
+        IF all SELF-CLOSE conditions are met:
+          `bd close \(issue.id) --reason="<summary>"`
+          Reason MUST be in Indonesian (Bahasa Indonesia) and MUST include:
+          (1) What changed and why
+          (2) The exact test command(s) run and the number of tests that passed
+
+        ── END COMPLETION PROTOCOL ────────────────────────────────────────────
 
         Constraints:
         - Follow project conventions; do not introduce unrelated refactors.
         - If a blocker appears, leave a note via `bd update \(issue.id) --notes=...` and stop instead of guessing.
-        - CRITICAL DON'T: Do NOT run `bd close` or close the issue under any circumstances. Even if your profile indicates shouldCloseIssue, you MUST instead submit it for review by adding the `human` label: `bd update \(issue.id) --add-label human`.
-        - CRITICAL DO: If the build is successful and all tests pass, you MUST follow the Git Worktree Merge & Push Protocol below to merge your worktree branch into `master` and push to remote so the changes go live.
-        - Rules for completion `--notes` / `--reason` summary (MANDATORY):
-          * The notes/reason MUST be written in Indonesian (Bahasa Indonesia).
-          * Do NOT just write a generic "implementation complete" or list files changed.
-          * You MUST explain exactly where the new/changed elements are located in the UI (e.g., which sidebar, button, screen, or menu item) so the user knows where to find them.
-          * You MUST provide a clear, step-by-step manual testing guide in the notes explaining how the user can test and verify the change in the app.
+        \(hardLockLine)- CRITICAL DO: If the build is successful and all tests pass, you MUST follow the Git Worktree Merge & Push Protocol below to merge your worktree branch into `master` and push to remote so the changes go live.
 
         \(Self.gitMergeProtocol(projectPath: projectPath))
 
@@ -292,7 +333,13 @@ public struct PromptGenerator: Sendable {
     4. Perform the work described by your role and record progress via `bd update {{issue_id}} --notes=...`.
 
     Constraints:
-    - CRITICAL DON'T: Do NOT run `bd close` or close the issue under any circumstances. You MUST instead submit it for review by adding the `human` label: `bd update {{issue_id}} --add-label human`.
+    - CRITICAL: Before finishing, check whether the change touches UI/visual files.
+      • If yes → submit for review: `bd update {{issue_id}} --add-label human --notes="<Indonesian summary>"`
+        Notes MUST be in Indonesian and include: (1) exactly where new/changed elements appear in the UI,
+        (2) a clear step-by-step manual testing guide.
+      • If no and build+tests pass → self-close: `bd close {{issue_id}} --reason="<Indonesian summary>"`
+        Reason MUST be in Indonesian and include: (1) what changed and why,
+        (2) the exact test command(s) run and the number of tests that passed.
     - CRITICAL DO: If the build is successful and all tests pass, you MUST merge your worktree branch into `master` and push to remote.
 
     Assignee convention:

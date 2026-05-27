@@ -30,7 +30,7 @@ struct PromptGeneratorTests {
         #expect(prompt.contains("Use `claude` for Claude Code Executor"))
     }
 
-    @Test("Built-in executor prompt requests human review instead of self-closing")
+    @Test("Built-in executor prompt contains Completion Protocol with review and self-close paths")
     func executorPromptRequestsReview() {
         let prompt = generator.generatePrompt(
             for: profile(for: .codingExecutor),
@@ -42,7 +42,12 @@ struct PromptGeneratorTests {
         #expect(prompt.contains("references/workstations_style_guide.md"))
         #expect(prompt.contains("bd update bd-42 --claim"))
         #expect(prompt.contains("bd update bd-42 --add-label human"))
-        #expect(!prompt.contains("bd close bd-42"))
+        // The built-in executor has shouldRequestHumanReview = true → hard lock line is present
+        #expect(prompt.contains("This profile requires human review"))
+        // Completion Protocol with both review and self-close paths is present
+        #expect(prompt.contains("COMPLETION PROTOCOL"))
+        #expect(prompt.contains("REQUIRES HUMAN REVIEW"))
+        #expect(prompt.contains("CAN SELF-CLOSE"))
         #expect(prompt.contains("Assignee convention"))
         #expect(prompt.contains("Use `claude` for Claude Code Executor"))
         #expect(prompt.contains("Use `kimi` for Kimi (Moonshot AI)"))
@@ -51,7 +56,7 @@ struct PromptGeneratorTests {
         #expect(lowered.contains("run relevant tests"))
     }
 
-    @Test("Executor with shouldCloseIssue still emits bd close instruction")
+    @Test("Executor with shouldCloseIssue=true and shouldRequestHumanReview=false has no hard lock and emits both paths")
     func executorPromptWithCloseEnabled() {
         let closer = AgentProfile(
             name: "Self-Closing",
@@ -62,8 +67,15 @@ struct PromptGeneratorTests {
             shouldRequestHumanReview: false
         )
         let prompt = generator.generatePrompt(for: closer, issue: issue, projectPath: projectPath)
+        // Both paths are present in the Completion Protocol
         #expect(prompt.contains("bd close bd-42 --reason"))
         #expect(prompt.contains("--add-label human"))
+        // No hard lock when shouldRequestHumanReview = false
+        #expect(!prompt.contains("This profile requires human review"))
+        // Protocol blocks are present
+        #expect(prompt.contains("COMPLETION PROTOCOL"))
+        #expect(prompt.contains("REQUIRES HUMAN REVIEW"))
+        #expect(prompt.contains("CAN SELF-CLOSE"))
     }
 
     @Test("Gemini/agy prompt prepends strict system override instruction to suppress security safety preaching")
@@ -266,5 +278,79 @@ struct PromptGeneratorTests {
         #expect(cmd.contains("\\`backticks\\`"))
         #expect(cmd.contains("\\$dollars"))
         #expect(cmd.contains("\\\\backslashes"))
+    }
+
+    @Test("Executor prompt completion protocol has all three steps")
+    func executorPromptContainsCompletionProtocol() {
+        let prompt = generator.generatePrompt(
+            for: profile(for: .codingExecutor),
+            issue: issue,
+            projectPath: projectPath
+        )
+        // All three protocol steps
+        #expect(prompt.contains("Step A"))
+        #expect(prompt.contains("Step B"))
+        #expect(prompt.contains("Step C"))
+        // Decision trigger categories
+        #expect(prompt.contains("git diff --name-only HEAD~1"))
+        #expect(prompt.contains("REQUIRES HUMAN REVIEW"))
+        #expect(prompt.contains("CAN SELF-CLOSE"))
+        // Both outcome actions
+        #expect(prompt.contains("--add-label human"))
+        #expect(prompt.contains("bd close bd-42 --reason"))
+    }
+
+    @Test("Executor prompt review-path notes requirements specify Indonesian + UI location + test guide")
+    func executorPromptReviewPathNotesRequirements() {
+        let prompt = generator.generatePrompt(
+            for: profile(for: .codingExecutor),
+            issue: issue,
+            projectPath: projectPath
+        )
+        // Notes must be Indonesian
+        #expect(prompt.contains("Indonesian (Bahasa Indonesia)"))
+        // Must include UI location
+        #expect(prompt.contains("where the new/changed elements appear"))
+        // Must include manual testing guide
+        #expect(prompt.contains("step-by-step manual testing guide"))
+    }
+
+    @Test("Executor prompt self-close path reason requirements specify Indonesian + what changed + test count")
+    func executorPromptSelfClosePathNotesRequirements() {
+        let prompt = generator.generatePrompt(
+            for: profile(for: .codingExecutor),
+            issue: issue,
+            projectPath: projectPath
+        )
+        // Reason must be Indonesian
+        #expect(prompt.contains("Indonesian (Bahasa Indonesia)"))
+        // Must explain what changed
+        #expect(prompt.contains("What changed and why"))
+        // Must include test command and pass count
+        #expect(prompt.contains("exact test command"))
+        #expect(prompt.contains("number of tests that passed"))
+    }
+
+    @Test("Executor prompt file-pattern heuristics cover multiple framework stacks")
+    func executorPromptFilePatternHeuristicsAreGeneral() {
+        let prompt = generator.generatePrompt(
+            for: profile(for: .codingExecutor),
+            issue: issue,
+            projectPath: projectPath
+        )
+        // Web frameworks
+        #expect(prompt.contains(".jsx"))
+        #expect(prompt.contains(".tsx"))
+        #expect(prompt.contains(".vue"))
+        #expect(prompt.contains(".html"))
+        #expect(prompt.contains(".css"))
+        // Native / mobile
+        #expect(prompt.contains(".storyboard"))
+        #expect(prompt.contains(".xib"))
+        // Asset / resource directories (generic)
+        #expect(prompt.contains("assets/"))
+        #expect(prompt.contains("images/"))
+        // Localisation files
+        #expect(prompt.contains(".strings"))
     }
 }
