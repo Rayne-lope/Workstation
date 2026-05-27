@@ -7,7 +7,7 @@ struct AgentRunConsoleContent: View {
 
     @State private var notesDraft: String = ""
     @State private var copyConfirmation: String?
-    @State private var selectedTab: AgentRunConsoleTab = .terminal
+    @State private var selectedTab: AgentRunConsoleTab = .prompt
 
     var body: some View {
         ScrollView(.vertical) {
@@ -135,8 +135,6 @@ struct AgentRunConsoleContent: View {
             promptCard
         case .command:
             commandCard
-        case .terminal:
-            terminalDrawerSection
         case .activity:
             activityContent
         }
@@ -206,16 +204,6 @@ struct AgentRunConsoleContent: View {
                 )
                 .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
         }
-    }
-
-    private var terminalDrawerSection: some View {
-        LiveTerminalDrawer(
-            runID: record.id,
-            messages: appVM.transcriptMessages(for: record.id),
-            isActive: record.status == .terminalOpened,
-            onKillAgent: { appVM.killActiveAgent(runID: record.id) },
-            onClearLogs: { appVM.clearLiveLogs(runID: record.id) }
-        )
     }
 
     private var activityContent: some View {
@@ -382,7 +370,6 @@ struct AgentRunConsoleContent: View {
 private enum AgentRunConsoleTab: String, CaseIterable, Identifiable {
     case prompt
     case command
-    case terminal
     case activity
 
     var id: String { rawValue }
@@ -391,7 +378,6 @@ private enum AgentRunConsoleTab: String, CaseIterable, Identifiable {
         switch self {
         case .prompt: return "Prompt"
         case .command: return "Command"
-        case .terminal: return "Terminal"
         case .activity: return "Activity"
         }
     }
@@ -400,7 +386,6 @@ private enum AgentRunConsoleTab: String, CaseIterable, Identifiable {
         switch self {
         case .prompt: return "doc.text"
         case .command: return "terminal"
-        case .terminal: return "chevron.left.forwardslash.chevron.right"
         case .activity: return "waveform.path.ecg"
         }
     }

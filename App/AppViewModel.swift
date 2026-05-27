@@ -1228,8 +1228,6 @@ final class AppViewModel {
                     terminalCommand: session.payload.command
                 )
                 terminalErrorMessage = nil
-                agentRunTranscriptStore.skipPersist = true
-                startRepeatingFlushTimer(for: session.id)
             } catch {
                 terminalErrorMessage = error.localizedDescription
             }
@@ -1266,8 +1264,6 @@ final class AppViewModel {
                 terminalCommand: session.payload.command
             )
             terminalErrorMessage = nil
-            agentRunTranscriptStore.skipPersist = true
-            startRepeatingFlushTimer(for: session.id)
         } catch {
             terminalErrorMessage = error.localizedDescription
         }
@@ -1447,13 +1443,6 @@ private enum AICommitError: LocalizedError, Sendable {
 
 private struct TerminalLauncherAdapter: TerminalLaunching {
     func openTerminal(at projectURL: URL, command: String?, runID: UUID?) throws {
-        if let runID {
-            if let command, !command.isEmpty {
-                try PTYRunner.shared.startSession(runID: runID, projectURL: projectURL, command: command)
-                return
-            }
-        }
-        
         if let command, !command.isEmpty {
             try TerminalLauncher.openTerminal(at: projectURL, command: command)
         } else {

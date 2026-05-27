@@ -6,6 +6,7 @@ DERIVED_DATA_PATH="$ROOT_DIR/.derivedData"
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug/Workstation.app"
 PROJECT_PATH="$ROOT_DIR/Workstation.xcodeproj"
 SCHEME="Workstation"
+BUILD_LOG="$ROOT_DIR/.build.log"
 
 usage() {
   cat <<'EOF'
@@ -13,19 +14,111 @@ Usage:
   ./run-app           Build and open the app
   ./run-app build     Build only
   ./run-app run       Build and open the app
+  ./run-app logs      Show last build log
 EOF
 }
 
+draw_progress() {
+  local percent="$1"
+  local label="$2"
+  local width=28
+  local filled=$((percent * width / 100))
+  local empty=$((width - filled))
+
+  local bar=""
+  for ((i = 0; i < filled; i++)); do bar="${bar}█"; done
+  for ((i = 0; i < empty; i++)); do bar="${bar}░"; done
+
+  printf "\r\033[K🚀 Building Workstation [%s] %3d%%  %s" "$bar" "$percent" "$label"
+}
+
+update_progress_from_log() {
+  local current="$1"
+  local next="$current"
+  local label="Building"
+
+  if [[ ! -f "$BUILD_LOG" ]]; then
+    echo "$next|Preparing"
+    return
+  fi
+
+  if grep -q "CompileSwiftSources\|CompileSwift\|SwiftCompile" "$BUILD_LOG"; then
+    label="Compiling Swift"
+    (( next < 55 )) && next=$((next + 2))
+  elif grep -q "Ld \|LinkStoryboards" "$BUILD_LOG"; then
+    label="Linking"
+    (( next < 75 )) && next=$((next + 2))
+  elif grep -q "ProcessInfoPlistFile" "$BUILD_LOG"; then
+    label="Processing Info.plist"
+    (( next < 82 )) && next=$((next + 1))
+  elif grep -q "CodeSign" "$BUILD_LOG"; then
+    label="Code signing"
+    (( next < 92 )) && next=$((next + 1))
+  elif grep -q "Validate" "$BUILD_LOG"; then
+    label="Validating"
+    (( next < 96 )) && next=$((next + 1))
+  else
+    label="Preparing"
+    (( next < 35 )) && next=$((next + 1))
+  fi
+
+  (( next > 96 )) && next=96
+  echo "$next|$label"
+}
+
 build_app() {
-  xcodebuild \
-    -project "$PROJECT_PATH" \
-    -scheme "$SCHEME" \
-    -configuration Debug \
-    -derivedDataPath "$DERIVED_DATA_PATH" \
-    build
+  rm -f "$BUILD_LOG"
+
+  printf "\033[?25l" # hide cursor
+  trap 'printf "\033[?25h\n"' EXIT
+
+  draw_progress 0 "Preparing"
+
+  set +e
+
+  # Important:
+  # Everything from xcodebuild goes to BUILD_LOG.
+  # Terminal only shows our progress UI.
+  (
+    xcodebuild \
+      -project "$PROJECT_PATH" \
+      -scheme "$SCHEME" \
+      -configuration Debug \
+      -derivedDataPath "$DERIVED_DATA_PATH" \
+      build
+  ) > "$BUILD_LOG" 2>&1 &
+
+  local build_pid=$!
+  local percent=1
+  local label="Preparing"
+
+  while kill -0 "$build_pid" 2>/dev/null; do
+    IFS="|" read -r percent label <<< "$(update_progress_from_log "$percent")"
+    draw_progress "$percent" "$label"
+    sleep 0.2
+  done
+
+  wait "$build_pid"
+  local status=$?
+
+  set -e
+
+  if [[ "$status" -eq 0 ]]; then
+    draw_progress 100 "Done"
+    printf "\n✅ Build succeeded\n"
+  else
+    printf "\n❌ Build failed\n\n"
+    echo "Last 100 lines from build log:"
+    echo "────────────────────────────────────────"
+    tail -n 100 "$BUILD_LOG"
+    echo "────────────────────────────────────────"
+    echo "Full log saved at: $BUILD_LOG"
+    exit "$status"
+  fi
 }
 
 mode="${1:-run}"
+
 case "$mode" in
   build)
     build_app
@@ -33,6 +126,14 @@ case "$mode" in
   run)
     build_app
     open "$APP_PATH"
+    ;;
+  logs)
+    if [[ -f "$BUILD_LOG" ]]; then
+      less "$BUILD_LOG"
+    else
+      echo "No build log found at: $BUILD_LOG"
+      exit 1
+    fi
     ;;
   -h|--help|help)
     usage

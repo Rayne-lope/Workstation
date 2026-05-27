@@ -1,0 +1,12 @@
+{
+  "cadenceDays" : 7,
+  "history" : [
+    {
+      "completedAt" : "2026-05-24T07:41:00Z",
+      "completedBy" : "kimi",
+      "id" : "88ECAE66-5E9B-4AC3-B027-0C63C33DDFAC"
+    }
+  ],
+  "isRecurring" : true,
+  "issueID" : "Workstation-gf0"
+}
