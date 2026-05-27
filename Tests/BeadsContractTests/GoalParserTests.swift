@@ -93,6 +93,23 @@ struct GoalParserTests {
         #expect(result == src)
     }
 
+    @Test("Toggle does not corrupt [X] or [x] patterns in goal text itself")
+    func toggleDoesNotCorruptTextBrackets() {
+        // The checkbox marker is [x] at start; text contains "[X]code" — must not be replaced
+        let src = "- [x] Install [X]code editor"
+        let result = GoalParser.toggle(src, at: 0)
+        #expect(result == "- [ ] Install [X]code editor")
+    }
+
+    @Test("Toggle does not corrupt [ ] in goal text body")
+    func toggleDoesNotCorruptUncheckedTextBrackets() {
+        // Checkbox is unchecked; text contains "[ ]" as part of prose
+        let src = "- [ ] Array has [ ] default value"
+        let result = GoalParser.toggle(src, at: 0)
+        // Only the leading checkbox flips; prose [ ] survives
+        #expect(result == "- [x] Array has [ ] default value")
+    }
+
     // MARK: - hasGoals
 
     @Test("hasGoals returns true when checkboxes present")
@@ -107,6 +124,15 @@ struct GoalParserTests {
         #expect(GoalParser.hasGoals(nil) == false)
         #expect(GoalParser.hasGoals("") == false)
         #expect(GoalParser.hasGoals("Just a description.") == false)
+        // "[x]" or "[ ]" appearing only in prose (not as a list item) must not trigger
+        #expect(GoalParser.hasGoals("Use [x] to mark done in Jira.") == false)
+    }
+
+    @Test("hasGoals handles all three list markers")
+    func hasGoalsAllMarkers() {
+        #expect(GoalParser.hasGoals("+ [ ] Plus marker") == true)
+        #expect(GoalParser.hasGoals("+ [x] Plus checked") == true)
+        #expect(GoalParser.hasGoals("* [X] Star uppercase") == true)
     }
 
     // MARK: - progress

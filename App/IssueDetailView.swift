@@ -562,7 +562,10 @@ struct IssueDetailView: View {
         if let description = issue.description, !description.isEmpty {
             section(title: "Description", body: description)
         }
-        if let acceptance = issue.acceptanceCriteria, !acceptance.isEmpty {
+        let freshAcceptance = store.selectedIssueDetail?.acceptanceCriteria
+            ?? store.selectedIssue?.acceptanceCriteria
+            ?? issue.acceptanceCriteria
+        if let acceptance = freshAcceptance, !acceptance.isEmpty {
             if GoalParser.hasGoals(acceptance) {
                 goalChecklistSection(source: acceptance)
             } else {
@@ -903,7 +906,7 @@ struct IssueDetailView: View {
 
     @ViewBuilder
     private var epicSection: some View {
-        if issue.issueType == "epic" {
+        if issue.issueType?.lowercased() == "epic" {
             epicChildrenSection
         } else if let parentID = issue.parentID, !parentID.isEmpty {
             epicParentRow(parentID: parentID)
@@ -972,7 +975,7 @@ struct IssueDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if let status = child.status {
-                Text(status.replacingOccurrences(of: "_", with: " "))
+                Text(status.replacingOccurrences(of: "_", with: " ").capitalized)
                     .font(WorkstationTheme.Fonts.body(10, weight: .medium))
                     .foregroundStyle(WorkstationTheme.textMuted)
                     .lineLimit(1)

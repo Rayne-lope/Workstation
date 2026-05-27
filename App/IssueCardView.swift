@@ -107,7 +107,7 @@ struct IssueCardView: View {
                 focusBadge()
             }
 
-            if issue.issueType == "epic", let progress = appVM.epicProgress(for: issue.id) {
+            if issue.issueType?.lowercased() == "epic", let progress = appVM.epicProgress(for: issue.id) {
                 epicProgressBadge(done: progress.done, total: progress.total)
             }
 

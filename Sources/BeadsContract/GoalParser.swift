@@ -27,25 +27,31 @@ public enum GoalParser: Sendable {
 
     /// Toggle the checkbox at `lineIndex` in `source`. Returns the modified string unchanged if
     /// the line isn't a checkbox or the index is out of bounds.
+    ///
+    /// Uses a regex anchored to the start of the line so that bracket patterns in the goal
+    /// *text* (e.g. `[X]code`) are never accidentally replaced.
     public static func toggle(_ source: String, at lineIndex: Int) -> String {
         var lines = source.components(separatedBy: "\n")
         guard lineIndex < lines.count else { return source }
         let line = lines[lineIndex]
-        if line.contains("[ ]") {
-            lines[lineIndex] = line.replacing("[ ]", with: "[x]", maxReplacements: 1)
-        } else {
-            lines[lineIndex] = line
-                .replacing("[x]", with: "[ ]", maxReplacements: 1)
-                .replacing("[X]", with: "[ ]", maxReplacements: 1)
+        // Capture: (1) "- [" prefix, (2) checkbox char (space / x / X), (3) "] rest"
+        lines[lineIndex] = line.replacing(
+            /^([-*+]\s+\[)([ xX])(\].+)$/
+        ) { match in
+            let prefix = String(match.output.1)
+            let current = match.output.2
+            let suffix = String(match.output.3)
+            let toggled: Character = current == " " ? "x" : " "
+            return "\(prefix)\(toggled)\(suffix)"
         }
         return lines.joined(separator: "\n")
     }
 
-    /// `true` if `source` contains at least one checkbox line.
+    /// `true` if `source` contains at least one valid checkbox line.
+    /// Uses the same regex as `parse()` — the two can never diverge.
     public static func hasGoals(_ source: String?) -> Bool {
         guard let s = source, !s.isEmpty else { return false }
-        return s.contains("- [ ]") || s.contains("- [x]") || s.contains("- [X]")
-            || s.contains("* [ ]") || s.contains("* [x]")
+        return !parse(s).isEmpty
     }
 
     /// How many goals are checked vs total.

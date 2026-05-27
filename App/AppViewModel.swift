@@ -465,7 +465,8 @@ final class AppViewModel {
     /// Progress for an epic issue. Returns `nil` if the issue isn't an epic or isn't found.
     func epicProgress(for id: String) -> (done: Int, total: Int)? {
         guard let store = issueStore,
-              store.issues.first(where: { $0.id == id })?.issueType == "epic" else { return nil }
+              store.issues.first(where: { $0.id == id })?.issueType?.lowercased() == "epic"
+        else { return nil }
         return store.epicProgress(id: id)
     }
 
