@@ -13,6 +13,7 @@ public final class IssueStore {
     public private(set) var readyIssueIDs: Set<String> = []
     public private(set) var blockedByDependencyIDs: Set<String> = []
     public private(set) var blockersMap: [String: [String]] = [:]
+    public private(set) var dependencyGraph: IssueDependencyGraph?
     public private(set) var selectedIssue: BeadIssue?
     public private(set) var selectedIssueDetail: BeadIssue?
     public private(set) var selectedIssueIDs: Set<String> = []
@@ -201,6 +202,7 @@ public final class IssueStore {
             readyIssueIDs = Set(ready.map(\.id))
             blockedByDependencyIDs = Set(blocked.map(\.id))
             blockersMap = Dictionary(uniqueKeysWithValues: blocked.map { ($0.id, $0.blockedBy ?? []) })
+            dependencyGraph = resolveDependencyGraph()
             errorMessage = nil
             lastReloadedAt = nowProvider()
             if let selected = selectedIssue {
@@ -558,5 +560,40 @@ public final class IssueStore {
         guard let value else { return nil }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func resolveDependencyGraph() -> IssueDependencyGraph {
+        var adj: [String: [String]] = [:]
+        var incoming: [String: [String]] = [:]
+        
+        for issue in issues {
+            adj[issue.id] = []
+            incoming[issue.id] = []
+        }
+        
+        for issue in issues {
+            let blockers = issue.blockedBy ?? []
+            incoming[issue.id] = blockers
+            for blocker in blockers {
+                adj[blocker, default: []].append(issue.id)
+            }
+        }
+        
+        for (k, v) in adj {
+            adj[k] = v.sorted()
+        }
+        for (k, v) in incoming {
+            incoming[k] = v.sorted()
+        }
+        
+        let cycles = IssueDependencyGraph.detectCycles(issues: issues)
+        let critical = IssueDependencyGraph.findCriticalPath(issues: issues)
+        
+        return IssueDependencyGraph(
+            adjacencyList: adj,
+            blockersMap: incoming,
+            detectedCycles: cycles,
+            criticalPath: critical
+        )
     }
 }
