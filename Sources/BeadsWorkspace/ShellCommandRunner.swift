@@ -51,6 +51,16 @@ public final class ShellCommandRunner: CommandRunning, @unchecked Sendable {
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
 
+        // macOS GUI apps (launched from Finder/Spotlight/Applications) receive a
+        // minimal PATH that excludes Homebrew. Prepend the common Homebrew and local
+        // bin paths so tools like `bd` (installed via brew) are always resolvable,
+        // regardless of how the app was launched.
+        var env = ProcessInfo.processInfo.environment
+        let brewPaths = ["/opt/homebrew/bin", "/opt/homebrew/sbin", "/usr/local/bin"]
+        let currentPath = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        env["PATH"] = (brewPaths + [currentPath]).joined(separator: ":")
+        process.environment = env
+
         stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
             if data.isEmpty {
