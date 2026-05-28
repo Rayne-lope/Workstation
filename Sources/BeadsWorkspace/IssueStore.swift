@@ -198,10 +198,32 @@ public final class IssueStore {
 
             if Task.isCancelled { return }
 
-            issues = merge(open: fetched, recentClosed: recentClosed)
+            let merged = merge(open: fetched, recentClosed: recentClosed)
+            blockersMap = Dictionary(uniqueKeysWithValues: blocked.map { ($0.id, $0.blockedBy ?? []) })
+            issues = merged.map { issue in
+                let blockers = blockersMap[issue.id] ?? []
+                return BeadIssue(
+                    id: issue.id,
+                    title: issue.title,
+                    status: issue.status,
+                    priority: issue.priority,
+                    issueType: issue.issueType,
+                    description: issue.description,
+                    acceptanceCriteria: issue.acceptanceCriteria,
+                    notes: issue.notes,
+                    createdAt: issue.createdAt,
+                    updatedAt: issue.updatedAt,
+                    closedAt: issue.closedAt,
+                    labels: issue.labels,
+                    assignee: issue.assignee,
+                    blockedBy: blockers.isEmpty ? nil : blockers,
+                    dependencies: issue.dependencies,
+                    dependents: issue.dependents,
+                    parentID: issue.parentID
+                )
+            }
             readyIssueIDs = Set(ready.map(\.id))
             blockedByDependencyIDs = Set(blocked.map(\.id))
-            blockersMap = Dictionary(uniqueKeysWithValues: blocked.map { ($0.id, $0.blockedBy ?? []) })
             dependencyGraph = resolveDependencyGraph()
             errorMessage = nil
             lastReloadedAt = nowProvider()

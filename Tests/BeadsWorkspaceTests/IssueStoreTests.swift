@@ -333,6 +333,9 @@ struct IssueStoreTests {
 
         #expect(store.blockedByDependencyIDs == ["bd-1"])
         #expect(store.blockersMap["bd-1"] == ["bd-2"])
+        #expect(store.issues.first(where: { $0.id == "bd-1" })?.blockedBy == ["bd-2"])
+        #expect(store.dependencyGraph?.blockersMap["bd-1"] == ["bd-2"])
+        #expect(store.dependencyGraph?.adjacencyList["bd-2"] == ["bd-1"])
     }
 
     @Test("Open issue listed in blocked routes to Blocked column, not Backlog/Ready")
