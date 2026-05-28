@@ -80,6 +80,10 @@ final class AppViewModel {
     var localAIStatusMessage: String?
     var localAIStatusMessageIsError = false
 
+    var gitWorktrees: [GitWorktreeInfo] = []
+    var isRefreshingWorktrees = false
+    var worktreeErrorMessage: String? = nil
+
     var pendingAgentLaunch: PendingAgentLaunch?
     var pendingWorktreeLaunch: PendingWorktreeLaunch?
     var launchErrorMessage: String?
@@ -666,6 +670,63 @@ final class AppViewModel {
     func resetSettingsToDefaults() {
         preferencesStore.resetToDefaults()
         agentProfileStore.resetToDefaults()
+    }
+
+    func refreshGitWorktrees() async {
+        guard let workspace = activeWorkspace else {
+            gitWorktrees = []
+            return
+        }
+        isRefreshingWorktrees = true
+        defer { isRefreshingWorktrees = false }
+        do {
+            gitWorktrees = try await gitWorktreeService.listWorktrees(in: workspace.inspectionURL)
+            worktreeErrorMessage = nil
+        } catch {
+            worktreeErrorMessage = error.localizedDescription
+        }
+    }
+
+    func pruneWorktree(path: String, branch: String?) async {
+        guard let workspace = activeWorkspace else { return }
+        do {
+            try await gitWorktreeService.pruneWorktree(path: path, branchName: branch, in: workspace.inspectionURL)
+            await refreshGitWorktrees()
+        } catch {
+            worktreeErrorMessage = error.localizedDescription
+        }
+    }
+
+    func pruneAllStaleWorktrees() async {
+        guard let workspace = activeWorkspace else { return }
+        let currentWorktrees = gitWorktrees
+        for wt in currentWorktrees {
+            if wt.path == workspace.inspectionURL.resolvingSymlinksInPath().path {
+                continue
+            }
+            
+            var isStale = false
+            if let slug = wt.issueSlug {
+                if let store = issueStore {
+                    if let issue = store.issues.first(where: { $0.id.lowercased() == slug }) {
+                        if issue.status?.lowercased() == "closed" {
+                            isStale = true
+                        }
+                    } else {
+                        isStale = true
+                    }
+                }
+            }
+            
+            if isStale {
+                do {
+                    try await gitWorktreeService.pruneWorktree(path: wt.path, branchName: wt.branchName, in: workspace.inspectionURL)
+                } catch {
+                    NSLog("Failed to batch-prune worktree at %@: %@", wt.path, error.localizedDescription)
+                }
+            }
+        }
+        await refreshGitWorktrees()
     }
 
     func setDefaultIssueType(_ type: String) {

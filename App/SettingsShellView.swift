@@ -55,6 +55,8 @@ struct SettingsShellView: View {
             LocalAISettingsPanelView(appVM: appVM)
         case .agentProfiles:
             AgentProfilesSettingsPanelView(appVM: appVM)
+        case .gitWorktrees:
+            GitWorktreesSettingsPanelView(appVM: appVM)
         }
     }
 }

@@ -485,4 +485,97 @@ public struct GitWorktreeService: @unchecked Sendable {
             NSLog("Failed to delete branch %@: %@", location.branchName, Self.detailMessage(for: branchResult))
         }
     }
+
+    public func listWorktrees(in workingDirectory: URL) async throws -> [GitWorktreeInfo] {
+        let result = try await commandRunner.run(
+            command: "git",
+            arguments: ["worktree", "list", "--porcelain"],
+            workingDirectory: workingDirectory
+        )
+        guard result.exitCode == 0 else {
+            throw GitWorktreeServiceError.notGitRepository(path: workingDirectory.path)
+        }
+        
+        var worktrees: [GitWorktreeInfo] = []
+        let blocks = result.stdout.components(separatedBy: "\n\n")
+        for block in blocks {
+            let lines = block.split(whereSeparator: \.isNewline)
+            var path: String?
+            var headSHA = ""
+            var branch: String?
+            
+            for line in lines {
+                if line.hasPrefix("worktree ") {
+                    path = String(line.dropFirst("worktree ".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                } else if line.hasPrefix("HEAD ") {
+                    headSHA = String(line.dropFirst("HEAD ".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                } else if line.hasPrefix("branch ") {
+                    branch = String(line.dropFirst("branch ".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
+            
+            if let path {
+                let resolvedPath = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+                worktrees.append(GitWorktreeInfo(path: resolvedPath, headSHA: headSHA, branch: branch))
+            }
+        }
+        return worktrees
+    }
+
+    public func pruneWorktree(path: String, branchName: String?, in workingDirectory: URL) async throws {
+        _ = try? await commandRunner.run(
+            command: "git",
+            arguments: ["worktree", "prune"],
+            workingDirectory: workingDirectory
+        )
+        
+        let removeResult = try await commandRunner.run(
+            command: "git",
+            arguments: ["worktree", "remove", "--force", path],
+            workingDirectory: workingDirectory
+        )
+        guard removeResult.exitCode == 0 else {
+            throw GitWorktreeServiceError.worktreeRemovalFailed(detail: Self.detailMessage(for: removeResult))
+        }
+        
+        if let branchName {
+            let branchResult = try await commandRunner.run(
+                command: "git",
+                arguments: ["branch", "-D", branchName],
+                workingDirectory: workingDirectory
+            )
+            if branchResult.exitCode != 0 {
+                NSLog("Failed to delete branch %@: %@", branchName, Self.detailMessage(for: branchResult))
+            }
+        }
+    }
+}
+
+public struct GitWorktreeInfo: Hashable, Sendable, Identifiable {
+    public var id: String { path }
+    public let path: String
+    public let headSHA: String
+    public let branch: String?
+    
+    public init(path: String, headSHA: String, branch: String?) {
+        self.path = path
+        self.headSHA = headSHA
+        self.branch = branch
+    }
+    
+    public var branchName: String? {
+        guard let branch else { return nil }
+        if branch.hasPrefix("refs/heads/") {
+            return String(branch.dropFirst("refs/heads/".count))
+        }
+        return branch
+    }
+    
+    public var issueSlug: String? {
+        guard let branchName else { return nil }
+        if branchName.hasPrefix("agent/") {
+            return String(branchName.dropFirst("agent/".count))
+        }
+        return nil
+    }
 }

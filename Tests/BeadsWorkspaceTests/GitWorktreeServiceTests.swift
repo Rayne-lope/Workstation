@@ -517,4 +517,30 @@ struct GitWorktreeServiceTests {
         #expect(preflight.reusableWorktreePath == nil)
     }
 
+    @Test("listWorktrees and pruneWorktree correctly list and delete checked out worktrees")
+    func testListAndPruneWorktrees() async throws {
+        let (workspace, baseURL) = try makeGitRepoWithAgents(name: "List Prune Test")
+        defer { try? FileManager.default.removeItem(at: baseURL) }
+
+        let service = GitWorktreeService(commandRunner: ShellCommandRunner(timeout: 10))
+        let issue = BeadIssue(
+            id: "bd-listprune",
+            title: "List prune test",
+            status: "open",
+            priority: 2,
+            issueType: "feature"
+        )
+        let location = try await service.createWorktree(for: issue, in: workspace)
+        
+        let list = try await service.listWorktrees(in: workspace.inspectionURL)
+        // There should be at least two worktrees: the main repo and the created worktree
+        #expect(list.count >= 2)
+        let resolvedURLPath = location.worktreeURL.resolvingSymlinksInPath().path
+        #expect(list.contains(where: { $0.path == resolvedURLPath }))
+        
+        try await service.pruneWorktree(path: resolvedURLPath, branchName: location.branchName, in: workspace.inspectionURL)
+        
+        let listAfter = try await service.listWorktrees(in: workspace.inspectionURL)
+        #expect(!listAfter.contains(where: { $0.path == resolvedURLPath }))
+    }
 }
