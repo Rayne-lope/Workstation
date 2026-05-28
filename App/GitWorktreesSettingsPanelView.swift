@@ -9,6 +9,10 @@ import BeadsContract
 struct GitWorktreesSettingsPanelView: View {
     @Bindable var appVM: AppViewModel
 
+    @State private var worktreeToPrune: GitWorktreeInfo?
+    @State private var isConfirmPrunePresented = false
+    @State private var isConfirmPruneAllPresented = false
+
     private var issues: [BeadIssue] {
         appVM.issueStore?.issues ?? []
     }
@@ -49,6 +53,22 @@ struct GitWorktreesSettingsPanelView: View {
         .task {
             await appVM.refreshGitWorktrees()
         }
+        .alert("Prune Worktree?", isPresented: $isConfirmPrunePresented, presenting: worktreeToPrune) { wt in
+            Button("Prune", role: .destructive) {
+                Task { await appVM.pruneWorktree(path: wt.path, branch: wt.branchName) }
+            }
+            Button("Batal", role: .cancel) {}
+        } message: { wt in
+            Text("Apakah Anda yakin ingin menghapus worktree untuk '\(wt.branchName ?? "Detached HEAD")'? Folder di \(wt.path) dan local branch akan dihapus secara permanen.")
+        }
+        .alert("Prune Semua Stale Worktrees?", isPresented: $isConfirmPruneAllPresented) {
+            Button("Prune Semua", role: .destructive) {
+                Task { await appVM.pruneAllStaleWorktrees() }
+            }
+            Button("Batal", role: .cancel) {}
+        } message: {
+            Text("Apakah Anda yakin ingin menghapus semua worktree yang berstatus Closed atau Missing? Aksi ini tidak dapat dibatalkan.")
+        }
     }
 
     private var headerSection: some View {
@@ -75,7 +95,7 @@ struct GitWorktreesSettingsPanelView: View {
 
                 if hasStaleWorktrees {
                     Button {
-                        Task { await appVM.pruneAllStaleWorktrees() }
+                        isConfirmPruneAllPresented = true
                     } label: {
                         Label("Prune Stale Worktrees", systemImage: "trash")
                     }
@@ -218,7 +238,8 @@ struct GitWorktreesSettingsPanelView: View {
 
             if !isMain {
                 Button {
-                    Task { await appVM.pruneWorktree(path: wt.path, branch: wt.branchName) }
+                    worktreeToPrune = wt
+                    isConfirmPrunePresented = true
                 } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 12))
