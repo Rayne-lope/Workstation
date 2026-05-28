@@ -83,6 +83,7 @@ final class AppViewModel {
     var gitWorktrees: [GitWorktreeInfo] = []
     var isRefreshingWorktrees = false
     var worktreeErrorMessage: String? = nil
+    var doneCelebrationTriggerID = UUID()
 
     var pendingAgentLaunch: PendingAgentLaunch?
     var pendingWorktreeLaunch: PendingWorktreeLaunch?
@@ -487,6 +488,11 @@ final class AppViewModel {
         await store.update(id: childID, UpdateIssueInput(parentID: epicID ?? ""))
     }
 
+    func triggerDoneCelebration() {
+        doneCelebrationTriggerID = UUID()
+        SoundscapeManager.shared.playTaskComplete()
+    }
+
     /// Mark a recurring issue's run as complete: append history entry then reset the issue
     /// back to Ready (status=open) so it shows up again on the board. Does NOT call `bd close`.
     /// Returns true on success.
@@ -511,7 +517,11 @@ final class AppViewModel {
             await store.clearHumanReview(id: issueID)
         }
         await store.update(id: issueID, UpdateIssueInput(status: "open"))
-        return store.errorMessage == nil
+        let success = store.errorMessage == nil
+        if success {
+            triggerDoneCelebration()
+        }
+        return success
     }
 
     func presentBlockerPicker(for issueID: String, existingBlockerIDs: Set<String> = []) {
@@ -974,6 +984,7 @@ final class AppViewModel {
             for id in ids {
                 await store.close(id: id, reason: reason)
             }
+            triggerDoneCelebration()
             store.clearSelection()
             detailPaneMode = .issue
         }

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0036DAF30C26630B31994810 /* GitWorktreesSettingsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C58351E4F587C4EB327A1D0 /* GitWorktreesSettingsPanelView.swift */; };
+		0036DAF30C26630B31994811 /* ParticleCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C58351E4F587C4EB327A1D1 /* ParticleCelebrationView.swift */; };
 		008E08E1CAF34D240D8B6890 /* AgentTimelineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0536C6445B86B242CFF825D5 /* AgentTimelineStore.swift */; };
 		011C93431FCCA7053C284A94 /* AgentProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36B596B1328FF83B1D609B6 /* AgentProfile.swift */; };
 		05E8175A662EEB417358B87C /* WorkspaceCheckState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14069CE24B8C10020B9420B2 /* WorkspaceCheckState.swift */; };
@@ -188,6 +189,7 @@
 		38B98FF907C967F3561B56B6 /* AgentRunTimelineCompactView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunTimelineCompactView.swift; sourceTree = "<group>"; };
 		3AD22E8AD06D83B420E333A0 /* CommandRunning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRunning.swift; sourceTree = "<group>"; };
 		3C58351E4F587C4EB327A1D0 /* GitWorktreesSettingsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitWorktreesSettingsPanelView.swift; sourceTree = "<group>"; };
+		3C58351E4F587C4EB327A1D1 /* ParticleCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticleCelebrationView.swift; sourceTree = "<group>"; };
 		3C8B23B400081B497D0ED65E /* LiveTerminalDrawer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTerminalDrawer.swift; sourceTree = "<group>"; };
 		3D681CE6C86EDAE8338D0E24 /* GoalParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalParser.swift; sourceTree = "<group>"; };
 		3EBDFB2F92EA5F5964227D36 /* SettingsShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsShellView.swift; sourceTree = "<group>"; };
@@ -456,6 +458,7 @@
 				828B13449CC3B4C9E1667F4B /* GeneralSettingsPanelView.swift */,
 				318566DC37E0E0C6C999E40A /* GitDirtyLaunchSheet.swift */,
 				3C58351E4F587C4EB327A1D0 /* GitWorktreesSettingsPanelView.swift */,
+				3C58351E4F587C4EB327A1D1 /* ParticleCelebrationView.swift */,
 				27751D07AAD59803026AEADA /* GoalChecklistView.swift */,
 				BC6F1CB226FDF9300F9A69AE /* IssueCardView.swift */,
 				2F1D320CF3DE5E7281566338 /* IssueDependencyGraphCanvasView.swift */,
@@ -630,6 +633,7 @@
 				26B7E023EA5BEFFBAC714259 /* GitStatusSummary.swift in Sources */,
 				EED8DF1BA8C8C66017D39C24 /* GitWorktreeService.swift in Sources */,
 				0036DAF30C26630B31994810 /* GitWorktreesSettingsPanelView.swift in Sources */,
+				0036DAF30C26630B31994811 /* ParticleCelebrationView.swift in Sources */,
 				220E255E25EDD57D3D6CCEB7 /* GoalChecklistView.swift in Sources */,
 				34931793876EDBF58BAC151E /* GoalParser.swift in Sources */,
 				86EE84A1901F3D1D705B5C86 /* IssueCardView.swift in Sources */,

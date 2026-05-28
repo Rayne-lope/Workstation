@@ -67,9 +67,12 @@ struct KanbanBoardView: View {
                             )
                             .frame(width: 280)
                             .opacity(0.7)
+                            .rotationEffect(.degrees(3))
+                            .scaleEffect(0.96)
                         }
                     }
                 }
+                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: items)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }

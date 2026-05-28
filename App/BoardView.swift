@@ -28,6 +28,7 @@ struct BoardView: View {
 
             StatusBarView(appVM: appVM)
         }
+        .overlay(ParticleCelebrationView(triggerID: appVM.doneCelebrationTriggerID))
         .background(WorkstationTheme.background)
         .frame(minWidth: 1180, minHeight: 640)
         .sheet(isPresented: $appVM.isClosePresented, onDismiss: { appVM.closeIssue = nil }) {

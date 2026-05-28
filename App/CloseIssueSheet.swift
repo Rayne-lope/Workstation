@@ -143,7 +143,7 @@ struct CloseIssueSheet: View {
                     .keyboardShortcut(.cancelAction)
 
                 Button {
-                    SoundscapeManager.shared.playTaskComplete()
+                    appVM.triggerDoneCelebration()
                     Task { await store.close(id: issue.id, reason: reason) }
                     onDismiss()
                 } label: {

@@ -93,8 +93,8 @@ struct IssueCardView: View {
         #if os(macOS)
         .onHover { isHovering = $0 }
         #endif
-        .animation(.easeOut(duration: 0.18), value: isHovering)
-        .animation(.easeOut(duration: 0.18), value: isSelected)
+        .animation(.spring(response: 0.25, dampingFraction: 0.5), value: isHovering)
+        .animation(.spring(response: 0.30, dampingFraction: 0.6), value: isSelected)
     }
 
     private var tagRow: some View {

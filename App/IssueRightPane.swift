@@ -1477,12 +1477,15 @@ struct WorkflowCopilotPane: View {
                 }
             }
             
+            let hasClose = approvedActions.contains { $0.kind == "close_with_reason" }
             await store.reload()
             
             await MainActor.run {
                 message.wrappedValue.isExecuting = false
                 message.wrappedValue.isExecuted = true
-                
+                if hasClose {
+                    appVM.triggerDoneCelebration()
+                }
                 messages.append(.init(role: .assistant, text: "Executed \(approvedActions.count) plan action(s) successfully! The Kanban board has been updated."))
             }
         }

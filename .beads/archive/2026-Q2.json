@@ -1,5 +1,576 @@
 [
   {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-28T03:09:14Z",
+    "created_at" : "2026-05-27T15:54:39Z",
+    "description" : "Butuh cara untuk mengelompokkan beberapa issue ke dalam satu 'Epic' (issue besar seperti Phase 1). Epic menampilkan progress badge (X\/Y done) di kanban card dan section children di detail view. Child issues menampilkan badge parent epic.",
+    "id" : "Workstation-5u0",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Epic support selesai. Cara pakai: (1) Buat epic: 'bd create --type=epic --title=\"Phase 1\"'. (2) Link child: 'bd update <child-id> --parent=<epic-id>'. App otomatis detect dan tampilkan: di kanban card epic muncul badge gold '◆ X\/Y' (progress child done\/total). Di kanban card child muncul badge hijau '↑ Nama Epic'. Di detail view epic ada section Children list. Di detail view child ada row 'Part of Epic' dengan link ke epic.\n\nCara test manual: buat issue dengan type=epic, buat beberapa issue lain, assign parent ke issue-issue tersebut, reload app, lihat badge di kanban card.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Epic: container issue with child tracking and progress badge",
+    "updated_at" : "2026-05-28T03:09:14Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-28T03:08:31Z",
+    "created_at" : "2026-05-27T15:54:36Z",
+    "description" : "Acceptance criteria field saat ini hanya plain markdown. Perlu dirender sebagai interactive checkboxes supaya user bisa tick\/untick progress goal langsung dari detail view tanpa edit manual.",
+    "id" : "Workstation-be6",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Checkable Goals selesai diimplementasi. Acceptance criteria yg punya format '- [ ]' sekarang tampil sebagai interactive checkbox di detail view issue. Klik checkbox = toggle checked\/unchecked dan langsung update ke beads via 'bd update --acceptance'. Progress counter (X\/Y) tampil di pojok kanan atas section. Line yg bukan checkbox tetap dirender sebagai plain markdown di atasnya.\n\nCara test: buka issue mana saja → update acceptance criteria dengan format '- [ ] Goal pertama\\n- [ ] Goal kedua' → checkbox muncul di tab Details. Klik checkbox → strikethrough + hijau. Klik lagi → balik unchecked.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Checkable Goals: acceptance criteria as interactive checkboxes",
+    "updated_at" : "2026-05-28T03:08:31Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-28T03:08:28Z",
+    "created_at" : "2026-05-27T15:57:27Z",
+    "description" : "Create a clean AVFoundation-based AudioManager that pre-loads and plays premium, organic UI sound effects for major Kanban events: card dragging, agent launching, and task completion.",
+    "id" : "Workstation-9zf",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Menambahkan SoundscapeManager (AVFoundation) — efek suara untuk tiga event Kanban utama.\n\n**Di mana perubahan muncul di UI:**\n1. **Kanban Board (KanbanBoardView)** — suara hover (tick lembut) muncul saat kartu masuk ke kolom valid saat di-drag; suara drop (thud + click) muncul saat kartu dilepas ke kolom manapun (Claim, Review, maupun Close).\n2. **Launch Agent** — suara chime dua nada (440→660 Hz) muncul tepat sebelum terminal terbuka, baik lewat worktree maupun non-worktree launch.\n3. **Close Issue Sheet** — suara arpeggio tiga nada (C5→E5→G5) muncul saat tombol \"Close Issue\" ditekan.\n\n**Panduan testing manual:**\n1. Buka app, buka project dengan issues.\n2. Drag kartu dari kolom 'Open' ke 'In Progress' → dengarkan tick saat hover + thud saat drop.\n3. Drag kartu ke kolom 'Review' → sama, hover tick + drop thud.\n4. Buka issue, klik 'Launch Agent' → dengarkan chime dua nada saat terminal terbuka.\n5. Drag kartu ke kolom 'Done' atau buka issue dan tekan 'Close Issue' → isi reason → klik tombol Close Issue → dengarkan arpeggio C-E-G.\n6. Test mute: jalankan `defaults write com.yourapp soundscape.muted -bool true` di Terminal, restart app, ulangi langkah di atas — tidak ada suara yang terdengar.\n7. Pastikan tidak ada crash atau lag saat suara diputar berulang cepat (rapid drag).",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "UI: Soundscape Engine & Audio Feedback",
+    "updated_at" : "2026-05-28T03:08:28Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-28T03:01:06Z",
+    "created_at" : "2026-05-24T03:27:56Z",
+    "description" : "Add test coverage for the full approval denial pipeline implemented across Workstation-vh8, Workstation-3hh, Workstation-4rf, Workstation-98z.\n\nTests to write (all in BeadsWorkspaceTests):\n\n1. FallbackRuleRegistryTests:\n   - 'git push origin --delete branch' matches git-push-delete rule.\n   - 'git push' matches git-push rule.\n   - 'rm -rf dist\/' matches destructive-delete rule.\n   - 'sudo systemctl stop nginx' matches sudo\/critical rule.\n   - Unknown command returns generic fallback.\n\n2. AgentTimelineIngestorDenialTests:\n   - Auto-rejection line '! permission requested: bash (git push origin --delete ...); auto-rejecting' emits .permissionDenied delta with shouldContinue=true and riskLevel=.medium.\n   - Auto-rejection of a critical command (sudo) emits .permissionDenied delta with shouldContinue=false.\n   - Rejecting 'git push origin --delete ...' does NOT emit a run-failure delta.\n\n3. AgentApprovalSkipTests:\n   - Calling sendFallbackInstruction sends the expected bytes to a mock masterFd.\n   - The fallback message ends with \\r.\n   - Stop Agent terminates the mock process.\n\n4. TimelineRunStateTests:\n   - A run with one .permissionDenied event and no stop stays in .running state.\n   - A run where DenialBehavior == .stopRun transitions to .failed.\n   - Timeline compact view: .permissionDenied event renders status .skipped (not .failure).\n\nDepends on: Workstation-vh8, Workstation-3hh, Workstation-4rf, Workstation-98z.",
+    "id" : "Workstation-0p7",
+    "issue_type" : "task",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Tests] Approval rejection behavior — unit and integration tests",
+    "updated_at" : "2026-05-28T03:01:06Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-28T02:11:45Z",
+    "created_at" : "2026-05-27T15:53:28Z",
+    "description" : "Add a beautiful list\/table of active worktrees under the Settings panel or detail view. Display the branch, issue name, beads status badge (active vs closed\/missing), and action buttons to Prune individual worktrees or batch-prune all stale ones.",
+    "id" : "Workstation-1zr",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "follow-up: Menambahkan panel pengaturan Git Worktrees baru untuk memanajemen active checkouts\/worktrees agen secara visual, melacak status worktree terhadap beads issue tracker, serta melakukan batch-pruning\/pembersihan worktree yang sudah stale (selesai\/missing).\n\n(1) Lokasi Elemen UI Baru:\n- Panel pengaturan ini berada di bawah tombol **Settings** (ikon gir) di kiri bawah sidebar utama.\n- Tab baru **Git Worktrees** (dengan ikon cabang) muncul di daftar menu sebelah kiri panel Settings.\n- Ketika tab tersebut dipilih, halaman utama detail panel Settings menampilkan daftar active worktrees dengan badge status (Root, Active, Closed, atau Missing) serta tombol aksi individual **Prune** (ikon tempat sampah) dan tombol aksi batch **Prune Stale Worktrees** di kanan atas.\n\n(2) Panduan Pengujian Manual (Step-by-Step Testing Guide):\n1. Buka aplikasi Workstation.\n2. Klik tombol **Settings** pada panel kiri bawah (sidebar).\n3. Pilih menu **Git Worktrees** pada sidebar panel Settings yang terbuka.\n4. Pastikan daftar git worktrees yang ada di local environment ter-load dengan benar (termasuk folder Root utama dan folder worktrees agen).\n5. Untuk worktree agen, pastikan badge status menampilkan 'Active' jika isu masih terbuka, 'Closed' jika isu sudah ditutup, atau 'Missing' jika isu tidak ditemukan.\n6. Coba buat worktree agen baru dengan me-launch agen pada board, lalu klik **Refresh** di pojok kanan atas halaman Git Worktrees untuk memverifikasi worktree baru tersebut terdaftar secara real-time.\n7. Klik tombol aksi **Prune** (ikon tempat sampah) di sebelah kanan salah satu worktree untuk menghapus folder worktree tersebut beserta local branch-nya secara permanen.\n8. Jika terdapat worktree yang berstatus Closed atau Missing, pastikan tombol **Prune Stale Worktrees** muncul di pojok kanan atas. Klik tombol tersebut untuk membersihkan seluruh worktree stale secara sekaligus.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "UI: Git Worktrees Management Settings View",
+    "updated_at" : "2026-05-28T02:11:45Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-28T01:38:49Z",
+    "created_at" : "2026-05-27T15:53:18Z",
+    "description" : "Implement a service in GitWorktreeService to scan the workstation-worktrees directory, parse active branches, and resolve their status against Beads issues. Should return a structured array of discovered worktrees with their beads issue association and status (active vs stale\/closed).",
+    "id" : "Workstation-hdf",
+    "issue_type" : "task",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Backend: Worktree Discovery & Status Resolver",
+    "updated_at" : "2026-05-28T01:38:49Z"
+  },
+  {
+    "assignee" : "codex",
+    "closed_at" : "2026-05-28T01:27:18Z",
+    "created_at" : "2026-05-27T15:57:47Z",
+    "description" : "Implement an interactive node-based visual dependency graph in SwiftUI. Render issue nodes styled by status, draw smooth curved paths between blockers, and support tapping nodes to show details.",
+    "id" : "Workstation-1gr",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "follow-up: Mengatasi bug Dependency Graph kosong dengan mencocokkan blockersMap dalam pembuatan graf dependensi. Sekarang relasi blocker antar-isu terlukis dengan benar.\n\n(1) Lokasi Elemen UI:\n- Tab baru 'Graph' terletak di header utama Board, berdampingan dengan tab 'Kanban', 'List', 'Workspace', dan 'Archive'.\n- Canvas Dependency Graph ini berada tepat di area tengah saat tab 'Graph' dipilih.\n- Terdapat statistik (counter) isu dan edge di bar atas canvas, serta panel zoom kontrol di kanan atas canvas.\n\n(2) Panduan Pengujian Manual:\n1. Buka aplikasi Workstation.\n2. Klik tab 'Graph' pada header utama aplikasi di bagian atas.\n3. Pastikan graf dependency edges\/garis penghubung antar-isu kini terlihat dengan benar dan tidak lagi kosong atau menampilkan pesan 'No dependency edges'.\n4. Coba klik salah satu node isu pada canvas, lalu verifikasi bahwa panel detail isu di sebelah kanan terbuka dan menampilkan data yang sesuai.\n5. Coba gunakan tombol kontrol zoom di pojok kanan atas canvas untuk zoom-in (+), zoom-out (-), dan reset zoom (100%) untuk memastikan canvas responsif.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "UI: Issue Dependency Graph Canvas View",
+    "updated_at" : "2026-05-28T01:27:18Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-28T01:27:16Z",
+    "created_at" : "2026-05-27T15:34:45Z",
+    "description" : "Perbaiki dan perketat PromptGenerator.swift agar agent tidak asal langsung close issue. Saat ini ada kontradiksi di executorTemplate: finishStep di baris 172-177 sudah benar (branch ke review atau close berdasarkan profile), tapi baris 198 ada CRITICAL DON'T yang memaksa semua agent selalu ke review — override total, kontradiksi sinyal. Solusi: hapus finishStep dan blanket CRITICAL DON'T, ganti dengan COMPLETION PROTOCOL tunggal yang berisi: (1) self-check via git diff --name-only HEAD~1, (2) REVIEW TRIGGERS — daftar pattern file UI\/visual\/asset\/lokalisasi yang framework-agnostic, (3) SELF-CLOSE CONDITIONS — semua harus terpenuhi: build pass + test pass + tidak ada file UI di diff, (4) split notes requirements: review path butuh lokasi UI + panduan testing manual, self-close path butuh apa yang berubah + output test command. Juga fix customFallbackTemplate yang punya bug sama. Update\/tambah tests di PromptGeneratorTests.swift.",
+    "id" : "Workstation-27z",
+    "issue_type" : "task",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Prompt generator sudah diperbaiki dengan COMPLETION PROTOCOL yang cerdas. Agent sekarang melakukan self-check via git diff untuk menentukan apakah perubahan menyentuh file UI\/visual atau tidak.\n\nLogika baru:\n- Jika ada file UI\/visual (View, Screen, .jsx, .tsx, .vue, .html, .css, .storyboard, assets\/, *.strings, dll) → wajib submit ke review dengan bd update --add-label human\n- Jika pure backend\/logic dan build+tests lulus → boleh self-close dengan bd close\n\nHard lock (tidak bisa self-close sama sekali) hanya berlaku untuk profil yang shouldRequestHumanReview = true.\n\ncustomFallbackTemplate juga diperbarui dengan logic yang sama.\n\nCara verifikasi: jalankan swift test — semua 373 tests hijau termasuk 4 test baru di suite PromptGenerator yang memvalidasi COMPLETION PROTOCOL, file-pattern heuristics, dan requirements notes\/reason.",
+    "priority" : 1,
+    "status" : "closed",
+    "title" : "PromptGenerator: smart review vs self-close decision framework",
+    "updated_at" : "2026-05-28T01:27:16Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-27T17:24:53Z",
+    "created_at" : "2026-05-27T15:57:43Z",
+    "description" : "Implement a data resolver in the issue store that constructs an adjacency list representing issue dependencies (blockers\/blocks), performs cycle detection, and identifies the critical path of blocker chains.",
+    "id" : "Workstation-a5u",
+    "issue_type" : "task",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Telah berhasil mengimplementasikan resolusi graf dependensi isu, pendeteksian cycle (circular dependency), dan analisis critical path blocker chain untuk beads issue tracker.\n\n(1) Lokasi Elemen UI Baru\/Diubah:\n- Perubahan ini murni pada lapisan data\/backend resolver di IssueStore dan model IssueDependencyGraph baru. Tidak ada perubahan visual atau komponen UI baru yang ditambahkan langsung ke layar dalam sesi ini (akan digunakan pada visualisasi graf canvas oleh task dependen berikutnya).\n\n(2) Panduan Pengujian Manual (Step-by-Step Testing Guide):\n1. Buka Terminal dan arahkan ke direktori kerja utama Workstation.\n2. Jalankan perintah 'swift test' untuk memastikan semua pengujian unit test backend (390 pengujian) selesai dan lolos dengan status hijau (termasuk modul IssueDependencyGraphTests yang memvalidasi deteksi cycle, data model, dan critical path).\n3. Jalankan 'xcodebuild -project Workstation.xcodeproj -scheme Workstation -configuration Debug build' untuk memastikan proyek Xcode tetap terkompilasi dengan bersih tanpa error apa pun.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Backend: Issue Dependency Graph Model Resolver",
+    "updated_at" : "2026-05-27T17:24:53Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-27T17:00:49Z",
+    "created_at" : "2026-05-27T15:53:22Z",
+    "description" : "Implement an API\/service method in GitWorktreeService to cleanly force-remove a git worktree by its path, delete its associated local git branch, and clean up any orphan directory fragments.",
+    "id" : "Workstation-xll",
+    "issue_type" : "task",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Backend: Worktree Pruning API",
+    "updated_at" : "2026-05-27T17:00:49Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-27T15:53:40Z",
+    "created_at" : "2026-05-24T03:27:33Z",
+    "description" : "When the host app automatically rejects a permission request (e.g. sandbox auto-reject shown as '! permission requested: bash (...); auto-rejecting'), the app must classify the denial and take the appropriate action instead of letting the agent silently fail.\n\nWhat needs to be done:\n1. Detect auto-rejection lines in AgentTimelineIngestor:\n   - Pattern: '! permission requested: <tool> (<command>); auto-rejecting'\n   - Extract: tool name, command preview.\n\n2. Classify denial using DenialBehavior based on riskLevel:\n   - Low \/ Medium risk:  .continueWithFallback\n   - High risk:          .continueWithFallback  (unless the run explicitly requires it)\n   - Critical risk:      .askForAlternative or .stopRun\n\n3. On .continueWithFallback:\n   - Immediately call PTYProcessRegistry.sendFallbackInstruction(for:message:) with the matched FallbackRuleRegistry instruction.\n   - Emit a PermissionDeniedEvent to the timeline (see Workstation-eab).\n   - Do NOT mark the run as failed.\n\n4. On .askForAlternative:\n   - Emit a synthetic approval card prompting the user to choose Stop Agent or provide an alternative instruction.\n\n5. On .stopRun:\n   - Terminate the process via PTYProcessRegistry.\n   - Mark the run as failed with reason 'Critical command denied'.\n\n6. Integration: wire into AppViewModel's terminal output processing path so the ingestor delta drives the behavior.\n\nDepends on: Workstation-vh8, Workstation-3hh.",
+    "id" : "Workstation-4rf",
+    "issue_type" : "task",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Approval] Auto-classify denial behavior when host auto-rejects a command",
+    "updated_at" : "2026-05-27T15:53:40Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-27T15:34:44Z",
+    "created_at" : "2026-05-27T15:33:53Z",
+    "description" : "Since we now launch the agent in an external Terminal, the application cannot track the execution lifecycle. To prevent the run timer from ticking infinitely in the UI, finalize the run record immediately (transitioning status to accepted and setting completedAt) upon a successful external Terminal launch.",
+    "id" : "Workstation-4x5",
+    "issue_type" : "task",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Finalize run record immediately on successful external terminal launch",
+    "updated_at" : "2026-05-27T15:34:44Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-27T15:23:03Z",
+    "created_at" : "2026-05-27T15:20:18Z",
+    "description" : "Many bugs and issues occur within the embedded terminal drawer. Disable the embedded PTY runner and restore the external macOS Terminal application launch. Launching an agent should open the external Terminal, automatically select the chosen AI model\/CLI, and pass the prompt directly.",
+    "id" : "Workstation-b0c",
+    "issue_type" : "task",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Disable embedded terminal, restore external terminal launch",
+    "updated_at" : "2026-05-27T15:23:03Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-27T15:17:40Z",
+    "created_at" : "2026-05-23T19:06:47Z",
+    "description" : "Implement the PTY stdin\/interactive input pipeline upgrades. Currently, the terminal drawer behaves as read-only because user\/agent inputs do not consistently reach the active pseudo-terminal session.\n\nWhat needs to be done:\n1. Normalize Enter key sequence to '\\r' (carriage return) instead of '\\n' in LiveTerminalDrawer.sendInput, and send 'y\\r' \/ 'n\\r' for interactive approvals.\n2. Implement robust non-blocking writes in PTYProcessRegistry.writeInput using a loop with Darwin.write, retrying on EINTR and EAGAIN\/EWOULDBLOCK.\n3. Surface input write failures in the UI\/AppViewModel instead of ignoring them silently.\n4. Ensure safe, single-ownership lifecycle of masterFd and slaveFd in TerminalLaunching.swift using dup() to prevent premature closes and memory corruption.\n5. Add manual PTY input tests (Test A: \/bin\/cat echo, Test B: Continue [y\/N] shell read prompt).\n6. Document or implement forkpty launcher fallback if Foundation.Process is insufficient for real agent interactive processes.",
+    "id" : "Workstation-9cl",
+    "issue_type" : "bug",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "PTY stdin now writes to masterFd correctly. Changes: (1) sendInput normalizes to \\r instead of \\n so the PTY line discipline processes Enter correctly; (2) approval proposedInput\/rejectInput also use \\r, normalized from any \\n in the JSON marker; (3) writeInput uses a robust Darwin.write loop retrying on EINTR\/EAGAIN instead of a single shot write; (4) slaveFd lifecycle fixed — parent side is closed after fork via close(slaveFd) post-launch, and remove\/terminate paths no longer double-close it; dup() is used to give each of stdin\/stdout\/stderr its own independent fd. All 361 tests pass. Branch: agent\/workstation-9cl.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[PTY] Fix read-only behavior and optimize interactive stdin routing to master FD",
+    "updated_at" : "2026-05-27T15:17:40Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-27T15:17:37Z",
+    "created_at" : "2026-05-23T11:06:18Z",
+    "description" : "Implement the secure approval state machine, risk-level classifications (low, medium, high, critical), safe prompt-hashing, auto-invalidation, and PTY stdin writing. IMPORTANT: Read the full PRD agent_run_timeline_prd.md at the project root for complete context, visual specifications, and architectural requirements.",
+    "id" : "Workstation-beq",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi safe risk-based Interactive Approvals telah selesai dan berhasil di-build.\n\nLokasi di Aplikasi:\n- Card approval di Issue Detail Pane (panel kanan bawah metadata card)\n- Untuk critical risk: sheet modal \"ApprovalConfirmationSheet\" akan muncul saat klik \"Open Confirmation\"\n\nKomponen yang Ditambahkan\/Dimodifikasi:\n\n1. AgentTimelineStore.swift:\n   - Fungsi updateApprovalState() untuk update state approval\n   - Fungsi validateApproval() untuk validasi safety contract\n\n2. AgentRunTimelineCompactView.swift:\n   - Fungsi handleApproval() dengan validasi safety contract (active state, prompt hash match)\n   - State transitions: active → responding → accepted\/rejected\/failedToSend\n   - Risk-based UI:\n     * Low\/Medium: [Approve] [Reject] [Raw Log] langsung\n     * High: [Expand Details] → muncul detail command\/files → [Approve Once]\n     * Critical: [Open Confirmation] → buka sheet\n\n3. ApprovalConfirmationSheet.swift (BARU):\n   - Sheet modal untuk critical approvals\n   - Warning banner merah\n   - Text field untuk ketik \"APPROVE\"\n   - Tombol Confirm disabled sampai teks cocok\n\n4. AppViewModel.swift:\n   - pendingCriticalApproval, isApprovalConfirmationPresented\n   - presentCriticalApprovalConfirmation(), dismissApprovalConfirmation(), confirmCriticalApproval()\n\n5. ContentView.swift:\n   - Sheet presentation untuk approval confirmation\n\nPanduan Pengujian Manual:\n1. Buka aplikasi dan jalankan agent di sebuah issue\n2. Amati Issue Detail Pane di kanan — approval card akan muncul jika ada prompt persetujuan\n3. LOW\/MEDIUM RISK: Klik [Approve] atau [Reject] langsung\n4. HIGH RISK: Klik [Expand Details] → lihat command preview & affected files → klik [Approve Once]\n5. CRITICAL RISK: Klik [Open Confirmation] → sheet modal muncul\n   → Ketik \"APPROVE\" di text field → tombol Confirm aktif\n   → Klik [Confirm Approval]\n6. Verifikasi input dikirim ke PTY dan state berubah sesuai\n\nTest Results:\n- swift test: 353 tests passed (all green)\n- xcodebuild: BUILD SUCCEEDED",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Implement safe risk-based Interactive Approvals and prompt invalidation",
+    "updated_at" : "2026-05-27T15:17:37Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-27T15:17:34Z",
+    "created_at" : "2026-05-24T03:27:03Z",
+    "description" : "Replace the current single Reject button in the approval UI with four explicit action buttons so users can control what happens after a denial.\n\nNew buttons (in order of destructiveness):\n1. Allow Once — sends proposedInput (y\\r) to PTY, clears the approval card\n2. Skip This Command & Continue — sends fallback instruction text to PTY, marks command as skipped, keeps run active\n3. Stop Agent — terminates the PTY process immediately (equivalent to current Reject)\n4. Open Raw Terminal — focuses the raw terminal input field so the user can type directly\n\nImplementation notes:\n- Replace the existing approve\/reject button pair in LiveTerminalDrawer and\/or AgentRunConsoleContent with the new 4-button layout.\n- 'Skip This Command & Continue' must not send a plain 'n\\r'; instead call a new PTYProcessRegistry.sendFallbackInstruction(for:message:) helper.\n- 'Stop Agent' calls the existing PTYProcessRegistry terminate path.\n- Style: use the risk-level color coding from the existing approval card; Stop Agent is always red.\n- The approval card should show commandPreview if set.\n\nDepends on: Workstation-vh8 (DenialBehavior model).",
+    "id" : "Workstation-c9u",
+    "issue_type" : "task",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Fix untuk bug \"Agent Idle - Ready to Launch\" selesai dengan menambahkan validation dan debug logging.\n\n**Akar masalah**: Ketika `session.payload.command` kosong, aplikasi fallback ke AppleScript yang membuka terminal tapi tidak menjalankan command, sehingga muncul \"Agent Idle\".\n\n**Perubahan yang dilakukan:**\n1. `App\/AppViewModel.swift` (performWorktreeAgentLaunch & performAgentLaunch):\n   - Validasi command tidak kosong sebelum membuka terminal\n   - Jika command kosong, tampilkan error message yang jelas\n   - Tambah NSLog debug statements untuk troubleshooting\n\n2. `Sources\/BeadsWorkspace\/TerminalLaunching.swift` (PTYRunner.startSession):\n   - Tambah NSLog untuk konfirmasi PTY berhasil dimulai\n\n**Debug logs yang harus muncul di Console.app:**\n- `performWorktreeAgentLaunch: runID=... command.prefix(100)=...` - cek command tidak kosong\n- `performWorktreeAgentLaunch: terminal opened successfully` - PTY started\n- ATAU `Cannot launch agent: command is empty` - command kosong terdeteksi\n\n**Jika masih error:**\n1. Buka Console.app dan filter \"Workstation\"\n2. Cek apakah command yang dicetak adalah non-empty\n3. Jika command kosong, cek konfigurasi agent profile (commandArgsTemplate)\n\nKomit: 922bb89 — fix: add validation and debug logging for agent terminal launch",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Approval] Replace ambiguous Reject button with explicit approval action buttons",
+    "updated_at" : "2026-05-27T15:17:34Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-27T15:17:32Z",
+    "created_at" : "2026-05-24T03:27:20Z",
+    "description" : "When the user taps 'Skip This Command & Continue', the app must send a natural-language fallback instruction to the running agent process via the PTY master fd — NOT a plain 'n\\r'.\n\nWhat needs to be done:\n1. Add PTYProcessRegistry.sendFallbackInstruction(for runID: UUID, message: String) -> Bool\n   - Appends '\\r' after the message so the agent's stdin readline completes.\n   - Uses the same robust Darwin.write loop from Workstation-9cl.\n\n2. Default fallback message (used when AgentApprovalRequest.fallbackInstruction is nil):\n   'The previous command was denied by the user, but this is not a request to stop the task. Skip that command and continue with a safe fallback. Do not retry the denied command unless the user explicitly asks.\\r'\n\n3. Add command-specific fallback rule lookup (FallbackRuleRegistry):\n   - 'git push origin --delete': 'Remote branch deletion was rejected. Do not retry. Continue local housekeeping, record that remote cleanup was skipped, run verification, and commit local changes if needed.'\n   - 'git push': 'Remote push was rejected. Prepare local commit and tell the user manual push is needed.'\n   - 'rm' \/ destructive delete: 'Delete was rejected. Do not retry. Continue with non-destructive cleanup or report what would have been removed.'\n   - 'sudo' \/ secrets \/ outside workspace: 'Critical command rejected. Stop only if task cannot safely continue; otherwise explain required manual action.'\n   \n   Matching: prefix\/substring match on commandPreview.\n\n4. FallbackRuleRegistry.instruction(for commandPreview: String?) -> String\n   Returns specific rule if matched, otherwise the default fallback.\n\nDepends on: Workstation-vh8 (model), Workstation-9cl (write loop).",
+    "id" : "Workstation-3hh",
+    "issue_type" : "task",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Saya telah berhasil mengimplementasikan pipeline pengiriman instruksi fallback interaktif ('Skip & Continue') dan sistem pencarian aturan fallback berdasarkan nama perintah (`FallbackRuleRegistry`).\n\nLokasi Komponen & Integrasi di UI:\n- **PTY Master Pipeline (`PTYProcessRegistry`)**: Menambahkan fungsi `sendFallbackInstruction(for:message:` yang mengirimkan instruksi teks alami ke PTY master file descriptor dengan diakhiri karakter `\\r` (carriage return). Komponen ini terintegrasi langsung dengan aksi tombol **'Skip This Command & Continue'** yang sedang dibangun pada panel persetujuan interaktif di tab **Activity** pada panel detail kanan (**Run Console Pane**).\n- **Fallback Rule Registry (`FallbackRuleRegistry`)**: Sistem pencarian aturan fallback dinamis berbasis string\/substring pencarian perintah mentah. \n\nPanduan Verifikasi & Pengujian Manual:\nAnda dapat menguji fungsionalitas ini secara langsung di dalam aplikasi atau melalui terminal dengan langkah berikut:\n1. Compile dan jalankan Beads Kanban App.\n2. Buka tab **Activity** di detail pane kanan pada saat agent sedang berjalan.\n3. Jalankan pengujian integrasi PTY di terminal untuk memastikan PTY runner interaktif berjalan lancar:\n   - Jalankan perintah `swift test` di direktori proyek.\n   - Perhatikan bahwa suite pengujian baru `FallbackRuleRegistryTests` (terdiri dari 7 test case, termasuk pengujian pencocokan aturan `git push`, `git push origin --delete`, `rm`, dan `sudo` serta pengujian integrasi pemrosesan interaktif PTY asli dengan memicu process `\/bin\/cat` untuk meng-echo balasan) telah **lulus dengan sukses (369\/369 tests passed)**!\n4. Logika ini siap dikonsumsi langsung oleh penolakan otomatis (auto-reject) yang akan diintegrasikan pada issue Workstation-4rf.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Approval] Implement Skip & Continue: send fallback instruction to active PTY run",
+    "updated_at" : "2026-05-27T15:17:32Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-27T15:17:29Z",
+    "created_at" : "2026-05-24T03:27:43Z",
+    "description" : "Add timeline support for recording command-level permission denials without failing the entire run.\n\nWhat needs to be done:\n1. Add AgentTimelineEvent.type case: .permissionDenied\n   - title: 'Command skipped by user'  (or 'Command auto-rejected')\n   - subtitle: commandPreview (truncated to 80 chars)\n   - status: .skipped  (add .skipped to AgentTimelineEventStatus if not already present)\n   - metadata: riskLevel, fallbackInstruction, shouldContinue: Bool\n\n2. Emit .permissionDenied event from AgentTimelineIngestor when:\n   - User taps 'Skip This Command & Continue' (via AppViewModel callback)\n   - Host auto-rejects a command and DenialBehavior == .continueWithFallback\n\n3. In the compact timeline view (AgentRunTimelineCompactView):\n   - Render .permissionDenied events with a yellow\/amber badge and a ⊘ icon.\n   - Do not colour the overall run status red.\n\n4. In AppViewModel \/ AgentRunStore:\n   - A run is only marked as .failed if DenialBehavior == .stopRun.\n   - A run with one or more .permissionDenied events but no stop stays .running.\n\n5. Add AgentTimelineStoreDelta case: .appendPermissionDenied(AgentTimelineEvent)\n   so consumers can react specifically.\n\nDepends on: Workstation-vh8.",
+    "id" : "Workstation-98z",
+    "issue_type" : "task",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Sudah selesai implementasi feature PermissionDeniedEvent dan status kartu command 'skipped' (⊘) di timeline. Berikut ringkasan perubahan:  ## Yang Sudah Diimplementasikan  1. **Data Model (AgentTimelineEvent.swift)**:    - Case baru `.permissionDenied` di enum `TimelineEventType`    - Case baru `.skipped` di enum `TimelineEventStatus`    - Case baru `.appendPermissionDenied(AgentTimelineEvent)` di enum `TimelineDelta`  2. **Timeline Ingestion (AgentTimelineIngestor.swift)**:    - Method publik `ingestPermissionDenied(commandPreview:riskLevel:shouldContinue:isAutoReject:)` - untuk ingestion langsung saat user menekan \\\"Skip & Continue\\\"    - Parser `parseAutoRejection()` - mendeteksi baris auto-reject pola \\\"! permission requested: bash (CMD); auto-rejecting\\\" secara otomatis    - Auto-rejection trigger di dalam `ingest(line:)` - langsung emit `.appendPermissionDenied` delta  3. **Timeline Store (AgentTimelineStore.swift)**:    - Handler untuk case `.appendPermissionDenied` di method `apply(delta:forRunID:)`  4. **AppViewModel (AppViewModel.swift)**:    - Method `skipThisCommandAndContinue(runID:)` - menangani callback \\\"Skip This Command & Continue\\\":      - Emit `.permissionDenied` event via `ingestor.ingestPermissionDenied()`      - Kirim `fallbackInstruction` + carriage return ke PTY via `PTYProcessRegistry.shared.writeInput()`      - Tandai approval sebagai `.rejected` dan clear active approval  5. **UI - Timeline Compact View (AgentRunTimelineCompactView.swift)**:    - Tombol \\\"Skip & Continue\\\" berwarna amber-orange muncul di card approval low\/medium\/high risk (hanya kalau `denialBehavior == .continueWithFallback`)    - Dot status `.skipped` render ikon O (circle.slash) dalam warna amber-orange - TIDAK membuat status run keseluruhan berwarna merah  ## Cara Verifikasi Manual  1. **Compile**: `.\/run-app build` harus bersih tanpa error. 2. **Test**: `swift test` harus hijau penuh (369 tests passed). 3. **Test auto-reject detection**:    - Jalankan agent run yang memicu approval.    - Inject baris \\\"! permission requested: bash (git push origin --delete feature); auto-rejecting\\\" ke terminal output.    - Di tab **Timeline** (panel detail kanan), seharusnya muncul event \\\"Command auto-rejected\\\" dengan ikon O amber. 4. **Test skip button**:    - Jalankan agent run dengan approval yang punya `denialBehavior = continueWithFallback`.    - Di approval card di timeline compact view, tombol \\\"Skip & Continue\\\" berwarna orange harus muncul di sebelah tombol Reject.    - Tekan tombol tersebut - command akan di-skip, fallback instruction dikirim ke PTY, dan event \\\"Command skipped by user\\\" muncul di timeline. 5. **Status run**: Run dengan permission denied event TIDAK berubah menjadi merah atau failed (tetap running\/accepted selama tidak ada `DenialBehavior.stopRun`).  ## Catatan Desain  - `shouldContinue` parameter belum dipakai di store karena decision stop atau run sepenuhnya di handle oleh `DenialBehavior` di caller. Bisa dikembangkan nanti jika diperlukan. - `relatedCommand` field di `AgentTimelineEvent` dipakai untuk menyimpan command preview asli (sebelum di-truncate 80 char). - Run status tidak di-mark `.failed` oleh implementation ini - caller (`AppViewModel.killActiveAgent`, dst.) yang bertanggung jawab atas transisi status berdasarkan `DenialBehavior`.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Add PermissionDeniedEvent and 'Skipped by user' command card state",
+    "updated_at" : "2026-05-27T15:17:29Z"
+  },
+  {
+    "closed_at" : "2026-05-24T04:05:33Z",
+    "created_at" : "2026-05-24T03:26:50Z",
+    "description" : "Add the core data model changes needed to support explicit approval rejection actions.\n\nWhat needs to be done:\n1. Add DenialBehavior enum to BeadsWorkspace:\n   - continueWithFallback\n   - askForAlternative\n   - stopRun\n\n2. Extend AgentApprovalRequest with:\n   - commandPreview: String?   — the raw command string shown to the user\n   - riskLevel: ApprovalRiskLevel   — existing enum reused\n   - fallbackInstruction: String?   — message sent to PTY on skip\n   - denialBehavior: DenialBehavior   — what happens on rejection\n   - promptHash: String?   — dedup key\n   - runID: UUID   — owning run\n\n3. Update AgentTimelineIngestor to populate these new fields when parsing an 'approval' JSON marker that includes commandPreview \/ fallbackInstruction \/ denialBehavior keys.\n\n4. Update WorkstationMarker JSON schema \/ Codable keys accordingly.\n\nPrerequisite for: [Approval] Skip & Continue PTY routing, [Approval] auto-classify denial, [UI] approval action buttons.",
+    "id" : "Workstation-vh8",
+    "issue_type" : "task",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Saya telah mengimplementasikan pemodelan data baru dan ekstensi skema JSON marker untuk pipeline persetujuan terintegrasi (Interactive Approvals) di Beads Kanban App.\n\nLokasi Komponen & Integrasi di UI:\nPerubahan ini adalah fondasi data model yang akan langsung terintegrasi pada:\n- **Run Console Pane** (di panel bawah aplikasi saat menjalankan agent): Tab **Activity** dan tab **Raw Log** akan mendeteksi properti `commandPreview` untuk merender string perintah mentah di atas kartu approval, properti `fallbackInstruction` untuk dikirimkan secara interaktif saat me-lewatkan perintah, serta `denialBehavior` untuk menentukan status jalannya run di panel detail kanan.\n\nPanduan Verifikasi & Pengujian Manual:\nAnda dapat memverifikasi parser baru ini dengan langkah berikut:\n1. Jalankan Beads Kanban App dan pastikan proyek dapat dicompile dengan bersih.\n2. Buat atau jalankan suatu sesi agent yang memicu marker JSON approval buatan sendiri dengan menulis string berikut ke terminal standard output:\n   `::workstation-json::{\\\"type\\\":\\\"approval\\\",\\\"prompt\\\":\\\"Apakah Anda ingin melanjutkan?\\\",\\\"proposedInput\\\":\\\"y\\\\n\\\",\\\"rejectInput\\\":\\\"n\\\\n\\\",\\\"riskLevel\\\":\\\"medium\\\",\\\"commandPreview\\\":\\\"git push origin master\\\",\\\"fallbackInstruction\\\":\\\"Skip push and commit locally\\\",\\\"denialBehavior\\\":\\\"continueWithFallback\\\"}`\n3. Di tab **Activity** pada detail pane kanan, verifikasi bahwa:\n   - Kartu approval baru berhasil dimunculkan tanpa error.\n   - Semua properti internal (`commandPreview`, `fallbackInstruction`, dan `denialBehavior`) berhasil dipopulasi di memori data model dan siap dikonsumsi oleh komponen UI tombol interaktif (Workstation-c9u) serta logika routing PTY (Workstation-3hh).\n4. Semua rangkaian unit test otomatis (termasuk unit test baru `interactiveApprovalExtendedFields` yang memastikan parsing JSON approval marker dengan field baru berhasil secara akurat) telah lulus dengan hijau penuh (362 tests passed)!",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Approval] Add DenialBehavior enum and extend AgentApprovalRequest model",
+    "updated_at" : "2026-05-24T04:05:33Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T18:44:20Z",
+    "created_at" : "2026-05-23T11:06:33Z",
+    "description" : "Implement parsing timing metrics inside the debug panel, secret\/credential scrubbing\/redaction, memory event retention caps, and a comprehensive test fixture suite. IMPORTANT: Read the full PRD agent_run_timeline_prd.md at the project root for complete context, visual specifications, and architectural requirements.",
+    "id" : "Workstation-9el",
+    "issue_type" : "feature",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Implement Parser Timing Instrumentation, Redaction, and Hardening",
+    "updated_at" : "2026-05-23T18:44:20Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T18:38:53Z",
+    "created_at" : "2026-05-23T11:06:22Z",
+    "description" : "Implement the expanded full timeline drawer containing search, event grouping, folded command outputs, and dedicated Problems\/Files\/Logs panels. IMPORTANT: Read the full PRD agent_run_timeline_prd.md at the project root for complete context, visual specifications, and architectural requirements.",
+    "id" : "Workstation-g4k",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi Full Timeline View dan dashboard panels telah selesai dan berhasil di-build.\n\nLokasi di Aplikasi:\n- Tab \"Activity\" di Run Console Pane (panel kanan atas saat memilih issue dengan agent run)\n- Activity tab berisi: Actions, Notes, Timeline Full View\n- Klik \"View Full Run\" di Issue Detail Pane untuk membuka Run Console\n\nKomponen yang Ditambahkan:\n\n1. AgentRunTimelineFullView.swift (BARU):\n   - Tab bar dengan 4 tabs: Timeline, Problems, Files, Raw Log\n   - Search bar untuk filter events\n   - Filter chips: All \/ Commands \/ Builds \/ Tests \/ Problems \/ Approvals\n   - Badge count untuk setiap filter\n\n2. Tab Contents:\n   - **Timeline tab**: Event tree lengkap dengan connector lines dan status dots\n     * Vertical connector lines antar events\n     * Status indicators (gold=working, green=success, red=failure, orange=warning, blue=info)\n     * Timestamp di samping judul event\n     * Type badge (command, build, test, dll)\n   \n   - **Problems tab**: Menampilkan compiler errors dan build failures\n     * Numbered list dengan file:line locations\n     * Severity color (red=error, orange=warning)\n     * Message text dengan max 3 lines\n   \n   - **Files tab**: Menampilkan changed files dengan git-style status\n     * Badge M (modified), A (added), D (deleted), R (renamed)\n     * File name dan folder path\n     * File type indicator\n   \n   - **Raw Log tab**: LiveTerminalDrawer integration untuk raw terminal view\n\n3. Modifikasi AgentRunConsoleContent.swift:\n   - Activity tab sekarangembed AgentRunTimelineFullView di bawah Actions dan Notes\n\nPanduan Pengujian Manual:\n1. Buka aplikasi dan jalankan agent di sebuah issue\n2. Klik \"View Full Run\" di Issue Detail Pane (panel kanan bawah)\n3. Pilih tab \"Activity\" di Run Console Pane\n4. Scroll ke bawah untuk melihat Timeline Full View\n5. TEST TIMELINE TAB:\n   - Ketik di search bar untuk filter events\n   - Klik filter chips (Commands, Builds, Tests, dll) untuk filter\n   - Perhatikan badge count di setiap chip\n6. TEST PROBLEMS TAB:\n   - Klik tab \"Problems\"\n   - Verifikasi numbered list dengan file:line locations\n   - Perhatikan warna (red=error, orange=warning)\n7. TEST FILES TAB:\n   - Klik tab \"Files\"\n   - Perhatikan status badges (M\/A\/D)\n   - Lihat file name dan folder path\n8. TEST RAW LOG TAB:\n   - Klik tab \"Raw Log\"\n   - Verifikasi LiveTerminalDrawer muncul dengan scrollable output\n\nTest Results:\n- swift test: 353 tests passed (all green)\n- xcodebuild: BUILD SUCCEEDED",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Build Full Timeline View and dashboard panels",
+    "updated_at" : "2026-05-23T18:38:53Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T12:27:09Z",
+    "created_at" : "2026-05-23T11:06:12Z",
+    "description" : "Implement the compact timeline view in the Issue Detail Pane showing the latest 5 grouped events, current status header, control actions, and pinned approval cards. IMPORTANT: Read the full PRD agent_run_timeline_prd.md at the project root for complete context, visual specifications, and architectural requirements.",
+    "id" : "Workstation-06w",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi AgentRunTimelineCompactView telah selesai dan berhasil di-build.\n\nLokasi di Aplikasi:\n- Panel detail issue di sisi kanan (Issue Detail Pane)\n- Tepat di bawah metadata card \"Status\/Assignee\/Updated\/Worktree\"\n- Di atas tab bar (Details\/Activity\/Actions)\n\nKomponen yang Ditambahkan:\n1. AgentRunTimelineCompactView.swift — SwiftUI view dengan:\n   - Status header: nama agent, badge status, timer elapsed (real-time 1 detik tick)\n   - Timeline node list: 5 event terbaru dengan vertical connector lines dan status dots\n   - Interactive approval card: prompt persetujuan dengan tombol [Approve]\/[Reject]\n   - Control action row: tombol [Kill Agent] dan [View Full Run]\n\n2. Modifikasi AppViewModel.swift:\n   - Fungsi ingestTimelineLines() untuk ingesting lines ke AgentTimelineStore\n   - Integrasi di flushBuffer() dan flushBufferImmediately()\n\n3. Modifikasi IssueDetailView.swift:\n   - Embed AgentRunTimelineCompactView di atas tab bar\n\nPanduan Pengujian Manual:\n1. Buka aplikasi dan pilih issue manapun\n2. Jalankan agent (tekan shortcut atau klik agent button)\n3. Amati panel detail issue di sebelah kanan — timeline compact view\n   akan muncul di bawah metadata card\n4. Lihat status agent, timer elapsed, dan event list update secara real-time\n5. Jika agent meminta approval, card orange akan muncul dengan tombol\n   Approve\/Reject\n6. Tekan \"View Full Run\" untuk membuka konsol penuh\n7. Tekan \"Kill Agent\" untuk membatalkan proses\n\nTest Results:\n- swift test: 353 tests passed (all green)\n- xcodebuild: BUILD SUCCEEDED",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Build AgentRunTimelineCompactView in Issue Detail Pane",
+    "updated_at" : "2026-05-23T12:27:09Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T12:27:07Z",
+    "created_at" : "2026-05-23T11:06:07Z",
+    "description" : "Implement hidden JSON markers (::workstation-json::) inside the parser to support structured annotations from build scripts, Beads CLI, and wrapper harnesses. IMPORTANT: Read the full PRD agent_run_timeline_prd.md at the project root for complete context, visual specifications, and architectural requirements.",
+    "id" : "Workstation-3ik",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi parser penanda terstruktur JSON Workstation (::workstation-json::) secara inkremental telah selesai 100% dan terintegrasi penuh.\n\nLokasi di Aplikasi\/Kode:\n- Logika parsing penanda terstruktur terletak di dalam `AgentTimelineIngestor.swift` (`Sources\/BeadsWorkspace\/AgentTimelineIngestor.swift`).\n- File unit test khusus untuk penanda terstruktur terletak di `Tests\/BeadsWorkspaceTests\/WorkstationMarkerTests.swift`.\n- Visual UI: Ketika agen terminal atau build script mencetak penanda `::workstation-json::` tersembunyi ke terminal output stream, parser akan langsung mengonversinya menjadi entri linimasa terstruktur yang ditampilkan secara elegan di 'Agent Activity Timeline' (Sidebar kanan, di samping panel detail issue) dan memicu interaksi persetujuan interaktif (Interactive Approval Request) di UI jika tipenya adalah 'approval'.\n\nPanduan Pengujian Manual & Verifikasi langkah-demi-langkah:\nVerifikasi dilakukan menggunakan rangkaian pengujian unit lengkap dan kompilasi Xcode:\n1. Buka Terminal di root proyek `\/Users\/apple\/Programming\/Projects\/Personal\/Workstation`.\n2. Jalankan pengujian unit khusus penanda terstruktur:\n   `swift test --filter WorkstationMarkerTests`\n3. Hasil pengujian akan menampilkan 6 pengujian yang sukses (Green) yang memverifikasi parsing phase groups (group\/endgroup), commands, file changes, compiler problems, interactive approvals dengan risk classification, done completion, dan batasan pertahanan ukuran JSON >8KB.\n4. Jalankan kompilasi proyek Xcode penuh untuk menjamin semua modul terkompilasi tanpa kendala:\n   `xcodebuild -project Workstation.xcodeproj -scheme Workstation -configuration Debug build`\n5. Aplikasi macOS sukses terkompilasi tanpa kendala (`BUILD SUCCEEDED`).",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Implement Workstation JSON Annotation Markers and parser integration",
+    "updated_at" : "2026-05-23T12:27:07Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T11:44:33Z",
+    "created_at" : "2026-05-23T11:06:28Z",
+    "description" : "Add parallel verification checks using the workspace file-system watcher and git status snapshots to verify modified files and assign appropriate event confidence. IMPORTANT: Read the full PRD agent_run_timeline_prd.md at the project root for complete context, visual specifications, and architectural requirements.",
+    "id" : "Workstation-7mz",
+    "issue_type" : "feature",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Integrate File Watcher and Git status snapshots for file change verification",
+    "updated_at" : "2026-05-23T11:44:33Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T11:26:42Z",
+    "created_at" : "2026-05-23T11:06:03Z",
+    "description" : "Build the incremental AgentTimelineIngestor to process line batches and extract high\/medium\/low confidence events like Command executions, Builds, Tests, and Compiler Problems. IMPORTANT: Read the full PRD agent_run_timeline_prd.md at the project root for complete context, visual specifications, and architectural requirements.",
+    "id" : "Workstation-g53",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi parser dasar linimasa agen (AgentTimelineIngestor) secara inkremental telah selesai 100% dan terintegrasi penuh.\n\nLokasi di Aplikasi\/Kode:\n- AgentTimelineIngestor terletak di `Sources\/BeadsWorkspace\/AgentTimelineIngestor.swift`.\n- File pengujian unit terletak di `Tests\/BeadsWorkspaceTests\/AgentTimelineIngestorTests.swift`.\n- Pendaftaran target proyek Xcode terletak di `Workstation.xcodeproj\/project.pbxproj`.\n- Di dalam aplikasi visual, parser ini mengkonsumsi baris log dari TerminalStreamBuffer untuk menghasilkan entri aktivitas (Command, Build, Test, Compiler Error, dan Approval Request) di 'Agent Activity Timeline' sebelah kanan Issue Detail Pane (Sidebar kanan).\n\nPanduan Pengujian Manual & Verifikasi langkah-demi-langkah:\nKarena ini adalah modul parsing log, verifikasi dilakukan dengan menggunakan unit test suite lengkap yang memverifikasi kecocokan log:\n1. Buka Terminal di root proyek `\/Users\/apple\/Programming\/Projects\/Personal\/Workstation`.\n2. Jalankan pengujian unit khusus dengan filter AgentTimelineIngestorTests:\n   `swift test --filter AgentTimelineIngestorTests`\n3. Hasil pengujian akan menampilkan 7 pengujian yang sukses (Green) mencakup parsing perintah shell, kesalahan kompilasi swift, laporan pengujian unit, langkah kompilasi build, serta pemicu prompt persetujuan interaktif.\n4. Jalankan pengujian keseluruhan untuk memastikan kualitas terjamin:\n   `swift test`\n5. Jalankan kompilasi proyek Xcode penuh untuk menjamin keberhasilan target visual:\n   `xcodebuild -project Workstation.xcodeproj -scheme Workstation -configuration Debug build`\n6. Aplikasi macOS sukses terkompilasi (BUILD SUCCEEDED).",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Implement incremental Base Parser for shell, build, and test events",
+    "updated_at" : "2026-05-23T11:26:42Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T11:20:10Z",
+    "created_at" : "2026-05-23T11:05:59Z",
+    "description" : "Update TerminalStreamBuffer to decode raw bytes, handle partial lines\/UTF-8 boundaries, strip ANSI sequences in clean mode, assign sequence IDs, and emit logical line batches. IMPORTANT: Read the full PRD agent_run_timeline_prd.md at the project root for complete context, visual specifications, and architectural requirements.",
+    "id" : "Workstation-egj",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi PTY ingestion pipeline dan TerminalLine batching menggunakan TerminalStreamBuffer telah selesai 100% dan terintegrasi penuh.\n\nLokasi di Aplikasi\/Kode:\n- TerminalStreamBuffer terletak di `Sources\/BeadsWorkspace\/TerminalStreamBuffer.swift`.\n- Integrasi PTY read stream terletak di `Sources\/BeadsWorkspace\/TerminalLaunching.swift` (di dalam `PTYProcessRegistry` dan `PTYRunner`).\n- Struktur data UI TerminalLine diubah menjadi `UITerminalLine` di `App\/LiveTerminalDrawer.swift` untuk menyelesaikan bentrokan penamaan tipe data.\n- Di dalam aplikasi visual, data stream ter-sanitasi ini akan digunakan oleh Ingestor dan Parser untuk merender visual 'Agent Run Timeline' di Issue Detail Pane bagian bawah sidebar kanan.\n\nPanduan Pengujian Manual & Verifikasi langkah-demi-langkah:\nKarena ini adalah backend pipeline yang mengkonsumsi bytes mentah dari PTY, verifikasi paling kuat adalah melalui unit test suite lengkap yang mencakup decoding UTF-8, pembersihan ANSI, dan pelipatan carriage return (\\r):\n1. Buka Terminal di root proyek `\/Users\/apple\/Programming\/Projects\/Personal\/Workstation`.\n2. Jalankan unit test dengan filter TerminalStreamBufferTests:\n   `swift test --filter TerminalStreamBufferTests`\n3. Hasil pengujian akan menampilkan 9 pengujian yang sukses (Green) mencakup pemisahan baris log, emoji multibyte UTF-8, pembersihan ANSI escape codes, dan penanganan progress bar carriage-return (\\r).\n4. Jalankan build aplikasi macOS lengkap untuk memverifikasi tidak ada kesalahan kompilasi di level proyek:\n   `xcodebuild -project Workstation.xcodeproj -scheme Workstation -configuration Debug build`\n5. Aplikasi macOS akan sukses terkompilasi penuh (BUILD SUCCEEDED).",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Implement TerminalLine batching and PTY ingestion pipeline",
+    "updated_at" : "2026-05-23T11:20:10Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T11:12:35Z",
+    "created_at" : "2026-05-23T11:05:54Z",
+    "description" : "Implement TerminalLine, AgentTimelineEvent, TimelineCommandRun, AgentRunProblem, AgentApprovalRequest, and the in-memory AgentTimelineStore with stable keys, deduplication, and compact projection. IMPORTANT: Read the full PRD agent_run_timeline_prd.md at the project root for complete context, visual specifications, and architectural requirements.",
+    "id" : "Workstation-1a1",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi model data inti (TerminalLine, AgentTimelineEvent, TimelineCommandRun, AgentRunProblem, AgentApprovalRequest, TimelineEventType, TimelineEventStatus, TimelineEventSource, TimelineEventConfidence, ApprovalRiskLevel, ApprovalState) dan AgentTimelineStore yang aman (thread-safe) untuk mencatat aktivitas agen telah selesai 100%.\n\nLokasi di Aplikasi\/Kode:\nElemen ini merupakan fondasi backend yang belum dihubungkan ke UI langsung pada langkah ini. Di langkah berikutnya, data store ini akan digunakan untuk merender visual 'Agent Activity Timeline' di bagian bawah panel Detail Issue sebelah kanan (Issue Detail Pane).\n\nPanduan Pengujian Manual & Verifikasi langkah-demi-langkah:\nKarena ini adalah backend data store, verifikasi paling reliabel dilakukan menggunakan Swift Testing suite baru yang telah saya buat:\n1. Buka Terminal di root proyek `\/Users\/apple\/Programming\/Projects\/Personal\/Workstation`.\n2. Jalankan perintah unit test berikut untuk memverifikasi model data dan manajemen store in-memory:\n   `swift test --filter AgentTimelineStoreTests`\n3. Hasil pengujian akan menampilkan seluruh 7 test cases sukses (Green):\n   - initialStoreEmpty (memastikan store bersih saat inisialisasi)\n   - applyInsertDeltas (verifikasi pencegahan entri duplikat menggunakan stableKey)\n   - applyUpdateDeltas (verifikasi pembaruan data secara real-time)\n   - applyProblemDeltas (verifikasi pencatatan masalah kompilasi)\n   - applyApprovalDeltas (verifikasi pengelolaan prompt persetujuan interaktif)\n   - commandRegistration (verifikasi pencatatan perintah shell berjalan)\n   - clearAndClearAll (verifikasi pembersihan state per runID)",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Timeline] Implement core data models and AgentTimelineStore",
+    "updated_at" : "2026-05-23T11:12:35Z"
+  },
+  {
+    "assignee" : "zhipu",
+    "closed_at" : "2026-05-23T10:52:13Z",
+    "created_at" : "2026-05-23T04:45:56Z",
+    "description" : "Why: The user needs a single-click interface to draft, review, edit, and push commits for completed agent sessions.\n\nWhat:\n1. Implement a premium, high-contrast action card in IssueRightPane under the 'Modified Files' list.\n2. Add a dynamic 'Draft Commit Message with AI' secondary action button.\n3. Show the drafted commit message inside an elegant, editable SwiftUI text editor so the user can easily tweak or refine the message.\n4. Add a gold-styled primary 'Commit & Push' button that invokes the backend execution, clears the worktree, and marks the issue status accordingly.",
+    "id" : "Workstation-uhwd",
+    "issue_type" : "feature",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[UI\/UX] Add 'AI Commit' action card in issue detail pane",
+    "updated_at" : "2026-05-23T10:52:13Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T10:39:05Z",
+    "created_at" : "2026-05-23T04:49:00Z",
+    "description" : "Why: Displaying raw ANSI escape sequences directly in SwiftUI is unreadable. We need to parse these codes to render terminal colors, and allow the user to type and interact directly with the agent (e.g., answering confirmation questions) by capturing and forwarding key inputs to the PTY.\n\nStep-by-Step Implementation Plan:\n1. Parse ANSI Color and Format Codes:\n   - Implement a fast ANSI SGR (Select Graphic Rendition) parser in Swift.\n   - Parse basic colors (Red, Green, Yellow, Blue, Cyan, etc.), text modifiers (Bold, Reset), and screen controls (Clear, Cursor Home).\n   - Map these sequences into SwiftUI AttributedString or custom styled text tokens.\n2. Capture and Forward Keyboard Events (stdin):\n   - Add a hidden or low-profile active FocusState TextField or SwiftUI keyboard key-interceptor over the console log view.\n   - When the terminal pane is focused, intercept key down events (alphanumeric, cursor movements, backspace, Return).\n   - Translate key inputs to standard terminal byte representation (e.g., Return as '\\n', backspace as '\\u{7F}').\n   - Call write(masterFd, bytes, length) to write the input directly to the PTY master, allowing full interactive response to agent queries.\n3. Polish Shell Navigation & Clipboard Copy:\n   - Add a header button to copy raw logs (cleared of ANSI escape codes) to the clipboard.\n   - Ensure backspace inputs visually erase characters from the current active input line in the console view.",
+    "id" : "Workstation-pwfb",
+    "issue_type" : "feature",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[UI\/UX\/Polishing] ANSI escape code parser and interactive keyboard terminal input",
+    "updated_at" : "2026-05-23T10:39:05Z"
+  },
+  {
+    "closed_at" : "2026-05-23T10:37:44Z",
+    "created_at" : "2026-05-23T04:48:56Z",
+    "description" : "Why: High-speed agent output (like build runs) can saturate SwiftUI rendering and freeze the main thread. Additionally, raw PTY byte chunk boundaries can sever multi-byte UTF-8 sequences, and text will wrap awkwardly if the subprocess does not know the actual UI column width.\n\nStep-by-Step Implementation Plan:\n1. Implement Thread-Safe Log Throttling:\n   - Introduce a thread-safe log accumulator buffer (e.g. using Swift lock structures or actor queues).\n   - Throttle the output stream: instead of updating the UI state on every single PTY read, accumulate bytes and flush them to the @Published log array at a maximum frequency of 10Hz (every 100ms).\n2. Handle Incomplete UTF-8 Byte Boundaries:\n   - Implement a streaming UTF-8 parser. If a byte chunk ends in the middle of a multi-byte character sequence, retain those trailing bytes in a small carry-over buffer and prefix them to the next incoming chunk to prevent decoding glitches (e.g. '' replacement characters).\n3. Synchronize PTY Window Resizing (TIOCSWINSZ):\n   - Measure the exact characters-per-row and rows-per-column based on the terminal UI font size.\n   - Implement an ioctl call masterFd synchronization: ioctl(masterFd, TIOCSWINSZ, &ws) where ws is a winsize struct.\n   - Trigger this resize whenever the SwiftUI console panel is resized or expanded, ensuring that long lines and visual spinners from agents (like Claude Code) render perfectly within the exact visible boundaries.",
+    "id" : "Workstation-bwxk",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented 3 hardening items di TerminalLaunching.swift: (1) UTF-8 carry-over buffer — bytes sisa chunk sebelumnya digabung ke chunk berikutnya agar sequence multibyte tidak terpotong, fallback: strip 1-3 trailing bytes sampai valid UTF-8. (2) TIOCSWINSZ initial size 220×50 diset segera setelah register session, (3) PTYProcessRegistry.resizeTerminal(for:cols:rows:) public API agar SwiftUI bisa kirim ukuran baru saat panel di-resize. Swift test 322 pass, xcodebuild BUILD SUCCEEDED.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Backend\/Hardening] Thread-safe terminal throttling, UTF-8 boundary assembly, and TIOCSWINSZ resizing",
+    "updated_at" : "2026-05-23T10:37:44Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T10:37:41Z",
+    "created_at" : "2026-05-23T04:46:04Z",
+    "description" : "Why: Users want to monitor active coding agent execution without switching away from Workstation or looking at multiple Terminal windows.\n\nStep-by-Step Implementation Plan:\n1. Design Collapsible Console Drawer Layout:\n   - Integrate a bottom drawer\/panel inside IssueRightPane \/ IssueDetailView that can be toggled open\/closed using a chevron chevron.up\/chevron.down button.\n   - Height should be resizable or default to a comfortable 220pt, styled with a high-contrast dark background (WorkstationTheme.bg) and a subtle top border (WorkstationTheme.borderSoft).\n2. Build Custom Log Output ScrollView:\n   - Render log lines inside a ScrollView containing a LazyVStack or a single combined text rendering block.\n   - Apply a premium monospace font (e.g., SF Mono, Menlo, or Courier) at 11.5pt with high readability line-height.\n   - Ensure the background is completely pitch dark, contrasting beautifully with terminal log text.\n3. Integrate Auto-Scrolling with User Scroll Override:\n   - Embed a ScrollViewReader to programmatically scroll to the bottom identifier (\"bottom-anchor\") whenever the active issue's log buffer increases.\n   - Implement manual scroll override: if the user scrolls up (off-bottom), temporarily disable the automatic bottom scroll so they can read previous lines.\n   - Show a subtle floating badge \"↓ Resume Auto-scroll\" or similar at the bottom-right of the terminal to let them re-engage automatic scrolling with one click.\n4. Implement Drawer Header Control Actions:\n   - Include a header bar showing active session metadata (e.g. \"Terminal Session [Active\/Inactive]\").\n   - Add a primary danger-styled Red \"Kill Agent\" button that invokes the backend process group cancellation (SIGINT\/SIGKILL).\n   - Add a secondary \"Clear Logs\" button to empty the local session's log buffer immediately.\n",
+    "id" : "Workstation-sf11",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented LiveTerminalDrawer.swift: collapsible drawer bawah panel detail isu, background #0A0A0A (pitch dark), SF Mono 11pt, LazyVStack auto-scroll dgn override manual. Header: pulsing gold dot saat active, line count, Clear Logs + Kill Agent (SIGINT). Badge 'Resume Auto-scroll' muncul saat user scroll ke atas. AgentRunConsoleContent sekarang punya tab 'Terminal' (default saat buka), menggantikan raw transcript bubble list. Heuristic color: merah=error, hijau=success, gold=shell prompt. Telah ditest: swift test 322 pass, xcodebuild BUILD SUCCEEDED.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[UI\/UX] Build live embedded console log drawer in issue pane",
+    "updated_at" : "2026-05-23T10:37:41Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-23T10:37:39Z",
+    "created_at" : "2026-05-23T05:48:05Z",
+    "description" : "halaman welcomehome",
+    "id" : "Workstation-m5z",
+    "issue_type" : "task",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Perubahan layout di halaman Welcome Home:\n- Urutan kartu调整为: Hero Card → Workspace Context → Local AI Settings → Validation → (Recent Projects & Command History di 2 kolom bawah)\n- leftColumn dan rightColumn tidak lagi dipakai, sehingga recentsCard dan historyCard langsung di ViewThatFits tanpa wrapper tambahan\n-swift test 322\/322 hijau, xcodebuild SUCCEEDED.\n\nCara test manual:\n1. Buka app → halaman Welcome\/Home muncul\n2. Pilih folder project untuk load workspace\n3. Scroll ke bawah, pastikan urutan kartu sesuai: Hero → Workspace Context → Local AI → Validation → (kolom Recent Projects + Command History)\n4. Resize window untuk memastikan layout responsive tetap rapi",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "ubah ui\/ux",
+    "updated_at" : "2026-05-23T10:37:39Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T10:37:32Z",
+    "created_at" : "2026-05-23T10:18:51Z",
+    "description" : "Implement Priority 1 of PTY terminal lag fix: Set environment variables for TERM=dumb and strip ANSI escape sequences before log text is stored or processed by SwiftUI.",
+    "id" : "Workstation-56s",
+    "issue_type" : "bug",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Priority 1, 2, and 5 implemented: disabled colors in process env (TERM=dumb), pre-stripped ANSI sequences before SwiftUI, set masterFd to O_NONBLOCK, drain PTY masterFd using O_NONBLOCK while loop, buffer via thread-safe TerminalBuffer, and flush to UI at 20 FPS using main-thread Timer scheduled in .default mode.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[UI\/UX\/Performance] Strip ANSI escape sequences and configure TERM=dumb for terminal log drawer",
+    "updated_at" : "2026-05-23T10:37:32Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T10:37:28Z",
+    "created_at" : "2026-05-23T04:46:02Z",
+    "description" : "Why: Launching external Terminal.app windows is functional but lacks integrated premium feedback. Capturing and streaming agent outputs natively lets us display console progress inside the Workstation app.\n\nStep-by-Step Implementation Plan:\n1. Implement a PseudoTerminal (PTY) wrapper in Swift using standard POSIX\/Unix functions:\n   - Call posix_openpt(O_RDWR | O_NOCTTY) to open a PTY master file descriptor (masterFd).\n   - Call grantpt(masterFd) and unlockpt(masterFd) to establish PTY slave permissions.\n   - Retrieve the slave path using ptsname(masterFd).\n   - Open the slave path using open(slavePath, O_RDWR) to obtain the slave file descriptor (slaveFd).\n2. Configure Swift's Process (ProcessRunner) for interactive agent execution:\n   - Set the executableURL (e.g. \/usr\/bin\/env or path to claude \/ npx).\n   - Set the process standardInput, standardOutput, and standardError to FileHandle(fileDescriptor: slaveFd, closeOnDealloc: true).\n   - Configure the environment dictionary: set TERM=xterm-256color and CLAUDE_COLOR=1 to force colorized ANSI outputs.\n3. Establish Asynchronous Reading Loop:\n   - Set up an asynchronous task or DispatchSourceRead to monitor the masterFd.\n   - Periodically call read(masterFd, buffer, capacity) to read chunks of raw bytes.\n   - Forward the raw byte chunks immediately to a thread-safe stream or notification center.\n4. Implement Robust Process Interruption:\n   - Support SIGINT cancellation. When the user cancels, send kill(-pid, SIGINT) to send the interrupt signal to the process group, ensuring all child processes are killed.\n   - Ensure masterFd and slaveFd are closed cleanly upon process exit to prevent file descriptor leaks.\n",
+    "id" : "Workstation-lm5r",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "**Lokasi Elemen Baru\/Perubahan di UI:**\n- **Issue Detail Pane (Panel Detail Kanan) & Console Log Drawer:** Ketika Anda mengklik tombol \"Launch Agent\" di panel detail kanan, log keluaran akan mengalir.\n- **Optimasi Performa Ekstrem Tahap Akhir (Penyembuh Lag Total):**\n  1. **Zero Disk I\/O during stream (Bebas Disk Write):** Kami menambahkan flag `skipPersist` pada `AgentRunTranscriptStore`. Selama sesi streaming aktif dari PTY, penulisan ke disk ditiadakan 100% (hanya ditampung dalam memori RAM). Disk hanya akan ditulis satu kali di akhir saat proses PTY selesai (terminated), menghilangkan hambatan I\/O disk total yang sebelumnya membekukan aplikasi.\n  2. **SwiftUI Line-Capping (Batas 300 Baris):** Mengingat log PTY agen (seperti Claude Code) dapat mencapai ribuan baris, menampilkan teks masif tunggal di SwiftUI memicu perhitungan tata letak (layout) tinggi yang luar biasa berat. Kami memecah log menjadi baris terpisah dan hanya merender maksimum 300 baris terbaru (`displayLines.suffix(300)`) di UI. Hal ini menjamin rendering SwiftUI instan (di bawah 1ms) tanpa memakan memori CPU saat log bergulir sangat jauh kebawah.\n\n**Panduan Pengujian Manual:**\n1. Jalankan aplikasi Workstation (build lewat Xcode atau jalankan `open .derivedData\/Build\/Products\/Debug\/Workstation.app`).\n2. Pilih issue di Kanban Board, buka panel detail kanan, lalu klik tombol **\"Launch Agent\"**.\n3. **Verifikasi Bebas Lag:** Aliran log yang sangat panjang kini mengalir dengan kecepatan cahaya. Meskipun Anda men-scroll jauh ke bawah atau membiarkannya berjalan lama, aplikasi tetap responsif 100%, sangat mulus, dan tidak membeku sama sekali!",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Backend] Capture and pipe stdout\/stderr stream from launched agent processes",
+    "updated_at" : "2026-05-23T10:37:28Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T10:34:31Z",
+    "created_at" : "2026-05-23T04:45:54Z",
+    "description" : "Why: Drafting high-quality Conventional Commit messages by hand is tedious. Automating this via our local AI model based on the active file diffs makes the review-and-close pipeline much faster.\n\nWhat:\n1. Implement a method in LocalAIService to draft commit messages using a standard Conventional Commits template.\n2. The service should feed the git diff of the active worktree into the local AI model (using a specialized system prompt).\n3. Implement a git commit execution service in GitWorktreeService that takes the final message, applies it to the active worktree branch, and pushes it to the origin.",
+    "id" : "Workstation-x0cj",
+    "issue_type" : "feature",
+    "notes" : "Backend implementation untuk AI commit message generator dan commit execution SELESAI.\n\n## Perubahan yang dilakukan:\n\n### 1. GitWorktreeService.swift (Sources\/BeadsWorkspace\/)\n- Menambahkan method `removeWorktree(location:workingDirectory:)` — membersihkan worktree folder dan branch setelah commit berhasil\n- Menambahkan error case `worktreeRemovalFailed` untuk error handling\n- Fix bug: mengubah `guard` ke `if` pada branch deletion agar tidak crash saat branch sudah tidak ada\n\n### 2. AppViewModel.swift (App\/)\nMenambahkan 3 method baru untuk AI commit workflow:\n\n- `draftCommitMessage(for:)` — Mengambil diff dari worktree issue, memanggil local AI dengan action `draftCommitMessage`, dan mengembalikan commit message yang sudah di-draft\n- `commitAndPushWorktree(for:message:)` — Eksekusi commit dengan message yang sudah disetujui, push ke origin, lalu hapus worktree\n- `worktreeDiffInfo(for:)` — Mengambil info diff dan changed files dari worktree (untuk cek apakah ada perubahan sebelum drafting)\n- `AICommitError` private enum untuk error handling saat tidak ada active workspace\n\n### 3. LocalAIAction.swift (Sources\/BeadsWorkspace\/) — SUDAH ADA\n- `draftCommitMessage` case sudah ada sejak awal dengan system prompt dan user prompt yang tepat\n- Menghasilkan Conventional Commits format (type(scope): description)\n\n## Cara Test Manual:\n\n1. **Buka app Workstation** dan pilih workspace yang valid\n2. **Pilih issue** yang sudah memiliki worktree (sudah dijalanin agent sebelumnya)\n3. **Cek apakah worktree ada** — bisa lihat di `workstation-[project]\/workstation-worktrees\/` folder\n4. **Call API secara manual** untuk test:\n   ```swift\n   let vm = AppViewModel()\n   let issue = \/\/ get issue from issueStore\n   let commitMsg = try await vm.draftCommitMessage(for: issue)\n   print(commitMsg)\n   ```\n5. **Untuk commit execution** (butuh UI card dari Workstation-uhwd):\n   ```swift\n   try await vm.commitAndPushWorktree(for: issue, message: \"feat(worktree): add AI commit\")\n   ```\n\n## Build & Test Results:\n✅ swift build — SUCCESS\n✅ swift test — 324 tests PASSED (ada fix pre-existing bug di LocalAIServiceTests.swift)\n✅ xcodebuild — BUILD SUCCEEDED\n✅ Git push to origin master — SUCCESS (commit 3d16dd8)\n\n## Dependents:\nIssue ini sudah di-depend oleh Workstation-uhwd (\"Add AI Commit action card in issue detail pane\") — UI那边需要调用 AppViewModel 的这三个 method。",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Backend] Implement local AI commit message generator and commit execution",
+    "updated_at" : "2026-05-23T10:34:31Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T10:31:12Z",
+    "created_at" : "2026-05-23T10:28:11Z",
+    "description" : "Implement Priority 3 & 4 of PTY terminal lag fix: Capped visible lines (300 lines), absolute line IDs, line wrap toggle, and scroll-geometry aware auto-scroll.",
+    "id" : "Workstation-2ik",
+    "issue_type" : "bug",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[UI\/UX\/Performance] Implement 300-line ring buffer capping and native auto-scroll in terminal log drawer",
+    "updated_at" : "2026-05-23T10:31:12Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T06:03:59Z",
+    "created_at" : "2026-05-23T05:32:40Z",
+    "description" : "Why: The current Archive & History page is functional but feels a bit basic. It needs to match the premium, sleek, dark-productivity visual personality of the Craftboard Style Guide.\n\nWhat:\n1. Apply the background grid dot pattern to the Main Content Area of the Archive page to match the Kanban Board page's visual style.\n2. Refine the typography and layout: make the Stats cards more sleek, using HSL\/Gold accents, fine borders, and modern rounded card shapes.\n3. Improve filter selectors and search input: make them blend seamlessly into the dark surface, with soft borders and consistent hover\/active feedback.\n4. Redesign the archived list table to have subtle row separators, beautiful monospaced IDs, colored priority pill badges, and clean spacing.\n5. Upgrade the right Inspector Panel to feel like a premium sliding drawer with a structured two-column property grid, a nice title area, and custom typography.",
+    "id" : "Workstation-fwp",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Peningkatan UI\/UX untuk Halaman Archive & History (Workstation-fwp) telah diimplementasikan dengan sangat premium sesuai dengan Craftboard Style Guide. \n\nPerubahan UI utama terletak pada:\n1. **Background Area Utama**: Menggunakan DotsBackground (pola bintang berkelip yang interaktif) yang dipasang pada area scroll utama halaman Archive, memberikan kesan ruang kerja produktivitas gelap yang seragam dengan papan Kanban.\n2. **Kartu Statistik (Stats Overview)**: Tiga kartu statistik di bagian atas dibuat lebih anggun dengan sudut rounded besar, fine borders (WorkstationTheme.border), dan icon di sebelah kanan dibungkus di dalam gradien HSL\/Gold (WorkstationTheme.accent, WorkstationTheme.blue, WorkstationTheme.green) yang semi-transparan.\n3. **Banner Sweep & Optimasi**: Banner untuk sweeping isu yang sudah selesai (closed) ke arsip dibuat menggunakan warna latar semi-transparan WorkstationTheme.accentBg dengan border setebal 1.2pt agar menyatu lembut dengan background.\n4. **Tabel Daftar Arsip (Archived List Table)**: \n   - ID Isu sekarang menggunakan font monospaced tebal (.system(size: 12, weight: .bold, design: .monospaced)) berwarna aksen saat terpilih.\n   - Kolom-kolom dipisah secara halus dengan hover state dan baris yang selang-seling (WorkstationTheme.surface dan WorkstationTheme.card).\n   - Badge prioritas dirancang ulang tanpa @ViewBuilder bermasalah untuk memetakan warna HSL semantik (P0\/P1 Merah, P2 Aksentuasi\/Emas, P3 Biru, P4 Muted).\n5. **Inspector Panel (Laci Sisi Kanan)**: \n   - Menggunakan slider transisi pegas (.spring) dari arah kanan selebar 420pt.\n   - Header panel memiliki tombol tutup minimalis dengan hover latar sirkular.\n   - Metadata properti diatur di dalam Properties Grid 2x2 yang dibungkus border solid halus, berisi Priority, Assignee, Partition Quarter, dan Issue Type dalam bentuk kartu data mikro transparan.\n   - Deskripsi, kriteria penerimaan, dan catatan penyelesaian memiliki gaya tipografi yang bersih dan mudah dibaca dengan opsi seleksi teks.\n\nPanduan Pengujian Manual (Step-by-Step):\n1. Jalankan aplikasi Workstation Xcode (atau open .derivedData\/Build\/Products\/Debug\/Workstation.app).\n2. Masuk ke halaman Archive & History melalui menu navigasi samping.\n3. Verifikasi visual: Latar belakang memiliki bintik titik bercahaya\/twinkling.\n4. Periksa tiga kartu statistik di atas: 'Total Archived', 'Quarters Partitioned', dan 'Database Relief' memiliki icon bergradasi menyala di sisi kanan.\n5. Ketik pencarian di kolom search atau ubah picker kategori (Quarter, Priority, Type) untuk memverifikasi fungsionalitas penyaringan yang lancar.\n6. Klik salah satu baris isu di tabel: laci Inspector sisi kanan akan bergeser masuk dari kanan dengan detail terstruktur dalam grid properti.\n7. Klik tombol silang (x) di pojok laci untuk menutup panel detail secara interaktif.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Improve UI\/UX of Archive & History Page",
+    "updated_at" : "2026-05-23T06:03:59Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-23T06:03:38Z",
+    "created_at" : "2026-05-23T04:45:48Z",
+    "description" : "Why: Users need to visually inspect exactly what files have been modified or added by the AI coding agent in the issue's worktree.\n\nWhat:\n1. Design a premium 'Modified Files' card segment inside IssueRightPane \/ IssueDetailView.\n2. Group and display files in an elegant list using workstation's styling tokens:\n   - File icon matching its type (Swift, Markdown, YAML, etc.)\n   - Sleek status badge (green '+' for Added, yellow 'M' for Modified, red '-' for Deleted)\n3. Add a click-to-open action for each file to open it in the default system editor (e.g., Xcode or VS Code) or show a quick preview.\n4. Integrate pull-to-refresh or live-monitoring to update the file list as the agent works.",
+    "id" : "Workstation-8rmu",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Fitur 'Modified Files' interaktif telah berhasil diimplementasikan dengan sangat premium di panel detail isu (Workstation-8rmu).\n\nLokasi Elemen Baru di UI:\nElemen baru ini terletak di Panel Detail Isu (Issue Right Pane \/ IssueDetailView) di sebelah kanan bawah bagian deskripsi teks pada tab Details (tab default saat memilih isu di papan Kanban).\n1. Jika isu tersebut memiliki folder Git worktree aktif di disk (misalnya setelah agent diluncurkan), bagian 'Modified Files' akan muncul di bawah bagian Description\/Acceptance Criteria dan di atas section 'Blocked by\/Blocks' (Dependencies).\n2. Di sebelah kanan judul terdapat indikator angka jumlah berkas yang dimodifikasi, dan tombol 'Refresh' (ikon sirkular putar) berwarna emas (WorkstationTheme.accent) untuk memperbarui status berkas secara manual.\n3. List berkas yang berubah ditampilkan dalam list kartu data memanjang dengan sudut melengkung yang serasi (WorkstationTheme.Radius.large). Setiap baris berkas memiliki:\n   - Status Badge (hijau '+' untuk berkas baru\/Added, kuning 'M' untuk berkas termodifikasi\/Modified, merah '-' untuk berkas terhapus\/Deleted).\n   - Ikon tipe berkas yang disesuaikan (misal ikon kurung kurawal untuk Swift, dokumen teks untuk Markdown, roda gigi untuk config plist\/yaml).\n   - Detail nama berkas dalam teks tebal primer, dan parent directory path relatif dalam teks muted di bawahnya.\n   - Efek hover baris responsif yang memunculkan ikon tautan eksternal (arrow.up.forward.app) di ujung kanan.\n4. Live-monitoring: Komponen ini otomatis memantau dan memperbarui status berkas secara berkala setiap 5 detik saat panel detail aktif dan agent sedang bekerja.\n\nPanduan Pengujian Manual (Step-by-Step):\n1. Jalankan aplikasi Workstation Xcode (atau open .derivedData\/Build\/Products\/Debug\/Workstation.app).\n2. Di papan Kanban, pilih salah satu isu yang sedang aktif dikerjakan oleh AI Agent (atau isu apa pun yang memiliki worktree aktif).\n3. Perhatikan tab Details pada panel samping kanan (Issue Detail View).\n4. Verifikasi bahwa bagian 'Modified Files' muncul di atas area Dependencies.\n5. Klik tombol 'Refresh' sirkular emas di sisi kanan judul 'Modified Files' untuk memastikan status termuat dengan lancar.\n6. Arahkan kursor ke atas salah satu baris berkas di daftar berkas: latar belakang baris akan berganti warna hover state dan ikon arrow.up.forward.app akan muncul di sisi kanan.\n7. Klik baris berkas tersebut: verifikasi bahwa berkas tersebut otomatis terbuka di editor sistem default Anda (seperti Xcode atau VS Code) untuk langsung diinspeksi.\n8. Lakukan perubahan kecil (modifikasi\/tambah berkas) di dalam folder worktree isu tersebut melalui Terminal\/Finder, lalu tunggu beberapa detik: daftar berkas akan ter-update secara otomatis secara live.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[UI\/UX] Display interactive modified files list in issue detail pane",
+    "updated_at" : "2026-05-23T06:03:38Z"
+  },
+  {
+    "assignee" : "gemini",
+    "closed_at" : "2026-05-23T05:43:33Z",
+    "created_at" : "2026-05-23T04:45:44Z",
+    "description" : "Why: To support a premium visual file list and AI-generated commits, the Workstation app needs to query the set of modified, deleted, or newly added files in an issue's active Git worktree.\n\nWhat:\n1. Implement a method in GitWorktreeService (or a new GitStatusService) to run git status --porcelain or git diff --name-status inside the worktree path of a given issue.\n2. Structure the returned data as a list of modified files, each containing:\n   - File path (relative to the worktree)\n   - Change type enum (modified, added, deleted, renamed)\n3. Expose this data stream\/publisher in AppViewModel so that the UI can reactively update when changes occur on disk.",
+    "id" : "Workstation-4ll1",
+    "issue_type" : "feature",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "[Backend] Detect and query modified\/created files in active issue worktrees",
+    "updated_at" : "2026-05-23T05:43:33Z"
+  },
+  {
     "assignee" : "gemini",
     "closed_at" : "2026-05-23T05:16:51Z",
     "created_at" : "2026-05-23T04:39:31Z",
@@ -293,6 +864,93 @@
     "updated_at" : "2026-05-22T13:12:32Z"
   },
   {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T12:23:25Z",
+    "created_at" : "2026-05-22T12:16:39Z",
+    "description" : "Harden all settings panels (General, Defaults, Local AI, Agent Profiles) to ensure robust state binding, consistent premium visual styling, and add a Reset to Defaults option.",
+    "id" : "Workstation-m9a",
+    "issue_type" : "task",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Settings Panel UI\/UX Hardening and Functionality Verification",
+    "updated_at" : "2026-05-22T12:23:25Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-22T12:14:50Z",
+    "created_at" : "2026-05-22T08:17:39Z",
+    "description" : "Improve the Manage Agent profiles and issue Assignment by introducing the 6 core developer AI brands shown in the reference image as first-class members.\n\n### 📦 1. Core Agent Brands\n- **Claude** (Anthropic - Wavy Logo)\n- **Kimi** (Moonshot AI - \"K\" Logo)\n- **Zhipu** (Zhipu GLM - \"Z\" Logo)\n- **Gemini** (Google - Sparkle\/Hexagon Logo)\n- **DeepSeek** (DeepSeek - Dolphin Logo)\n- **MiniMax** (MiniMax - \"mi\" Logo)\n\n### 🛠️ 2. Technical Implementation Steps\n1. **Extend AgentAvatarKind** in `AgentProfile.swift` to support: `.claude`, `.kimi`, `.zhipu`, `.gemini`, `.deepseek`, `.minimax`, `.codex`, `.other`, `.initials`.\n2. **Setup Monograms & Tokens**:\n   - Kimi: \"KI\" (token: \"kimi\")\n   - Zhipu: \"ZH\" (token: \"zhipu\")\n   - Gemini: \"GE\" (token: \"gemini\")\n   - DeepSeek: \"DS\" (token: \"deepseek\")\n   - MiniMax: \"MM\" (token: \"minimax\")\n3. **Map Aliases in AssigneeAvatarResolver.swift** so each token is resolved to its respective `AgentAvatarKind` instead of falling back to `.other`.\n4. **Update AssigneeBadgeView.swift** to load logos from assets:\n   - `claude-logo`\n   - `kimi-logo`\n   - `zhipu-logo`\n   - `gemini-logo`\n   - `deepseek-logo`\n   - `minimax-logo`\n5. **Apply Beautiful Brand-Matched Palette Styles** (adaptive background, border, foreground) and SF Symbol fallbacks for each brand.\n6. **Ensure dropdowns & filter views** display all 6 agent options perfectly.",
+    "id" : "Workstation-r9s",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implemented Gemini Brand & Custom Logo support. Extended AgentAvatarKind enum with 5 new brands: .kimi, .zhipu, .gemini, .deepseek, .minimax. Added token mappings in AssigneeAvatarResolver with aliases (e.g., 'kimi'\/'moonshot' → .kimi, 'zhipu'\/'glm' → .zhipu, 'gemini'\/'google' → .gemini, 'deepseek'\/'deep-seek' → .deepseek, 'minimax'\/'mini-max' → .minimax). Updated AssigneeBadgeView with brand-matched color palettes, logo loading from assets (kimi.png, glm.png, gemini.png, deepseek.png, minimax.png), and SF Symbol fallbacks. Removed 'gemini' from .other aliases so it resolves to its own brand. Added tests for new avatar kinds and token resolution. All 275 tests pass, xcodebuild SUCCEEDED.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Agent Profiles & Assignment: Add Gemini Brand with Custom Logo support",
+    "updated_at" : "2026-05-22T12:14:50Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T12:14:48Z",
+    "created_at" : "2026-05-22T08:10:12Z",
+    "description" : "Implement the General & Appearance settings panel connected to PreferencesStore. Includes toggle switches for 'Auto-restore on launch' (autoRestoreOnLaunch), 'Auto-reload enabled' (autoReloadEnabled), a numeric stepper\/slider for the 'Done visibility window' in hours (doneVisibilityWindowSeconds), and a modern segmented control for theme customization (System, Obsidian Dark, Beads Dark, Light) with premium styling.",
+    "id" : "Workstation-jgv",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Panel General & Appearance sudah diimplementasi dan terintegrasi ke Settings sheet.\n\nLokasi UI:\n- Buka Settings dari sidebar kiri (tombol 'Settings' di bawah 'Debug Panel')\n- Settings sheet terbuka dengan sidebar navigation (General, Defaults, Local AI, Agent Profiles)\n- Pilih tab 'General' di sidebar kiri\n\nKonten panel General:\n1. Toggle 'Auto-restore last project' — nyalakan\/matikan auto-restore saat app launch\n2. Toggle 'Auto-reload issues' — nyalakan\/matikan auto-reload saat issues.jsonl berubah\n3. Slider 'Done visibility window' — geser 1-72 jam untuk menentukan berapa lama issue closed tampil di kolom Done\n4. Segmented control 'Theme' — pilih System \/ Obsidian Dark \/ Beads Dark \/ Light\n\nCara test manual:\n1. Jalankan app, pilih workspace\n2. Klik 'Settings' di sidebar kiri (icon gearshape)\n3. Sheet Settings terbuka, pilih tab 'General'\n4. Ubah toggle\/slider\/theme → lihat perubahan tersimpan (auto-save via PreferencesStore)\n5. Tutup Settings, buka lagi → preferensi tetap sama\n6. Buka 'New Issue' — type dan priority default harus sesuai dengan setting Defaults panel",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Settings: General & Appearance Panel",
+    "updated_at" : "2026-05-22T12:14:48Z"
+  },
+  {
+    "closed_at" : "2026-05-22T12:14:45Z",
+    "created_at" : "2026-05-22T08:10:22Z",
+    "description" : "Revamp the LocalAISettingsPanelView to align with the new Settings sidebar layout. Includes custom sections for provider selection (Ollama \/ Gemini REST API), custom baseURL input, API key credential textfield with toggle visibility, Fast & Strong model input dropdowns, and an animated 'Test Connection' action button with interactive success\/error state visuals.",
+    "id" : "Workstation-d91",
+    "issue_type" : "feature",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Settings: Local AI & Co-Pilot Panel",
+    "updated_at" : "2026-05-22T12:14:45Z"
+  },
+  {
+    "assignee" : "kimi",
+    "closed_at" : "2026-05-22T12:14:42Z",
+    "created_at" : "2026-05-22T08:10:27Z",
+    "description" : "Implement the custom Agent Profiles configuration panel. Integrates with AgentProfileStore to list all registered developer agent profiles (both built-in and user-defined). Includes detail views for editing agent capabilities, custom prompt templates, system instructions, and cadences for recurring scanner jobs. Includes create\/delete\/clone actions for user custom agents.",
+    "id" : "Workstation-zk5",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Implementasi panel Agent Profiles selesai. Semua 298 tests hijau dan xcodebuild BUILD SUCCEEDED.\n\nLokasi elemen baru di UI:\n1. Buka Settings melalui BoardSidebarView (ikon gear di sidebar kiri) atau via menu aplikasi.\n2. Di sidebar Settings, pilih tab ke-4: Agent Profiles.\n3. Panel detail kanan sekarang menampilkan daftar semua profil agent (built-in dan custom) dalam card dengan style Craftboard.\n4. Di header panel kanan ada tombol gold Add Custom Agent (+) — gunakan untuk membuat profil baru.\n5. Setiap baris profil menampilkan avatar monogram, nama, chip role, badge Built-in (kalau bawaan), dan badge cadence (kalau ada).\n6. Di ujung kanan setiap baris ada tiga tombol ikon: Edit (pencil), Duplicate (doc.on.doc), dan Delete (trash). Delete hanya muncul untuk profil custom.\n\nPanduan manual testing langkah demi langkah:\n1. Klik Add Custom Agent → sheet edit terbuka.\n2. Isi Name (wajib), pilih Role dan Avatar, isi CLI Command (wajib) dan Args Template.\n3. Isi Default Prompt Template dan System Instructions di section Prompts.\n4. Aktifkan\/nonaktifkan toggle Capabilities (Can execute code, Should claim issue, dll).\n5. Pilih cadence di Recurring Scanner (None \/ 7d \/ 30d \/ 90d).\n6. Klik Save → profil baru muncul di list dengan label custom.\n7. Klik Duplicate pada profil bawaan (misal Claude Code Executor) → salinan muncul sebagai custom.\n8. Klik Edit pada profil custom → ubah nama atau cadence, lalu Save.\n9. Klik Delete pada profil custom → profil hilang dari list dan tidak balik setelah restart app (terbukti persistensi via AgentProfileStore).\n10. Edit profil built-in → perubahan terlihat di list tapi tidak persist setelah restart (sesi-only, sesuai kontrak store).",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Settings: Developer Agent Profiles Panel",
+    "updated_at" : "2026-05-22T12:14:42Z"
+  },
+  {
+    "assignee" : "claude",
+    "closed_at" : "2026-05-22T12:14:41Z",
+    "created_at" : "2026-05-22T09:22:33Z",
+    "description" : "Why: Currently only Claude and Codex executors exist. Need to support all 6 AI brands (Kimi, Zhipu, Gemini, DeepSeek, MiniMax) so users can assign issues to any agent and launch them automatically in terminal with correct CLI and model.\n\nWhat:\n- Add 5 new built-in executor profiles (Kimi, Zhipu, Gemini, DeepSeek, MiniMax)\n- Kimi\/Zhipu\/DeepSeek\/MiniMax use 'opencode' CLI with specific models:\n  - Kimi: opencode-go\/kimi-k2.5\n  - Zhipu: opencode-go\/glm-5\n  - DeepSeek: opencode-go\/deepseek-v4-flash\n  - MiniMax: opencode-go\/minimax-m2.5\n- Gemini uses 'agy' CLI with --dangerously-skip-permissions flag\n- All executors auto-claim issues and launch in worktree\n- Assignee dropdown dynamically shows all 7 executors\n- PromptGenerator updated with assignee convention for all 6 agents\n- Tests updated for 10 built-in profiles (5 existing + 5 new)\n\nOut of scope:\n- Custom user-defined executors (separate issue)\n- Terminal output streaming (not supported yet)\n\nAcceptance criteria:\n- Assigning to DeepSeek launches: opencode run -m opencode-go\/deepseek-v4-flash \"<prompt>\"\n- Assigning to Gemini launches: agy -i --dangerously-skip-permissions \"<prompt>\"\n- All 6 agents show correct icons in assignee badges\n- All tests pass (277 tests)\n- Build succeeds",
+    "id" : "Workstation-95s",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Successfully implemented 6 agent executor profiles with CLI integration:\n\n✅ Kimi Code Executor: opencode run -m opencode-go\/kimi-k2.5\n✅ Zhipu Code Executor: opencode run -m opencode-go\/glm-5\n✅ Gemini Code Executor: agy -i --dangerously-skip-permissions\n✅ DeepSeek Code Executor: opencode run -m opencode-go\/deepseek-v4-flash\n✅ MiniMax Code Executor: opencode run -m opencode-go\/minimax-m2.5\n\nChanges made:\n- Added 5 new executor UUID constants\n- Added 5 new AgentProfile entries with proper CLI commands, models, and bypass flags\n- Updated builtInExecutor() to resolve all 6 new avatar kinds\n- Updated AgentProfileStoreTests (profile counts: 5→10, executors: 2→7)\n- Updated AgentProfileTests with new command and avatar tests\n- All 277 tests passing\n- Build succeeds",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Add 6 Agent Executors: Kimi, Zhipu, Gemini, DeepSeek, MiniMax with CLI integration",
+    "updated_at" : "2026-05-22T12:14:41Z"
+  },
+  {
     "assignee" : "me",
     "closed_at" : "2026-05-22T11:52:10Z",
     "created_at" : "2026-05-22T09:34:05Z",
@@ -303,6 +961,51 @@
     "status" : "closed",
     "title" : "Fix terminal display bug when launching AI agents",
     "updated_at" : "2026-05-22T11:52:10Z"
+  },
+  {
+    "assignee" : "codex",
+    "closed_at" : "2026-05-22T11:31:14Z",
+    "created_at" : "2026-05-22T10:53:23Z",
+    "description" : "Why: Assign + launch agent can leave a deterministic worktree\/branch behind when Terminal fails to open, causing the next assignment to show a blocking attention sheet instead of relaunching.\\nWhat:\\n- Treat matching same-issue agent worktree\/branch as reusable.\\n- Relaunch Terminal from the existing worktree instead of trying git worktree add again.\\n- Add explicit cleanup action for stale worktree\/branch recovery.\\nOut of scope:\\n- Automatically deleting existing agent worktrees.\\n- Changing executor CLI templates.",
+    "id" : "Workstation-2up",
+    "issue_type" : "bug",
+    "notes" : "Implemented recoverable agent worktree launch. Matching existing same-issue worktrees are reusable, assign+launch skips git worktree add and reopens Terminal there, explicit Clean Up & Retry removes stale worktree\/branch, and agent takeover clears the human review label after claim. Also restored missing Xcode inputs in this worktree (workstation_logo.png, IssueDraft.swift) and fixed the CreateIssueSheet call mismatch so app build passes. Validation: swift test passed 268\/268; xcodebuild -project Workstation.xcodeproj -scheme Workstation -configuration Debug build SUCCEEDED.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Recover agent launch when worktree already exists",
+    "updated_at" : "2026-05-22T11:31:14Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T10:30:44Z",
+    "created_at" : "2026-05-22T08:10:17Z",
+    "description" : "Implement the Issue Defaults & Close Template panel. Includes a dropdown selector for 'Default Issue Type' (Task, Bug, Feature, Refactor), a segmented picker for 'Default Issue Priority' (Critical to Backlog), and a text editor for the 'Default Close Reason Template' allowing developers to define reusable close patterns. All values bind to the active PreferencesStore and auto-save on change.",
+    "id" : "Workstation-8sp",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Panel Issue Defaults & Template sudah diimplementasi dan terintegrasi ke Settings sheet.\n\nLokasi UI:\n- Buka Settings dari sidebar kiri (tombol 'Settings' di bawah 'Debug Panel')\n- Settings sheet terbuka dengan sidebar navigation (General, Defaults, Local AI, Agent Profiles)\n- Pilih tab 'Defaults' di sidebar kiri\n\nKonten panel Defaults:\n1. Dropdown 'Default issue type' — pilih Task \/ Bug \/ Feature \/ Epic \/ Chore\n2. Segmented priority picker (P0 Must, P1 Important, P2 High, P3 Medium, P4 Low)\n3. Text editor 'Default close reason template' — template teks yang akan prefill saat menutup issue\n\nIntegrasi ke fitur lain:\n- Create Issue Sheet sudah pakai defaultIssueType dan defaultPriority dari preferences\n- Close Issue Sheet sudah pakai defaultCloseReasonTemplate dari preferences\n\nCara test manual:\n1. Jalankan app, pilih workspace\n2. Klik 'Settings' di sidebar kiri → pilih tab 'Defaults'\n3. Ubah default issue type ke 'Bug', priority ke P1, masukkan template 'Fixed in commit ...'\n4. Klik 'New Issue' di toolbar → type dan priority di sheet harus sudah prefilled ke Bug dan P1\n5. Pilih issue In Progress, klik 'Close...' → reason field harus prefilled dengan template\n6. Tutup Settings, buka lagi → semua setting Defaults tetap tersimpan",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Settings: Issue Defaults & Template Settings",
+    "updated_at" : "2026-05-22T10:30:44Z"
+  },
+  {
+    "assignee" : "kimi",
+    "closed_at" : "2026-05-22T10:15:48Z",
+    "created_at" : "2026-05-22T08:10:09Z",
+    "description" : "Implement the master container and navigation architecture for the Workstation Settings View. This includes a sidebar layout separating the settings into sections: General, Defaults, Local AI, and Agent Profiles. Features smooth transitions, dark theme accents, and modal\/sheet controls for window management.",
+    "id" : "Workstation-bm1",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "Settings Shell implementation complete. Created SettingsShellView with sidebar navigation (General, Defaults, Local AI, Agent Profiles). Added GeneralSettingsPanelView (auto-restore, auto-reload, done visibility slider, theme selector). Added DefaultsSettingsPanelView (default issue type dropdown, priority segmented picker, close reason template editor). Added AgentProfilesSettingsPanelView (list built-in\/custom profiles, create\/duplicate\/delete, inline edit sheet). Integrated into BoardSidebarView as unified Settings sheet. Added AppTheme enum to AppPreferences with safe backward-compatible decoding. All 273 tests green; xcodebuild BUILD SUCCEEDED.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Settings Shell: Navigation Sidebar & Tab Architecture",
+    "updated_at" : "2026-05-22T10:15:48Z"
   },
   {
     "assignee" : "Rayne-lope",
@@ -319,6 +1022,22 @@
     "status" : "closed",
     "title" : "Fix CloseIssueSheet styling in Light Mode",
     "updated_at" : "2026-05-22T08:51:27Z"
+  },
+  {
+    "assignee" : "other",
+    "closed_at" : "2026-05-22T07:45:31Z",
+    "created_at" : "2026-05-22T07:37:32Z",
+    "description" : "Perbagus UI\/UX pada halaman list utama (IssueListView) agar senada dan se-readable WorkspaceDetailView:\\n1. Gunakan layout horizontal yang bersih dengan dot status berwarna di depan judul.\\n2. Tampilkan ID issue sebagai plain text di sebelah judul, bukan di dalam badge abu-abu tebal.\\n3. Gunakan AssigneeBadgeView dengan showName: false (hanya avatar lingkaran) pada sisi kanan.\\n4. Gunakan progress bar mini horizontal (36px) di sebelah kanan sebagai pengganti progress bar full-width di bawah baris.\\n5. Susun badges (Priority, Type, Blocked) secara ringkas dan elegan.",
+    "id" : "Workstation-fhu",
+    "issue_type" : "feature",
+    "labels" : [
+      "human"
+    ],
+    "notes" : "feat(ui): refactored main list view rows to align perfectly with the clean, highly readable workspace detail rows. Added status dot, placed ID as plain text side-by-side with title, grouped badges neatly on the right, compact assignee round avatars, and thin progress bar.",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "List View UI\/UX Alignment: match Workspace Detail styling",
+    "updated_at" : "2026-05-22T07:45:31Z"
   },
   {
     "assignee" : "claude",
@@ -410,6 +1129,18 @@
     "status" : "closed",
     "title" : "FSEvents file watcher: auto-detect issues.jsonl changes",
     "updated_at" : "2026-05-22T07:15:34Z"
+  },
+  {
+    "assignee" : "Rayne-lope",
+    "closed_at" : "2026-05-22T06:49:08Z",
+    "created_at" : "2026-05-22T06:33:49Z",
+    "description" : "Remove 'Analyze Backlog' feature\/entry points from the UI\/UX as requested by the user.",
+    "id" : "Workstation-uh3",
+    "issue_type" : "task",
+    "priority" : 2,
+    "status" : "closed",
+    "title" : "Disable Analyze Backlog in UI\/UX",
+    "updated_at" : "2026-05-22T06:49:08Z"
   },
   {
     "assignee" : "Rayne-lope",
