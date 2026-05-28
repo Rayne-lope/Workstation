@@ -87,6 +87,8 @@ struct KanbanBoardView: View {
             return handleDrop(issueID: id, into: column)
         } isTargeted: { hovering in
             if hovering {
+                // Play hover tick only when a card first enters any column
+                if hoverTargetColumn == nil { SoundscapeManager.shared.playCardHover() }
                 hoverTargetColumn = column
             } else if hoverTargetColumn == column {
                 hoverTargetColumn = nil
@@ -133,12 +135,15 @@ struct KanbanBoardView: View {
         case .noop:
             return false
         case .claim:
+            SoundscapeManager.shared.playCardDrop()
             Task { await store.claim(id: issueID) }
             return true
         case .requestHumanReview:
+            SoundscapeManager.shared.playCardDrop()
             Task { await store.requestHumanReview(id: issueID) }
             return true
         case .close:
+            SoundscapeManager.shared.playCardDrop()
             onRequestClose(issue)
             return true
         }

@@ -1318,6 +1318,7 @@ final class AppViewModel {
                 Clipboard.copy(session.payload.prompt)
             }
             do {
+                SoundscapeManager.shared.playAgentLaunch()
                 try agentLaunchFlowCoordinator.openTerminal(
                     for: session,
                     projectURL: worktree.worktreeURL,
@@ -1355,6 +1356,7 @@ final class AppViewModel {
         detailPaneMode = .console
         Clipboard.copy(session.payload.prompt)
         do {
+            SoundscapeManager.shared.playAgentLaunch()
             try agentLaunchFlowCoordinator.openTerminal(
                 for: session,
                 projectURL: workspace.inspectionURL,

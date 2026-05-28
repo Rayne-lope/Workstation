@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0036DAF30C26630B31994810 /* GitWorktreesSettingsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C58351E4F587C4EB327A1D0 /* GitWorktreesSettingsPanelView.swift */; };
 		008E08E1CAF34D240D8B6890 /* AgentTimelineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0536C6445B86B242CFF825D5 /* AgentTimelineStore.swift */; };
 		011C93431FCCA7053C284A94 /* AgentProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36B596B1328FF83B1D609B6 /* AgentProfile.swift */; };
 		05E8175A662EEB417358B87C /* WorkspaceCheckState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14069CE24B8C10020B9420B2 /* WorkspaceCheckState.swift */; };
@@ -21,6 +22,7 @@
 		11AD643DECCB3B4165F081CE /* IssueDependencyGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28C106C6E459CF2B46667A8 /* IssueDependencyGraph.swift */; };
 		11D1BE62C48EB0F95709C208 /* ProcessCommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E76DEF5D604366BFFE11D3E /* ProcessCommandRunner.swift */; };
 		1511CAD23372C5FDBFEE854A /* IssueDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45E86C3EE3BADCC3721FFFF5 /* IssueDraft.swift */; };
+		17412BF3403451A7A22BBB6D /* SoundscapeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46E9C53AB4DBB8E771584F4F /* SoundscapeManager.swift */; };
 		1AFCE7434DDE29985264B8A6 /* AgentRunLaunchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21EDA36E01DC179204FA67C /* AgentRunLaunchCoordinator.swift */; };
 		1B028222CCA651471B9754F5 /* BlockerPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888BE52E8A89EAA938999978 /* BlockerPickerSheet.swift */; };
 		1E82711CB134527950F605D6 /* AssigneeBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E9765ACEE853F40158ABDF /* AssigneeBadgeView.swift */; };
@@ -81,7 +83,6 @@
 		83732800378670E8A9ED4945 /* PriorityDifficulty.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFB5BD82F9980E27DDE77E4A /* PriorityDifficulty.swift */; };
 		839DF9C967F0EEFB03E6469C /* FocusSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E75029744ADEBC7A72F65B /* FocusSessionStore.swift */; };
 		86EE84A1901F3D1D705B5C86 /* IssueCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6F1CB226FDF9300F9A69AE /* IssueCardView.swift */; };
-		871A8826E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 871A8825E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift */; };
 		88D9FBEE6AD787588C414A68 /* IssueFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 284D14F10FAD954DE8084E98 /* IssueFilterState.swift */; };
 		8FBFD5658AFC82CD57BBC344 /* ProjectRootDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6224D67B91244DA59C02E583 /* ProjectRootDiscovery.swift */; };
 		90FCF8C268D3F27869C35625 /* CommandRunning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD22E8AD06D83B420E333A0 /* CommandRunning.swift */; };
@@ -132,8 +133,8 @@
 		E92441B38FE0898B98CB4C4B /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DE4BAAABA3B24747611E458 /* AppTheme.swift */; };
 		EDDF6FB1FB7E4DAD8D874515 /* robot_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = FE5282CF1F6FD222BC46AD2D /* robot_logo.png */; };
 		EED8DF1BA8C8C66017D39C24 /* GitWorktreeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 005A86C1888FE4CB8379B2BA /* GitWorktreeService.swift */; };
-		EED8DF1BA8C8C66017D39002 /* GitWorktreesSettingsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED8DF1BA8C8C66017D39001 /* GitWorktreesSettingsPanelView.swift */; };
 		F3EE994C732B25783D6F5A1A /* DMSans-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9D1634AE4431DCFC838CA764 /* DMSans-Variable.ttf */; };
+		F4E20B68E849E61B3F5FB6E1 /* IssueDependencyGraphCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F1D320CF3DE5E7281566338 /* IssueDependencyGraphCanvasView.swift */; };
 		F58C2CDF8EF7D9F330E1F8CC /* RecentProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDBF01581D478F869789EFA /* RecentProject.swift */; };
 		F594A7D2CE4B30A29539D64B /* LocalAISettingsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D973E9BF68711E221A24DA /* LocalAISettingsPanelView.swift */; };
 		F6D5AA568EB30667CC8DFFD5 /* AgentLaunchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719C5EBB688AF23196D5730B /* AgentLaunchState.swift */; };
@@ -179,17 +180,20 @@
 		2D5AB344D5A4D3F85B094889 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		2DE4BAAABA3B24747611E458 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		2EDF7E4DE788E6AD0637B4CF /* WorkspaceValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceValidator.swift; sourceTree = "<group>"; };
+		2F1D320CF3DE5E7281566338 /* IssueDependencyGraphCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDependencyGraphCanvasView.swift; sourceTree = "<group>"; };
 		2F90C5592382B08D28A3542C /* QuickCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
 		318566DC37E0E0C6C999E40A /* GitDirtyLaunchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitDirtyLaunchSheet.swift; sourceTree = "<group>"; };
 		383BDACAF164837CF4EB3ADF /* WorkspaceSelectionError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSelectionError.swift; sourceTree = "<group>"; };
 		38B98FF907C967F3561B56B6 /* AgentRunTimelineCompactView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunTimelineCompactView.swift; sourceTree = "<group>"; };
 		3AD22E8AD06D83B420E333A0 /* CommandRunning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRunning.swift; sourceTree = "<group>"; };
+		3C58351E4F587C4EB327A1D0 /* GitWorktreesSettingsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitWorktreesSettingsPanelView.swift; sourceTree = "<group>"; };
 		3C8B23B400081B497D0ED65E /* LiveTerminalDrawer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTerminalDrawer.swift; sourceTree = "<group>"; };
 		3D681CE6C86EDAE8338D0E24 /* GoalParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalParser.swift; sourceTree = "<group>"; };
 		3EBDFB2F92EA5F5964227D36 /* SettingsShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsShellView.swift; sourceTree = "<group>"; };
 		412453999B9BCF926556D33A /* RecurringMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringMetadata.swift; sourceTree = "<group>"; };
 		4443CBD3C4BF13C6EFF81D5B /* CommandSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandSnapshot.swift; sourceTree = "<group>"; };
 		45E86C3EE3BADCC3721FFFF5 /* IssueDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDraft.swift; sourceTree = "<group>"; };
+		46E9C53AB4DBB8E771584F4F /* SoundscapeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapeManager.swift; sourceTree = "<group>"; };
 		47E024339F6709086B129865 /* IssueListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueListView.swift; sourceTree = "<group>"; };
 		4C29EACE5A1325EBBDFACE1B /* AgentRunConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunConsoleView.swift; sourceTree = "<group>"; };
 		4E76DEF5D604366BFFE11D3E /* ProcessCommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessCommandRunner.swift; sourceTree = "<group>"; };
@@ -222,7 +226,6 @@
 		7F33F1DA015B079DD64713C6 /* BeadIssue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadIssue.swift; sourceTree = "<group>"; };
 		816CB71D780855351A7B0945 /* WorkspaceCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCheck.swift; sourceTree = "<group>"; };
 		828B13449CC3B4C9E1667F4B /* GeneralSettingsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsPanelView.swift; sourceTree = "<group>"; };
-		EED8DF1BA8C8C66017D39001 /* GitWorktreesSettingsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitWorktreesSettingsPanelView.swift; sourceTree = "<group>"; };
 		876B61BCEC422CC1BB78AA8A /* IssueFilterBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueFilterBarView.swift; sourceTree = "<group>"; };
 		888BE52E8A89EAA938999978 /* BlockerPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockerPickerSheet.swift; sourceTree = "<group>"; };
 		894623BE6C865390CCA4B26B /* AgentRunNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunNotesView.swift; sourceTree = "<group>"; };
@@ -238,7 +241,6 @@
 		9A88CC42EF5FF51ECCC44DF4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9D1634AE4431DCFC838CA764 /* DMSans-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Variable.ttf"; sourceTree = "<group>"; };
 		A058CE86AB9D21A90D4AC4A4 /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
-		871A8825E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDependencyGraphCanvasView.swift; sourceTree = "<group>"; };
 		A28C106C6E459CF2B46667A8 /* IssueDependencyGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDependencyGraph.swift; sourceTree = "<group>"; };
 		A426C3CF17A97D5D9A653E94 /* StatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarView.swift; sourceTree = "<group>"; };
 		A9D17E8ECAB8F8236106375E /* AgentRunPromptPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunPromptPreviewView.swift; sourceTree = "<group>"; };
@@ -449,11 +451,11 @@
 				8DA82BC47E8DF9FB67752C3D /* DefaultsSettingsPanelView.swift */,
 				D27F04B1AC6BCDE59657C6B5 /* FocusStripView.swift */,
 				828B13449CC3B4C9E1667F4B /* GeneralSettingsPanelView.swift */,
-				EED8DF1BA8C8C66017D39001 /* GitWorktreesSettingsPanelView.swift */,
 				318566DC37E0E0C6C999E40A /* GitDirtyLaunchSheet.swift */,
+				3C58351E4F587C4EB327A1D0 /* GitWorktreesSettingsPanelView.swift */,
 				27751D07AAD59803026AEADA /* GoalChecklistView.swift */,
 				BC6F1CB226FDF9300F9A69AE /* IssueCardView.swift */,
-				871A8825E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift */,
+				2F1D320CF3DE5E7281566338 /* IssueDependencyGraphCanvasView.swift */,
 				F890105154924D319CFE485F /* IssueDetailRecurringSection.swift */,
 				A058CE86AB9D21A90D4AC4A4 /* IssueDetailView.swift */,
 				876B61BCEC422CC1BB78AA8A /* IssueFilterBarView.swift */,
@@ -467,6 +469,7 @@
 				2F90C5592382B08D28A3542C /* QuickCaptureView.swift */,
 				71826CC9F5A44E27B59B0EF2 /* ReviewFollowupSheet.swift */,
 				3EBDFB2F92EA5F5964227D36 /* SettingsShellView.swift */,
+				46E9C53AB4DBB8E771584F4F /* SoundscapeManager.swift */,
 				A426C3CF17A97D5D9A653E94 /* StatusBarView.swift */,
 				2A774C9D9CA5BFF52912BC2A /* WelcomeView.swift */,
 				911B6D15106586722D5B61D2 /* WorkspaceDetailView.swift */,
@@ -618,16 +621,16 @@
 				839DF9C967F0EEFB03E6469C /* FocusSessionStore.swift in Sources */,
 				93C54C1F493139C7481EC5B4 /* FocusStripView.swift in Sources */,
 				397C925078051C2EE4950ECD /* GeneralSettingsPanelView.swift in Sources */,
-				EED8DF1BA8C8C66017D39002 /* GitWorktreesSettingsPanelView.swift in Sources */,
 				F75F5048B5508E9CF98EACCC /* GitDirtyLaunchSheet.swift in Sources */,
 				695395B3EBB5BFCB9F06BFAF /* GitStatusService.swift in Sources */,
 				26B7E023EA5BEFFBAC714259 /* GitStatusSummary.swift in Sources */,
 				EED8DF1BA8C8C66017D39C24 /* GitWorktreeService.swift in Sources */,
+				0036DAF30C26630B31994810 /* GitWorktreesSettingsPanelView.swift in Sources */,
 				220E255E25EDD57D3D6CCEB7 /* GoalChecklistView.swift in Sources */,
 				34931793876EDBF58BAC151E /* GoalParser.swift in Sources */,
 				86EE84A1901F3D1D705B5C86 /* IssueCardView.swift in Sources */,
-				871A8826E1C0462E94E26F02 /* IssueDependencyGraphCanvasView.swift in Sources */,
 				11AD643DECCB3B4165F081CE /* IssueDependencyGraph.swift in Sources */,
+				F4E20B68E849E61B3F5FB6E1 /* IssueDependencyGraphCanvasView.swift in Sources */,
 				1090C560748AD4C05E9E2BE8 /* IssueDetailRecurringSection.swift in Sources */,
 				F75546CC5E1ECC49645B16A3 /* IssueDetailView.swift in Sources */,
 				1511CAD23372C5FDBFEE854A /* IssueDraft.swift in Sources */,
@@ -666,6 +669,7 @@
 				4D89A396E437E3AB3E46EEAA /* SettingsShellView.swift in Sources */,
 				475D8F4CC21C9CB86EA72AAF /* SettingsTab.swift in Sources */,
 				E1C492C65B59EEA94CA3AB58 /* ShellCommandRunner.swift in Sources */,
+				17412BF3403451A7A22BBB6D /* SoundscapeManager.swift in Sources */,
 				9926BC17F1066C0C699D12A6 /* StatusBarView.swift in Sources */,
 				B21D0C88B305BDF1829258DB /* TerminalLauncher.swift in Sources */,
 				7F8A60638B110146BF3C9739 /* TerminalLaunching.swift in Sources */,
