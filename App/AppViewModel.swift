@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 import Observation
@@ -235,6 +236,9 @@ final class AppViewModel {
             doneVisibilityWindow: preferencesStore.preferences.doneVisibilityWindowSeconds,
             filterState: persistedFilterState
         )
+        store.onDidReload = { [weak self] in
+            self?.persistWidgetState()
+        }
         issueStore = store
         let recurring = RecurringStore(workingDirectory: workspace.inspectionURL)
         recurring.load()
@@ -689,6 +693,11 @@ final class AppViewModel {
         preferencesStore.update { $0.kanbanCompactMode = value }
     }
 
+    func setNotificationsEnabled(_ value: Bool) {
+        preferencesStore.update { $0.notificationsEnabled = value }
+        if value { NotificationManager.shared.requestAuthorization() }
+    }
+
     func resetSettingsToDefaults() {
         preferencesStore.resetToDefaults()
         agentProfileStore.resetToDefaults()
@@ -878,18 +887,65 @@ final class AppViewModel {
     func presentAgentRunConsole(runID: UUID) {
         activeConsoleRunID = runID
         detailPaneMode = .console
+        persistWidgetState()
     }
 
     func presentLatestAgentRunConsole(forIssueID issueID: String) {
         if let record = agentRunHistoryStore.latestRecord(forIssueID: issueID) {
             activeConsoleRunID = record.id
             detailPaneMode = .console
+            persistWidgetState()
         }
     }
 
     func dismissAgentRunConsole() {
         activeConsoleRunID = nil
         detailPaneMode = .issue
+        persistWidgetState()
+    }
+
+    func persistWidgetState() {
+        guard let workspace = activeWorkspace, let store = issueStore else {
+            WidgetStatePersister.shared.persist(
+                workspaceName: nil,
+                workspacePath: nil,
+                issues: [],
+                readyIssueIDs: [],
+                blockedByDependencyIDs: [],
+                activeRun: nil
+            )
+            return
+        }
+
+        var activeRun: WidgetState.ActiveRun? = nil
+        if let runID = activeConsoleRunID,
+           let record = agentRunHistoryStore.record(id: runID) {
+            let statusStr: String
+            if let approval = AgentTimelineStore.shared.activeApproval(forRunID: runID),
+               approval.state == .active {
+                statusStr = "waiting_approval"
+            } else if record.status.isFinalized {
+                statusStr = record.status.rawValue
+            } else {
+                statusStr = "running"
+            }
+            activeRun = WidgetState.ActiveRun(
+                issueID: record.issueID,
+                issueTitle: record.issueTitle,
+                assignee: record.agentName,
+                status: statusStr,
+                startedAt: record.startedAt
+            )
+        }
+
+        WidgetStatePersister.shared.persist(
+            workspaceName: workspace.name,
+            workspacePath: workspace.selectedURL.path,
+            issues: store.issues,
+            readyIssueIDs: store.readyIssueIDs,
+            blockedByDependencyIDs: store.blockedByDependencyIDs,
+            activeRun: activeRun
+        )
     }
 
     // MARK: - Approval Confirmation
@@ -933,6 +989,7 @@ final class AppViewModel {
         AgentTimelineStore.shared.updateApprovalState(forRunID: runID, newState: finalState)
 
         dismissApprovalConfirmation()
+        persistWidgetState()
     }
 
     func showIssuePane() {
@@ -1094,6 +1151,7 @@ final class AppViewModel {
                 triggerLanding(for: record)
             }
         }
+        persistWidgetState()
     }
 
     // MARK: - Landing Sequence
@@ -1104,6 +1162,29 @@ final class AppViewModel {
         let landing = PendingLanding(from: record)
         pendingLandings.append(landing)
         startLandingAnalysis(for: landing)
+
+        if preferencesStore.preferences.notificationsEnabled {
+            NotificationManager.shared.notifyFinalized(
+                landingID: landing.id,
+                issueID: record.issueID,
+                issueTitle: record.issueTitle,
+                status: record.status
+            )
+        }
+    }
+
+    /// Brings the app forward and surfaces the Landing Sheet for the tapped notification.
+    /// Called from the notification tap handler wired up in `WorkstationApp`.
+    func focusLanding(landingID: UUID) {
+        NSApp.activate(ignoringOtherApps: true)
+        guard let index = pendingLandings.firstIndex(where: { $0.id == landingID }) else {
+            // Landing already dismissed — just bring the app to the front.
+            return
+        }
+        if index != 0 {
+            let landing = pendingLandings.remove(at: index)
+            pendingLandings.insert(landing, at: 0)
+        }
     }
 
     private func startLandingAnalysis(for landing: PendingLanding) {
@@ -1179,11 +1260,19 @@ final class AppViewModel {
             return newIngestor
         }()
 
+        var didChange = false
         for line in lines {
             let deltas = ingestor.ingest(line: line)
+            if !deltas.isEmpty {
+                didChange = true
+            }
             for delta in deltas {
                 AgentTimelineStore.shared.apply(delta: delta, forRunID: runID)
             }
+        }
+
+        if didChange {
+            persistWidgetState()
         }
     }
 
@@ -1220,6 +1309,7 @@ final class AppViewModel {
 
         // Remove ingestor to prevent memory leaks
         timelineIngestors.removeValue(forKey: runID)
+        persistWidgetState()
     }
 
     func updateTranscriptMessageContent(id: UUID, content: String) {

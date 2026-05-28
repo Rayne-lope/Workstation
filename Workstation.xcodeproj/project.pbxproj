@@ -34,6 +34,7 @@
 		2301A9AA47A99AFEF3B5278F /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D5AB344D5A4D3F85B094889 /* AppPreferences.swift */; };
 		23468E3729F7C7407D353AD1 /* WorktreeDiffAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBAA6D4BF7DD3B5B3A4AE290 /* WorktreeDiffAnalyzer.swift */; };
 		234B36538B05A7413D790F5C /* UpdateIssueInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 577CDDC714F1C8C5E07746BD /* UpdateIssueInput.swift */; };
+		25F1E9848DA7DE2DB123C154 /* WidgetStatePersister.swift in Sources */ = {isa = PBXBuildFile; fileRef = 063EF1232103451F934264A1 /* WidgetStatePersister.swift */; };
 		26B7E023EA5BEFFBAC714259 /* GitStatusSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE6B7461351447EB9564CA77 /* GitStatusSummary.swift */; };
 		26FA2B55B26965A43CE7D934 /* DefaultsSettingsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DA82BC47E8DF9FB67752C3D /* DefaultsSettingsPanelView.swift */; };
 		28B216EB49828384B00D0777 /* RecentProjectsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790A0D87A86630F43BB0AB5F /* RecentProjectsStore.swift */; };
@@ -56,6 +57,7 @@
 		4192B3D625B3B2546381E5BE /* AgentRunStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 539D23D5A48E3C6D6129CCD2 /* AgentRunStatus.swift */; };
 		42BA5E3C93F17E56D865F3BA /* LocalAIAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043AA7CA225177B7CD687981 /* LocalAIAction.swift */; };
 		434F3A7547E49627055FD4AC /* AgentRunTranscriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBEB229B00EA9F96BA7BDE44 /* AgentRunTranscriptView.swift */; };
+		44D00E7B794A67AE56ED3A82 /* WorkstationWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D698E39441548D4D521C3A52 /* WorkstationWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		46E73A4A41ED848CC03964FC /* Clipboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB65FC1E71D27AB7752E18C /* Clipboard.swift */; };
 		475D8F4CC21C9CB86EA72AAF /* SettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B169E4EDA542277E1D174137 /* SettingsTab.swift */; };
 		4D89A396E437E3AB3E46EEAA /* SettingsShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBDFB2F92EA5F5964227D36 /* SettingsShellView.swift */; };
@@ -66,6 +68,7 @@
 		59B5CBBA8A0BB559BD651B5A /* codex_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = BED1A8DCADC4A4AAE99975A7 /* codex_logo.png */; };
 		5C3457B6E50903A055CFD460 /* BoardSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB1EB4ED6437C458FE5DD39 /* BoardSidebarView.swift */; };
 		5F6BB8AF75B8E8A4FDBDD38B /* KanbanBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5479031AA691E8487A8769C2 /* KanbanBoardView.swift */; };
+		5FDF74760DF67795802294E2 /* WidgetState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7814C4C49AB0146A2095E337 /* WidgetState.swift */; };
 		6118D768851A2391F76C76F1 /* AgentRunConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C29EACE5A1325EBBDFACE1B /* AgentRunConsoleView.swift */; };
 		6783CF7E06D40DF26AE3AF91 /* glm.png in Resources */ = {isa = PBXBuildFile; fileRef = 7E8076A719C88118D525766F /* glm.png */; };
 		6816E14341F3673E8F83E252 /* AgentRunHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21136495113009F87FFC43FA /* AgentRunHistoryStore.swift */; };
@@ -88,6 +91,7 @@
 		86EE84A1901F3D1D705B5C86 /* IssueCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6F1CB226FDF9300F9A69AE /* IssueCardView.swift */; };
 		88D9FBEE6AD787588C414A68 /* IssueFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 284D14F10FAD954DE8084E98 /* IssueFilterState.swift */; };
 		8B571A6F2DB1EC333F78B27C /* WorktreeTestRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 144A249FCC704F02D9E1DE35 /* WorktreeTestRunner.swift */; };
+		8EE156E5C8405FA1E8BB40F0 /* WorkstationWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = D514CE8962DEF8049BF1A63D /* WorkstationWidget.swift */; };
 		8FBFD5658AFC82CD57BBC344 /* ProjectRootDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6224D67B91244DA59C02E583 /* ProjectRootDiscovery.swift */; };
 		90FCF8C268D3F27869C35625 /* CommandRunning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD22E8AD06D83B420E333A0 /* CommandRunning.swift */; };
 		924DD8B9293A11F245C4ABD0 /* IssueFileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 573D11F28CE8BB30BC0028B3 /* IssueFileWatcher.swift */; };
@@ -103,6 +107,7 @@
 		A7D93288EE987302E1DFF8A6 /* AgentRunTranscriptStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB07A4DAE97C487B1BBB698 /* AgentRunTranscriptStore.swift */; };
 		AB2C596AC21EF1616642E406 /* AgentRunTimelineCompactView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38B98FF907C967F3561B56B6 /* AgentRunTimelineCompactView.swift */; };
 		AE2A5C4732C0B1A1CC6200D0 /* ProjectWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B8DC4F74056EA4C65C2E4F8 /* ProjectWorkspace.swift */; };
+		AEDD54547008001FF07399CD /* WidgetState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7814C4C49AB0146A2095E337 /* WidgetState.swift */; };
 		B0979FA4A91BDF3F917471B0 /* LocalAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D0D0C643D2854E7420E3F1 /* LocalAIService.swift */; };
 		B0980720256C3BAF8099F85A /* LocalAISuggestionPreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C22673D4291FAEF4A2F24D /* LocalAISuggestionPreviewSheet.swift */; };
 		B1EE02A1356B91B9E4B0E916 /* workstation_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = C3CA754B2C5DFA39473ABA9F /* workstation_logo.png */; };
@@ -133,6 +138,7 @@
 		E4C015741546D80FE54F0C7A /* TestRunResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72F0B70717D85D49545B00A /* TestRunResult.swift */; };
 		E5362CA604F5B254AE646B6F /* CommandSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4443CBD3C4BF13C6EFF81D5B /* CommandSnapshot.swift */; };
 		E56E5F5F393AD83F9307135A /* KanbanStateMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA5B6A2791C35889C81C87D9 /* KanbanStateMapper.swift */; };
+		E5BD9A427DED127BD9D92E59 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DCB3C0CCB2514E05796A231 /* NotificationManager.swift */; };
 		E5C90D0F81259A27E13AA53D /* FallbackRuleRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ADB79F4CA59F6EB55C3E388 /* FallbackRuleRegistry.swift */; };
 		E5EAE5E56F935C87F949AE2E /* minimax.png in Resources */ = {isa = PBXBuildFile; fileRef = D7A712E04C5859F87AEB14AA /* minimax.png */; };
 		E63B82648D0134BDD37E1488 /* ParticleCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3262318B7AECE1D3F23D9617 /* ParticleCelebrationView.swift */; };
@@ -153,6 +159,30 @@
 		FEF2BD0CF88AD11189CC4372 /* DebugPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECE704832A64B678F0BB590 /* DebugPanelView.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		1FA52A7F7062161E5F086E95 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B8DDCF78536D7DA401EC797E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8E8B9DEB889CE720A9FD4D7B;
+			remoteInfo = WorkstationWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0D1E76E50081A2679D6C3A7F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				44D00E7B794A67AE56ED3A82 /* WorkstationWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		005A86C1888FE4CB8379B2BA /* GitWorktreeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitWorktreeService.swift; sourceTree = "<group>"; };
 		01B8B5FFF8ED382730668083 /* WorkspaceValidationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceValidationState.swift; sourceTree = "<group>"; };
@@ -162,11 +192,13 @@
 		043AA7CA225177B7CD687981 /* LocalAIAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIAction.swift; sourceTree = "<group>"; };
 		04CAC7B276A1E15A7D0C9AB5 /* CommandPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPaletteView.swift; sourceTree = "<group>"; };
 		0536C6445B86B242CFF825D5 /* AgentTimelineStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTimelineStore.swift; sourceTree = "<group>"; };
+		063EF1232103451F934264A1 /* WidgetStatePersister.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetStatePersister.swift; sourceTree = "<group>"; };
 		072B084321C41D7E7A900DF0 /* FocusSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSession.swift; sourceTree = "<group>"; };
 		08595A30DF961BE18D3B7A77 /* AssigneeAvatarResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssigneeAvatarResolver.swift; sourceTree = "<group>"; };
 		0A0A1CBE6105A8946FE64715 /* AgentRunRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunRecord.swift; sourceTree = "<group>"; };
 		0AF61879F7CAD15B80A61FA3 /* AgentTimelineEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTimelineEvent.swift; sourceTree = "<group>"; };
 		0D10F2A90FA1A49C77E291F2 /* WorkspaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewModel.swift; sourceTree = "<group>"; };
+		0DCB3C0CCB2514E05796A231 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		0EB07A4DAE97C487B1BBB698 /* AgentRunTranscriptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunTranscriptStore.swift; sourceTree = "<group>"; };
 		0ECE704832A64B678F0BB590 /* DebugPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPanelView.swift; sourceTree = "<group>"; };
 		13DC880F7A30532C29D6BA48 /* CopilotConversationMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopilotConversationMessage.swift; sourceTree = "<group>"; };
@@ -230,6 +262,7 @@
 		719C5EBB688AF23196D5730B /* AgentLaunchState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLaunchState.swift; sourceTree = "<group>"; };
 		71C494D7BB7A5EC851154318 /* Workstation.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Workstation.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		769302AC4630DBE23ADC0E6B /* BeadsJSONDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadsJSONDecoder.swift; sourceTree = "<group>"; };
+		7814C4C49AB0146A2095E337 /* WidgetState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetState.swift; sourceTree = "<group>"; };
 		7878032EDE2E0C5E41B07522 /* AgentRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRole.swift; sourceTree = "<group>"; };
 		790A0D87A86630F43BB0AB5F /* RecentProjectsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentProjectsStore.swift; sourceTree = "<group>"; };
 		7B9D720E12CC0C5AB38C73A5 /* BeadsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadsService.swift; sourceTree = "<group>"; };
@@ -281,6 +314,8 @@
 		D27F04B1AC6BCDE59657C6B5 /* FocusStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusStripView.swift; sourceTree = "<group>"; };
 		D2889E1E4286149FCAA80921 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D4C845336B13EF1ABF4D799A /* PendingLanding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingLanding.swift; sourceTree = "<group>"; };
+		D514CE8962DEF8049BF1A63D /* WorkstationWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkstationWidget.swift; sourceTree = "<group>"; };
+		D698E39441548D4D521C3A52 /* WorkstationWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WorkstationWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7A712E04C5859F87AEB14AA /* minimax.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = minimax.png; sourceTree = "<group>"; };
 		D7C22673D4291FAEF4A2F24D /* LocalAISuggestionPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISuggestionPreviewSheet.swift; sourceTree = "<group>"; };
 		DAE9D72BE92C79F7777F7583 /* BeadsError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadsError.swift; sourceTree = "<group>"; };
@@ -333,6 +368,7 @@
 			isa = PBXGroup;
 			children = (
 				71C494D7BB7A5EC851154318 /* Workstation.app */,
+				D698E39441548D4D521C3A52 /* WorkstationWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -393,6 +429,7 @@
 				BFBE229256C1C4F0F2D77BCF /* TerminalLaunching.swift */,
 				E916DD6C530CE8D9F12400A7 /* TerminalStreamBuffer.swift */,
 				577CDDC714F1C8C5E07746BD /* UpdateIssueInput.swift */,
+				063EF1232103451F934264A1 /* WidgetStatePersister.swift */,
 				816CB71D780855351A7B0945 /* WorkspaceCheck.swift */,
 				14069CE24B8C10020B9420B2 /* WorkspaceCheckState.swift */,
 				383BDACAF164837CF4EB3ADF /* WorkspaceSelectionError.swift */,
@@ -422,9 +459,18 @@
 				F5719C283759185E973FB3CA /* PromptGenerator.swift */,
 				412453999B9BCF926556D33A /* RecurringMetadata.swift */,
 				E72F0B70717D85D49545B00A /* TestRunResult.swift */,
+				7814C4C49AB0146A2095E337 /* WidgetState.swift */,
 			);
 			name = BeadsContract;
 			path = Sources/BeadsContract;
+			sourceTree = "<group>";
+		};
+		A271BE27AE1AF440CF9E81F8 /* WorkstationWidget */ = {
+			isa = PBXGroup;
+			children = (
+				D514CE8962DEF8049BF1A63D /* WorkstationWidget.swift */,
+			);
+			path = WorkstationWidget;
 			sourceTree = "<group>";
 		};
 		A7D72F2B72AFCF50C054F2B7 = {
@@ -434,6 +480,7 @@
 				0495B83BEB7AF08FD78D0708 /* assets */,
 				45FC8D367597BBE066D51D71 /* BeadsContract */,
 				44FDB91B0899158712BC9994 /* BeadsWorkspace */,
+				A271BE27AE1AF440CF9E81F8 /* WorkstationWidget */,
 				2661585F06A7DEF87143599B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -489,6 +536,7 @@
 				96D973E9BF68711E221A24DA /* LocalAISettingsPanelView.swift */,
 				D7C22673D4291FAEF4A2F24D /* LocalAISuggestionPreviewSheet.swift */,
 				5F061841017E55D4A9256432 /* LocalAISuggestionPreviewState.swift */,
+				0DCB3C0CCB2514E05796A231 /* NotificationManager.swift */,
 				3262318B7AECE1D3F23D9617 /* ParticleCelebrationView.swift */,
 				2F90C5592382B08D28A3542C /* QuickCaptureView.swift */,
 				71826CC9F5A44E27B59B0EF2 /* ReviewFollowupSheet.swift */,
@@ -512,10 +560,12 @@
 			buildPhases = (
 				973C4A4EA225A246A59C6738 /* Sources */,
 				FF5DEAC8C99D05954476F134 /* Resources */,
+				0D1E76E50081A2679D6C3A7F /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F7DCB987CD3ADAA6575B29F8 /* PBXTargetDependency */,
 			);
 			name = Workstation;
 			packageProductDependencies = (
@@ -523,6 +573,23 @@
 			productName = Workstation;
 			productReference = 71C494D7BB7A5EC851154318 /* Workstation.app */;
 			productType = "com.apple.product-type.application";
+		};
+		8E8B9DEB889CE720A9FD4D7B /* WorkstationWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 86FDB5380F3EE9AE0E449032 /* Build configuration list for PBXNativeTarget "WorkstationWidget" */;
+			buildPhases = (
+				7860462763677B9589E535D2 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WorkstationWidget;
+			packageProductDependencies = (
+			);
+			productName = WorkstationWidget;
+			productReference = D698E39441548D4D521C3A52 /* WorkstationWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -534,6 +601,9 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					80D5B3CC5AA5758198CC1FD5 = {
+						ProvisioningStyle = Manual;
+					};
+					8E8B9DEB889CE720A9FD4D7B = {
 						ProvisioningStyle = Manual;
 					};
 				};
@@ -553,6 +623,7 @@
 			projectRoot = "";
 			targets = (
 				80D5B3CC5AA5758198CC1FD5 /* Workstation */,
+				8E8B9DEB889CE720A9FD4D7B /* WorkstationWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -581,6 +652,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7860462763677B9589E535D2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AEDD54547008001FF07399CD /* WidgetState.swift in Sources */,
+				8EE156E5C8405FA1E8BB40F0 /* WorkstationWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		973C4A4EA225A246A59C6738 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -680,6 +760,7 @@
 				B0980720256C3BAF8099F85A /* LocalAISuggestionPreviewSheet.swift in Sources */,
 				FD95960F5160696403B26C3F /* LocalAISuggestionPreviewState.swift in Sources */,
 				32993856C442FC02097AB25E /* MarkdownTextRenderer.swift in Sources */,
+				E5BD9A427DED127BD9D92E59 /* NotificationManager.swift in Sources */,
 				A6435CD7D9DD630A68657484 /* OpenCodeService.swift in Sources */,
 				E63B82648D0134BDD37E1488 /* ParticleCelebrationView.swift in Sources */,
 				CE87D2EE7DFAE00D77074B36 /* PendingLanding.swift in Sources */,
@@ -706,6 +787,8 @@
 				E4C015741546D80FE54F0C7A /* TestRunResult.swift in Sources */,
 				234B36538B05A7413D790F5C /* UpdateIssueInput.swift in Sources */,
 				21D25424584B277730496E43 /* WelcomeView.swift in Sources */,
+				5FDF74760DF67795802294E2 /* WidgetState.swift in Sources */,
+				25F1E9848DA7DE2DB123C154 /* WidgetStatePersister.swift in Sources */,
 				B442AA6C1654A5089CBDB034 /* WorkspaceCheck.swift in Sources */,
 				05E8175A662EEB417358B87C /* WorkspaceCheckState.swift in Sources */,
 				368C328B40B6D82F36FD406A /* WorkspaceDetailView.swift in Sources */,
@@ -720,6 +803,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F7DCB987CD3ADAA6575B29F8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8E8B9DEB889CE720A9FD4D7B /* WorkstationWidget */;
+			targetProxy = 1FA52A7F7062161E5F086E95 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		07425CCF0912A00C021C3599 /* Release */ = {
@@ -780,6 +871,25 @@
 				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
+		};
+		6BF77E8520E7070BC49D6A22 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Workstation Monitor";
+				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = local.beads.workstation.widget;
+				SDKROOT = macosx;
+			};
+			name = Debug;
 		};
 		9C9AA86CADDCBF904D55142A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -887,6 +997,25 @@
 			};
 			name = Release;
 		};
+		F50FAB83D76A3C585E968292 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Workstation Monitor";
+				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = local.beads.workstation.widget;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -895,6 +1024,15 @@
 			buildConfigurations = (
 				D23CAC6DF4CBA066BF948461 /* Debug */,
 				07425CCF0912A00C021C3599 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		86FDB5380F3EE9AE0E449032 /* Build configuration list for PBXNativeTarget "WorkstationWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6BF77E8520E7070BC49D6A22 /* Debug */,
+				F50FAB83D76A3C585E968292 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -22,6 +22,8 @@ public final class IssueStore {
     public private(set) var errorMessage: String?
     public private(set) var lastReloadedAt: Date?
     public private(set) var lastDecodeFailureRawJSON: String?
+    public var onDidReload: (@MainActor @Sendable () -> Void)?
+
 
     public let service: BeadsService
     public let workingDirectory: URL
@@ -236,6 +238,8 @@ public final class IssueStore {
             if let anchor = rangeAnchorID, !presentIDs.contains(anchor) {
                 rangeAnchorID = selectedIssueIDs.first
             }
+            onDidReload?()
+
         } catch is CancellationError {
             return
         } catch let error as BeadsError {

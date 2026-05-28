@@ -21,6 +21,8 @@ targets:
       - path: Sources/BeadsWorkspace
       - path: assets
         buildPhase: resources
+    dependencies:
+      - target: WorkstationWidget
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: local.beads.workstation
@@ -28,5 +30,20 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Workstation
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
         INFOPLIST_KEY_NSAppleEventsUsageDescription: "This application needs permission to control Terminal to run local agent tasks."
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1
+
+  WorkstationWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: WorkstationWidget
+      - path: Sources/BeadsContract/WidgetState.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.beads.workstation.widget
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        INFOPLIST_KEY_CFBundleDisplayName: Workstation Monitor
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1
