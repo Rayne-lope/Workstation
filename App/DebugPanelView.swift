@@ -4,6 +4,9 @@ struct DebugPanelView: View {
     let history: [CommandSnapshot]
     let latestDecodeFailureRawJSON: String?
     let agentRunHistoryStore: AgentRunHistoryStore
+    /// Routes a status change through the full landing pipeline (triggers Landing Sheet
+    /// + native notification), unlike a direct store mutation. Wired to `appVM.updateAgentRunStatus`.
+    var onChangeStatus: (UUID, AgentRunStatus) -> Void
     let onDismiss: () -> Void
 
     var body: some View {
@@ -184,7 +187,7 @@ struct DebugPanelView: View {
         Menu(record.status.displayName) {
             ForEach([AgentRunStatus.needsReview, .accepted, .failed, .abandoned], id: \.self) { status in
                 Button(status.displayName) {
-                    agentRunHistoryStore.updateStatus(id: record.id, status: status)
+                    onChangeStatus(record.id, status)
                 }
                 .disabled(record.status == status)
             }

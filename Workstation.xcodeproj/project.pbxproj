@@ -201,6 +201,7 @@
 		0DCB3C0CCB2514E05796A231 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		0EB07A4DAE97C487B1BBB698 /* AgentRunTranscriptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunTranscriptStore.swift; sourceTree = "<group>"; };
 		0ECE704832A64B678F0BB590 /* DebugPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPanelView.swift; sourceTree = "<group>"; };
+		103848C3DFDDA8D4DE5385BD /* Workstation.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Workstation.entitlements; sourceTree = "<group>"; };
 		13DC880F7A30532C29D6BA48 /* CopilotConversationMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopilotConversationMessage.swift; sourceTree = "<group>"; };
 		14069CE24B8C10020B9420B2 /* WorkspaceCheckState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceCheckState.swift; sourceTree = "<group>"; };
 		144A249FCC704F02D9E1DE35 /* WorktreeTestRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorktreeTestRunner.swift; sourceTree = "<group>"; };
@@ -318,7 +319,9 @@
 		D698E39441548D4D521C3A52 /* WorkstationWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WorkstationWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7A712E04C5859F87AEB14AA /* minimax.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = minimax.png; sourceTree = "<group>"; };
 		D7C22673D4291FAEF4A2F24D /* LocalAISuggestionPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISuggestionPreviewSheet.swift; sourceTree = "<group>"; };
+		DA2AB843AF6322C28881678A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		DAE9D72BE92C79F7777F7583 /* BeadsError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadsError.swift; sourceTree = "<group>"; };
+		DFDE22A4821DD6FE6DD58B89 /* WorkstationWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WorkstationWidget.entitlements; sourceTree = "<group>"; };
 		E101615EB6C73F66CED19BCF /* AgentRunMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunMessage.swift; sourceTree = "<group>"; };
 		E3CD22FEF1D758CB128260EE /* CloseIssueSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloseIssueSheet.swift; sourceTree = "<group>"; };
 		E5C17F1CE4E2A17F3855F82D /* ApprovalConfirmationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalConfirmationSheet.swift; sourceTree = "<group>"; };
@@ -468,6 +471,8 @@
 		A271BE27AE1AF440CF9E81F8 /* WorkstationWidget */ = {
 			isa = PBXGroup;
 			children = (
+				DA2AB843AF6322C28881678A /* Info.plist */,
+				DFDE22A4821DD6FE6DD58B89 /* WorkstationWidget.entitlements */,
 				D514CE8962DEF8049BF1A63D /* WorkstationWidget.swift */,
 			);
 			path = WorkstationWidget;
@@ -546,6 +551,7 @@
 				2A774C9D9CA5BFF52912BC2A /* WelcomeView.swift */,
 				911B6D15106586722D5B61D2 /* WorkspaceDetailView.swift */,
 				0D10F2A90FA1A49C77E291F2 /* WorkspaceViewModel.swift */,
+				103848C3DFDDA8D4DE5385BD /* Workstation.entitlements */,
 				BFE3A89F931C955C66A7FF25 /* WorkstationApp.swift */,
 			);
 			path = App;
@@ -875,11 +881,12 @@
 		6BF77E8520E7070BC49D6A22 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WorkstationWidget/WorkstationWidget.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WorkstationWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Workstation Monitor";
-				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -895,6 +902,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/Workstation.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -981,6 +989,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/Workstation.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1000,11 +1009,12 @@
 		F50FAB83D76A3C585E968292 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WorkstationWidget/WorkstationWidget.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WorkstationWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Workstation Monitor";
-				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

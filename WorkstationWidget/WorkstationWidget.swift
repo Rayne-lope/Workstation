@@ -124,11 +124,16 @@ struct Provider: TimelineProvider {
 
     private func loadState() -> WidgetState {
         let fileManager = FileManager.default
-        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? fileManager.homeDirectoryForCurrentUser
-        let fileURL = appSupport
-            .appendingPathComponent("local.beads.workstation")
-            .appendingPathComponent("widget_state.json")
+        let groupID = "group.local.beads.workstation"
+        let baseDir: URL
+        if let containerURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: groupID) {
+            baseDir = containerURL
+        } else {
+            let libraryDir = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first
+                ?? fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library")
+            baseDir = libraryDir.appendingPathComponent("Group Containers").appendingPathComponent(groupID)
+        }
+        let fileURL = baseDir.appendingPathComponent("widget_state.json")
 
         guard let data = try? Data(contentsOf: fileURL) else {
             return WidgetState(

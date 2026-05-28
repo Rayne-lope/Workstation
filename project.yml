@@ -23,6 +23,11 @@ targets:
         buildPhase: resources
     dependencies:
       - target: WorkstationWidget
+    entitlements:
+      path: App/Workstation.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.local.beads.workstation
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: local.beads.workstation
@@ -39,11 +44,21 @@ targets:
     sources:
       - path: WorkstationWidget
       - path: Sources/BeadsContract/WidgetState.swift
+    info:
+      path: WorkstationWidget/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: WorkstationWidget/WorkstationWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups:
+          - group.local.beads.workstation
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: local.beads.workstation.widget
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
         INFOPLIST_KEY_CFBundleDisplayName: Workstation Monitor
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1

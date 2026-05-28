@@ -89,9 +89,15 @@ public final class WidgetStatePersister: Sendable {
         )
 
         do {
-            let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-                ?? fileManager.homeDirectoryForCurrentUser
-            let baseDir = appSupport.appendingPathComponent("local.beads.workstation", isDirectory: true)
+            let groupID = "group.local.beads.workstation"
+            let baseDir: URL
+            if let containerURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: groupID) {
+                baseDir = containerURL
+            } else {
+                let libraryDir = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first
+                    ?? fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library")
+                baseDir = libraryDir.appendingPathComponent("Group Containers").appendingPathComponent(groupID)
+            }
             if !fileManager.fileExists(atPath: baseDir.path) {
                 try fileManager.createDirectory(at: baseDir, withIntermediateDirectories: true)
             }

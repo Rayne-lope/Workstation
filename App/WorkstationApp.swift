@@ -55,6 +55,11 @@ struct WorkstationApp: App {
         _viewModel = StateObject(wrappedValue: workspaceVM)
         _appVM = State(initialValue: appViewModel)
 
+        NotificationManager.shared.setDelegate()
+        NotificationManager.shared.onLandingTapped = { [weak appViewModel] id in
+            Task { @MainActor in appViewModel?.focusLanding(landingID: id) }
+        }
+
         let prefs = appViewModel.preferencesStore.preferences
         if prefs.autoRestoreOnLaunch,
            let path = prefs.lastSelectedPath,
@@ -69,6 +74,9 @@ struct WorkstationApp: App {
                 .font(WorkstationTheme.Fonts.body(13))
                 .onAppear {
                     startKeyboardMonitor()
+                    if appVM.preferencesStore.preferences.notificationsEnabled {
+                        NotificationManager.shared.requestAuthorization()
+                    }
                 }
                 .onDisappear {
                     keyboardMonitor.stop()

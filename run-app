@@ -109,6 +109,14 @@ release_app() {
   draw_progress 100 "Done"
   printf "\n"
 
+  # Re-sign with a real ad-hoc signature, specifying entitlements for the main app and widget individually to prevent stripping.
+  if codesign --force --sign - --entitlements "$ROOT_DIR/WorkstationWidget/WorkstationWidget.entitlements" "$RELEASE_APP_PATH/Contents/PlugIns/WorkstationWidget.appex" >/dev/null 2>&1 && \
+     codesign --force --sign - --entitlements "$ROOT_DIR/App/Workstation.entitlements" "$RELEASE_APP_PATH" >/dev/null 2>&1; then
+    printf "🔏 Code-signed (ad-hoc)\n"
+  else
+    printf "⚠️  Code-sign step failed (notifications/widgets may not work)\n"
+  fi
+
   # Install / replace /Applications/Workstation.app
   printf "📦 Installing to %s..." "$INSTALL_PATH"
   rm -rf "$INSTALL_PATH"
@@ -159,6 +167,15 @@ build_app() {
   if [[ "$status" -eq 0 ]]; then
     draw_progress 100 "Done"
     printf "\n✅ Build succeeded\n"
+    # Re-sign with a real ad-hoc signature. Xcode leaves the binary "linker-signed"
+    # (CODE_SIGNING_ALLOWED=NO), which usernotificationsd/widgetkit reject.
+    # Specify entitlements for the main app and widget individually to prevent stripping.
+    if codesign --force --sign - --entitlements "$ROOT_DIR/WorkstationWidget/WorkstationWidget.entitlements" "$APP_PATH/Contents/PlugIns/WorkstationWidget.appex" >/dev/null 2>&1 && \
+       codesign --force --sign - --entitlements "$ROOT_DIR/App/Workstation.entitlements" "$APP_PATH" >/dev/null 2>&1; then
+      printf "🔏 Code-signed (ad-hoc)\n"
+    else
+      printf "⚠️  Code-sign step failed (notifications/widgets may not work)\n"
+    fi
   else
     printf "\n❌ Build failed\n\n"
     echo "Last 100 lines from build log:"

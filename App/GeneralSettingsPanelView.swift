@@ -17,6 +17,8 @@ struct GeneralSettingsPanelView: View {
                     Divider().overlay(WorkstationTheme.borderSoft)
                     autoReloadToggle
                     Divider().overlay(WorkstationTheme.borderSoft)
+                    notificationsToggle
+                    Divider().overlay(WorkstationTheme.borderSoft)
                     doneVisibilitySection
                     Divider().overlay(WorkstationTheme.borderSoft)
                     themeSection
@@ -68,6 +70,18 @@ struct GeneralSettingsPanelView: View {
             isOn: Binding(
                 get: { preferences.autoReloadEnabled },
                 set: { appVM.setAutoReloadEnabled($0) }
+            )
+        )
+    }
+
+    private var notificationsToggle: some View {
+        ToggleRow(
+            icon: "bell.badge",
+            title: "Enable notifications",
+            subtitle: "Notify when an agent finishes or fails on an issue",
+            isOn: Binding(
+                get: { preferences.notificationsEnabled },
+                set: { appVM.setNotificationsEnabled($0) }
             )
         )
     }

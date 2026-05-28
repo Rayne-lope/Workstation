@@ -14,6 +14,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
     public var filterState: [String: FilterState]
     public var localAI: LocalAISettings
     public var kanbanCompactMode: Bool
+    public var notificationsEnabled: Bool
 
     public init(
         lastSelectedPath: String? = nil,
@@ -26,7 +27,8 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         theme: AppTheme = .system,
         filterState: [String: FilterState] = [:],
         localAI: LocalAISettings = LocalAISettings(),
-        kanbanCompactMode: Bool = false
+        kanbanCompactMode: Bool = false,
+        notificationsEnabled: Bool = true
     ) {
         self.lastSelectedPath = lastSelectedPath
         self.autoRestoreOnLaunch = autoRestoreOnLaunch
@@ -39,6 +41,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         self.filterState = filterState
         self.localAI = localAI
         self.kanbanCompactMode = kanbanCompactMode
+        self.notificationsEnabled = notificationsEnabled
     }
 
     enum CodingKeys: String, CodingKey {
@@ -53,6 +56,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         case filterState
         case localAI
         case kanbanCompactMode
+        case notificationsEnabled
     }
 
     public init(from decoder: Decoder) throws {
@@ -69,5 +73,6 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         filterState = try c.decodeIfPresent([String: FilterState].self, forKey: .filterState) ?? [:]
         localAI = try c.decodeIfPresent(LocalAISettings.self, forKey: .localAI) ?? LocalAISettings()
         kanbanCompactMode = try c.decodeIfPresent(Bool.self, forKey: .kanbanCompactMode) ?? false
+        notificationsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
     }
 }

@@ -63,6 +63,7 @@ struct BoardSidebarView: View {
                 history: appVM.shellRunner.history,
                 latestDecodeFailureRawJSON: store.lastDecodeFailureRawJSON,
                 agentRunHistoryStore: appVM.agentRunHistoryStore,
+                onChangeStatus: { appVM.updateAgentRunStatus(id: $0, status: $1) },
                 onDismiss: { appVM.isDebugPresented = false }
             )
         }
