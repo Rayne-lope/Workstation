@@ -18,6 +18,7 @@
 		0BF9773E5F52DBBB6AFCAA75 /* BulkActionPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55633AD1FD16E43D9B4A0EEB /* BulkActionPanel.swift */; };
 		0CDFA601F7028545E917AB14 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C70366E2909BEEDC4FE54A /* AppViewModel.swift */; };
 		0D93E1519EE3C02AC7C32036 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A88CC42EF5FF51ECCC44DF4 /* ContentView.swift */; };
+		0F7295E5B2A5F29033910212 /* AgentRunSpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB85EAAE3E1543D3350035A1 /* AgentRunSpinnerView.swift */; };
 		1090C560748AD4C05E9E2BE8 /* IssueDetailRecurringSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F890105154924D319CFE485F /* IssueDetailRecurringSection.swift */; };
 		11AD643DECCB3B4165F081CE /* IssueDependencyGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28C106C6E459CF2B46667A8 /* IssueDependencyGraph.swift */; };
 		11D1BE62C48EB0F95709C208 /* ProcessCommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E76DEF5D604366BFFE11D3E /* ProcessCommandRunner.swift */; };
@@ -254,6 +255,7 @@
 		B36B596B1328FF83B1D609B6 /* AgentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProfile.swift; sourceTree = "<group>"; };
 		B683B26AD79C94797EF8BC0B /* LocalAISettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISettings.swift; sourceTree = "<group>"; };
 		B9E29E69A2A1CA0E7A860744 /* IssueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueStore.swift; sourceTree = "<group>"; };
+		BB85EAAE3E1543D3350035A1 /* AgentRunSpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRunSpinnerView.swift; sourceTree = "<group>"; };
 		BC6F1CB226FDF9300F9A69AE /* IssueCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueCardView.swift; sourceTree = "<group>"; };
 		BC94C6308D78DB176B7985FD /* KanbanDropResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanDropResolver.swift; sourceTree = "<group>"; };
 		BE35D8FF2D8242C64CC61835 /* ArchiveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveStore.swift; sourceTree = "<group>"; };
@@ -427,6 +429,7 @@
 				4C29EACE5A1325EBBDFACE1B /* AgentRunConsoleView.swift */,
 				894623BE6C865390CCA4B26B /* AgentRunNotesView.swift */,
 				A9D17E8ECAB8F8236106375E /* AgentRunPromptPreviewView.swift */,
+				BB85EAAE3E1543D3350035A1 /* AgentRunSpinnerView.swift */,
 				38B98FF907C967F3561B56B6 /* AgentRunTimelineCompactView.swift */,
 				2AD756ACF64FD7E03402F795 /* AgentRunTimelineFullView.swift */,
 				EBEB229B00EA9F96BA7BDE44 /* AgentRunTranscriptView.swift */,
@@ -576,6 +579,7 @@
 				C6F5368140BA529BBBDB276D /* AgentRunNotesView.swift in Sources */,
 				C3EFDAB35E07D4D454D3FD42 /* AgentRunPromptPreviewView.swift in Sources */,
 				B7DE241A327F7F783DF6BF10 /* AgentRunRecord.swift in Sources */,
+				0F7295E5B2A5F29033910212 /* AgentRunSpinnerView.swift in Sources */,
 				4192B3D625B3B2546381E5BE /* AgentRunStatus.swift in Sources */,
 				AB2C596AC21EF1616642E406 /* AgentRunTimelineCompactView.swift in Sources */,
 				2C03CFCD54CAF42005978082 /* AgentRunTimelineFullView.swift in Sources */,

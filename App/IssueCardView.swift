@@ -11,6 +11,16 @@ struct IssueCardView: View {
 
     @State private var isHovering = false
 
+    /// True while a pending or in-flight agent run exists for this issue.
+    /// Automatically becomes false when the run finalises (review/failed/abandoned).
+    private var isAgentRunning: Bool {
+        if appVM.pendingAgentLaunch?.issue.id    == issue.id { return true }
+        if appVM.pendingWorktreeLaunch?.issue.id == issue.id { return true }
+        guard let record = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id)
+        else { return false }
+        return !record.status.isFinalized
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if isSelected {
@@ -58,6 +68,16 @@ struct IssueCardView: View {
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
                 .stroke(isSelected ? WorkstationTheme.accent : (isHovering ? WorkstationTheme.borderStrong : WorkstationTheme.border), lineWidth: isSelected ? 1.5 : 1)
         )
+        .overlay {
+            if isAgentRunning {
+                ZStack {
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                        .fill(Color.black.opacity(0.45))
+                    AgentRunSpinnerView(size: 24)
+                }
+                .transition(.opacity.animation(.easeInOut(duration: 0.25)))
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
         .shadow(
             color: isSelected ? WorkstationTheme.accent.opacity(0.08) : (isHovering ? WorkstationTheme.textPrimary.opacity(0.10) : .clear),
