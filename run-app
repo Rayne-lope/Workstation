@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DERIVED_DATA_PATH="$ROOT_DIR/.derivedData"
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug/Workstation.app"
+RELEASE_APP_PATH="$DERIVED_DATA_PATH/Build/Products/Release/Workstation.app"
+INSTALL_PATH="/Applications/Workstation.app"
 PROJECT_PATH="$ROOT_DIR/Workstation.xcodeproj"
 SCHEME="Workstation"
 BUILD_LOG="$ROOT_DIR/.build.log"
@@ -11,10 +13,11 @@ BUILD_LOG="$ROOT_DIR/.build.log"
 usage() {
   cat <<'EOF'
 Usage:
-  ./run-app           Build and open the app
-  ./run-app build     Build only
-  ./run-app run       Build and open the app
-  ./run-app logs      Show last build log
+  ./run-app              Build (Debug) and open the app
+  ./run-app build        Build only (Debug)
+  ./run-app run          Build (Debug) and open the app
+  ./run-app release      Build Release + install to /Applications/Workstation.app
+  ./run-app logs         Show last build log
 EOF
 }
 
@@ -64,6 +67,56 @@ update_progress_from_log() {
 
   (( next > 96 )) && next=96
   echo "$next|$label"
+}
+
+release_app() {
+  rm -f "$BUILD_LOG"
+
+  printf "\033[?25l"
+  trap 'printf "\033[?25h\n"' EXIT
+
+  draw_progress 0 "Preparing (Release)"
+
+  set +e
+  (
+    xcodebuild \
+      -project "$PROJECT_PATH" \
+      -scheme "$SCHEME" \
+      -configuration Release \
+      -derivedDataPath "$DERIVED_DATA_PATH" \
+      build
+  ) > "$BUILD_LOG" 2>&1 &
+
+  local build_pid=$!
+  local percent=1
+
+  while kill -0 "$build_pid" 2>/dev/null; do
+    IFS="|" read -r percent label <<< "$(update_progress_from_log "$percent")"
+    draw_progress "$percent" "$label"
+    sleep 0.2
+  done
+
+  wait "$build_pid"
+  local status=$?
+  set -e
+
+  if [[ "$status" -ne 0 ]]; then
+    printf "\n❌ Build failed\n\n"
+    tail -n 60 "$BUILD_LOG"
+    exit "$status"
+  fi
+
+  draw_progress 100 "Done"
+  printf "\n"
+
+  # Install / replace /Applications/Workstation.app
+  printf "📦 Installing to %s..." "$INSTALL_PATH"
+  rm -rf "$INSTALL_PATH"
+  cp -R "$RELEASE_APP_PATH" "$INSTALL_PATH"
+  local size
+  size=$(du -sh "$INSTALL_PATH" | cut -f1)
+  printf "\r✅ Installed %s → %s\n" "$size" "$INSTALL_PATH"
+  printf "   Run: open /Applications/Workstation.app\n"
 }
 
 build_app() {
@@ -126,6 +179,9 @@ case "$mode" in
   run)
     build_app
     open "$APP_PATH"
+    ;;
+  release)
+    release_app
     ;;
   logs)
     if [[ -f "$BUILD_LOG" ]]; then
