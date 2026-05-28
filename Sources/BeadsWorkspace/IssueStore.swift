@@ -219,7 +219,8 @@ public final class IssueStore {
                     blockedBy: blockers.isEmpty ? nil : blockers,
                     dependencies: issue.dependencies,
                     dependents: issue.dependents,
-                    parentID: issue.parentID
+                    parentID: issue.parentID,
+                    dependencyType: issue.dependencyType
                 )
             }
             readyIssueIDs = Set(ready.map(\.id))

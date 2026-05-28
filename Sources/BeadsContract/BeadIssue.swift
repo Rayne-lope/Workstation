@@ -18,6 +18,9 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
     public let dependencies: [BeadIssue]?
     public let dependents: [BeadIssue]?
     public let parentID: String?
+    /// The relationship type of this issue when it appears as a nested dependency in `bd show` output.
+    /// e.g. `"parent-child"`, `"blocks"`. Only populated in the `bd show` nested format.
+    public let dependencyType: String?
 
     public init(
         id: String,
@@ -36,7 +39,8 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
         blockedBy: [String]? = nil,
         dependencies: [BeadIssue]? = nil,
         dependents: [BeadIssue]? = nil,
-        parentID: String? = nil
+        parentID: String? = nil,
+        dependencyType: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -55,6 +59,7 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
         self.dependencies = dependencies
         self.dependents = dependents
         self.parentID = parentID
+        self.dependencyType = dependencyType
     }
 
     public enum CodingKeys: String, CodingKey {
@@ -75,11 +80,28 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
         case dependencies
         case dependents
         case parentID = "parent_id"
+        case dependencyType = "dependency_type"
+    }
+
+    // MARK: - Private helpers for dependency edge row format (bd list / bd ready output)
+
+    /// Dependency edge row emitted by `bd list --json` / `bd ready --json`.
+    /// Shape: { "issue_id": "A", "depends_on_id": "B", "type": "parent-child" }
+    private struct DependencyEdge: Decodable {
+        let issueID: String
+        let dependsOnID: String
+        let type: String
+        enum CodingKeys: String, CodingKey {
+            case issueID = "issue_id"
+            case dependsOnID = "depends_on_id"
+            case type
+        }
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.id = try container.decode(String.self, forKey: .id)
+        let id = try container.decode(String.self, forKey: .id)
+        self.id = id
         self.title = try container.decode(String.self, forKey: .title)
         self.status = try container.decodeIfPresent(String.self, forKey: .status)
         self.priority = try container.decodeIfPresent(Int.self, forKey: .priority)
@@ -93,11 +115,37 @@ public struct BeadIssue: Identifiable, Codable, Hashable, Sendable {
         self.labels = try container.decodeIfPresent([String].self, forKey: .labels)
         self.assignee = try container.decodeIfPresent(String.self, forKey: .assignee)
         self.blockedBy = try container.decodeIfPresent([String].self, forKey: .blockedBy)
-        // `bd list`/`bd ready` emit `dependencies` as edge rows ({issue_id, depends_on_id, type}),
-        // while `bd show` emits nested BeadIssue objects. Decode tolerantly: only keep the nested
-        // shape, ignore the edge shape silently.
-        self.dependencies = try? container.decodeIfPresent([BeadIssue].self, forKey: .dependencies)
+        self.dependencyType = try container.decodeIfPresent(String.self, forKey: .dependencyType)
+
+        // `bd show` emits `dependencies`/`dependents` as nested BeadIssue objects.
+        // `bd list`/`bd ready` emit them as edge rows ({issue_id, depends_on_id, type, ...}).
+        //
+        // Strategy:
+        //  1. Try decoding as [BeadIssue] (bd show format).
+        //     If any entry has dependency_type == "parent-child", derive parentID from it.
+        //  2. If [BeadIssue] fails, try decoding as [DependencyEdge] (bd list format).
+        //     Find an edge where issue_id == self.id && type == "parent-child" → that's the parent.
+        //  3. Fall back to direct parent_id field (future-proof if bd ever emits it at top level).
+
+        if let nestedDeps = try? container.decodeIfPresent([BeadIssue].self, forKey: .dependencies) {
+            self.dependencies = nestedDeps
+            // In bd show format, the parent of this issue is a dependency with dependency_type "parent-child"
+            let parentDep = nestedDeps.first { $0.dependencyType == "parent-child" }
+            self.parentID = parentDep?.id
+                ?? (try? container.decodeIfPresent(String.self, forKey: .parentID))
+                ?? nil
+        } else if let edges = try? container.decodeIfPresent([DependencyEdge].self, forKey: .dependencies) {
+            self.dependencies = nil
+            // In bd list format, find an edge where this issue depends on a parent via parent-child
+            let parentEdge = edges.first { $0.issueID == id && $0.type == "parent-child" }
+            self.parentID = parentEdge?.dependsOnID
+                ?? (try? container.decodeIfPresent(String.self, forKey: .parentID))
+                ?? nil
+        } else {
+            self.dependencies = nil
+            self.parentID = try container.decodeIfPresent(String.self, forKey: .parentID)
+        }
+
         self.dependents = try? container.decodeIfPresent([BeadIssue].self, forKey: .dependents)
-        self.parentID = try container.decodeIfPresent(String.self, forKey: .parentID)
     }
 }

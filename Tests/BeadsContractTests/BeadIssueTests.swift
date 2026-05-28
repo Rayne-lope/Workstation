@@ -60,6 +60,58 @@ struct BeadIssueTests {
         let issue = try JSONDecoder().decode(BeadIssue.self, from: Data(json.utf8))
         #expect(issue.id == "Workstation-pb5")
         #expect(issue.dependencies == nil)
+        #expect(issue.parentID == nil)  // "blocks" type should not set parentID
+    }
+
+    @Test("bd list format: parent-child edge row derives parentID")
+    func edgeRowParentChildDerivesParentID() throws {
+        // When bd list --json emits a dependency edge row with type "parent-child",
+        // BeadIssue should derive parentID from the depends_on_id field.
+        let json = """
+        {
+          "id": "Workstation-0a5",
+          "title": "Landing trigger",
+          "status": "open",
+          "dependencies": [
+            { "issue_id": "Workstation-0a5", "depends_on_id": "Workstation-hjh",
+              "type": "parent-child", "created_at": "2026-05-28T21:13:01Z", "metadata": "{}" },
+            { "issue_id": "Workstation-0a5", "depends_on_id": "Workstation-abc",
+              "type": "blocks" }
+          ]
+        }
+        """
+        let issue = try JSONDecoder().decode(BeadIssue.self, from: Data(json.utf8))
+        #expect(issue.id == "Workstation-0a5")
+        #expect(issue.dependencies == nil)   // edge rows → dependencies stays nil
+        #expect(issue.parentID == "Workstation-hjh")  // derived from parent-child edge
+    }
+
+    @Test("bd show format: nested dependency with dependency_type parent-child derives parentID")
+    func nestedDependencyParentChildDerivesParentID() throws {
+        // bd show --json emits dependencies as nested BeadIssue objects
+        // with an extra "dependency_type" field. Parent-child means the nested
+        // issue is the parent of the current one.
+        let json = """
+        {
+          "id": "Workstation-0a5",
+          "title": "Landing trigger",
+          "status": "open",
+          "dependencies": [
+            {
+              "id": "Workstation-hjh",
+              "title": "Epic: Automated Landing Sequence",
+              "status": "open",
+              "issue_type": "epic",
+              "dependency_type": "parent-child"
+            }
+          ]
+        }
+        """
+        let issue = try JSONDecoder().decode(BeadIssue.self, from: Data(json.utf8))
+        #expect(issue.id == "Workstation-0a5")
+        #expect(issue.dependencies?.count == 1)
+        #expect(issue.dependencies?.first?.id == "Workstation-hjh")
+        #expect(issue.parentID == "Workstation-hjh")  // derived from nested parent-child dep
     }
 
     @Test("Roundtrips dependency fields through Codable")
