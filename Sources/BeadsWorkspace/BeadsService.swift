@@ -222,6 +222,22 @@ public struct BeadsService: Sendable {
         )
     }
 
+    /// Adds the `human` review label and sets notes in a single `bd update` call.
+    public func flagForReview(
+        id: String,
+        notes: String,
+        in workingDirectory: URL
+    ) async throws -> BeadIssue {
+        try Self.validateID(id)
+        var arguments = ["update", id, "--add-label", KanbanStateMapper.humanReviewLabel]
+        let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedNotes.isEmpty {
+            arguments += ["--notes", trimmedNotes]
+        }
+        arguments.append("--json")
+        return try await runDecodingIssue(arguments: arguments, in: workingDirectory)
+    }
+
     public func removeLabel(id: String, label: String, in workingDirectory: URL) async throws -> BeadIssue {
         try Self.validateID(id)
         guard !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {

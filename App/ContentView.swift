@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(BeadsWorkspace)
+import BeadsWorkspace
+#endif
 
 struct ContentView: View {
     @ObservedObject var viewModel: WorkspaceViewModel
@@ -46,7 +49,21 @@ struct ContentView: View {
                 )
             }
         }
+        // Automated Landing Sheet — presented when an agent run finalises
+        .sheet(item: activeLandingBinding) { landing in
+            if let store = appVM.issueStore {
+                LandingSheet(landing: landing, appVM: appVM, store: store)
+            }
+        }
         .preferredColorScheme(colorScheme)
+    }
+
+    /// A binding that exposes the first pending landing (or nil) for `.sheet(item:)`.
+    private var activeLandingBinding: Binding<PendingLanding?> {
+        Binding(
+            get: { appVM.pendingLandings.first },
+            set: { _ in }
+        )
     }
 
     private var colorScheme: ColorScheme? {

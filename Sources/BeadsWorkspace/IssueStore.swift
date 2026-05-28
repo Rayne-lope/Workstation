@@ -348,6 +348,18 @@ public final class IssueStore {
         }
     }
 
+    /// Adds the `human` review label and sets notes in a single bd update call.
+    /// Used by the Automated Landing Sheet.
+    public func flagForReview(id: String, notes: String) async {
+        await runMutation { [self] in
+            _ = try await service.flagForReview(
+                id: id,
+                notes: notes,
+                in: workingDirectory
+            )
+        }
+    }
+
     @discardableResult
     public func clearHumanReview(id: String) async -> Bool {
         await runMutation { [self] in

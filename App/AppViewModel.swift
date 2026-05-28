@@ -87,6 +87,18 @@ final class AppViewModel {
 
     var pendingAgentLaunch: PendingAgentLaunch?
     var pendingWorktreeLaunch: PendingWorktreeLaunch?
+
+    // MARK: - Automated Landing Sequence
+    /// Queue of finalized agent runs awaiting human close/review decision.
+    var pendingLandings: [PendingLanding] = []
+    /// Test results keyed by PendingLanding.id (populated asynchronously after landing trigger).
+    var landingTestResults: [UUID: TestRunResult] = [:]
+    /// Diff analysis keyed by PendingLanding.id (populated asynchronously after landing trigger).
+    var landingDiffResults: [UUID: DiffAnalysis] = [:]
+    @ObservationIgnored private var processedLandingIDs: Set<UUID> = []
+    @ObservationIgnored private let testRunner = WorktreeTestRunner()
+    @ObservationIgnored private let diffAnalyzer = WorktreeDiffAnalyzer()
+
     var launchErrorMessage: String?
     var terminalErrorMessage: String?
     var worktreeMessage: String?
@@ -1077,6 +1089,39 @@ final class AppViewModel {
 
     func updateAgentRunStatus(id: UUID, status: AgentRunStatus) {
         agentRunHistoryStore.updateStatus(id: id, status: status)
+        if status.isFinalized, !processedLandingIDs.contains(id) {
+            if let record = agentRunHistoryStore.record(id: id) {
+                triggerLanding(for: record)
+            }
+        }
+    }
+
+    // MARK: - Landing Sequence
+
+    private func triggerLanding(for record: AgentRunRecord) {
+        guard !processedLandingIDs.contains(record.id) else { return }
+        processedLandingIDs.insert(record.id)
+        let landing = PendingLanding(from: record)
+        pendingLandings.append(landing)
+        startLandingAnalysis(for: landing)
+    }
+
+    private func startLandingAnalysis(for landing: PendingLanding) {
+        let landingID = landing.id
+        let dir = landing.workDirectory
+        Task {
+            async let testResult = testRunner.run(in: dir)
+            async let diffResult = diffAnalyzer.analyze(in: dir)
+            let (tests, diff) = await (testResult, diffResult)
+            landingTestResults[landingID] = tests
+            landingDiffResults[landingID] = diff
+        }
+    }
+
+    func dismissLanding(_ landing: PendingLanding) {
+        pendingLandings.removeAll { $0.id == landing.id }
+        landingTestResults.removeValue(forKey: landing.id)
+        landingDiffResults.removeValue(forKey: landing.id)
     }
 
     func updateAgentRunNotes(id: UUID, notes: String) {
