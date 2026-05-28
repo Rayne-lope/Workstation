@@ -263,22 +263,13 @@ private struct IssueListRowView: View {
         store.blockedByDependencyIDs.contains(issue.id)
     }
 
-    /// True while a pending or in-flight agent run exists for this issue.
-    private var isAgentRunning: Bool {
-        if appVM.pendingAgentLaunch?.issue.id    == issue.id { return true }
-        if appVM.pendingWorktreeLaunch?.issue.id == issue.id { return true }
-        guard let record = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id)
-        else { return false }
-        return !record.status.isFinalized
-    }
-
     var body: some View {
         Button {
             store.selectIssue(id: issue.id)
         } label: {
             HStack(alignment: .center, spacing: 12) {
-                // Status dot — swaps to animated spinner while agent runs
-                if isAgentRunning {
+                // Status dot — swaps to animated spinner while in progress
+                if issue.status == "in_progress" {
                     AgentRunSpinnerView(size: 12)
                         .frame(width: 12, height: 12)
                 } else {

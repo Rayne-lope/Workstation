@@ -11,16 +11,6 @@ struct IssueCardView: View {
 
     @State private var isHovering = false
 
-    /// True while a pending or in-flight agent run exists for this issue.
-    /// Automatically becomes false when the run finalises (review/failed/abandoned).
-    private var isAgentRunning: Bool {
-        if appVM.pendingAgentLaunch?.issue.id    == issue.id { return true }
-        if appVM.pendingWorktreeLaunch?.issue.id == issue.id { return true }
-        guard let record = appVM.agentRunHistoryStore.latestRecord(forIssueID: issue.id)
-        else { return false }
-        return !record.status.isFinalized
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if isSelected {
@@ -68,17 +58,14 @@ struct IssueCardView: View {
             RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
                 .stroke(isSelected ? WorkstationTheme.accent : (isHovering ? WorkstationTheme.borderStrong : WorkstationTheme.border), lineWidth: isSelected ? 1.5 : 1)
         )
-        .overlay {
-            if isAgentRunning {
-                ZStack {
-                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
-                        .fill(Color.black.opacity(0.45))
-                    AgentRunSpinnerView(size: 24)
-                }
-                .transition(.opacity.animation(.easeInOut(duration: 0.25)))
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
+        .overlay(alignment: .topTrailing) {
+            if issue.status == "in_progress" {
+                AgentRunSpinnerView(size: 16)
+                    .padding(8)
+                    .transition(.opacity.animation(.easeInOut(duration: 0.25)))
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
         .shadow(
             color: isSelected ? WorkstationTheme.accent.opacity(0.08) : (isHovering ? WorkstationTheme.textPrimary.opacity(0.10) : .clear),
             radius: isSelected || isHovering ? 16 : 0,
@@ -97,40 +84,63 @@ struct IssueCardView: View {
         .animation(.spring(response: 0.30, dampingFraction: 0.6), value: isSelected)
     }
 
+    // MARK: - Tag Row (Option C)
+    // ID: plain muted text · Priority: colored dot · Type: one badge pill
+    // Recurring / focus / blocked: icon-only with .help tooltips
+
     private var tagRow: some View {
         HStack(spacing: 6) {
-            BadgeView(style: .id) {
-                Text(issue.id)
-                    .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+            // ID — muted mono text, no pill wrapper
+            Text(issue.id)
+                .font(WorkstationTheme.Fonts.body(10, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.textDisabled)
+                .lineLimit(1)
+                .truncationMode(.middle)
+
+            // Priority — small colored dot, tooltip shows label
+            if let priority = issue.priority {
+                Circle()
+                    .fill(WorkstationTheme.difficultyColor(priority))
+                    .frame(width: 5, height: 5)
+                    .help(priorityLabel(priority))
             }
 
-            if let priority = issue.priority,
-               let difficulty = PriorityDifficulty.from(priority: priority) {
-                difficultyBadge(difficulty.displayName, priority: priority)
-            }
-
+            // Type — single badge pill (unchanged)
             if let type = issue.issueType, !type.isEmpty {
                 typeBadge(type)
             }
 
+            // Blocked — warning triangle icon only
             if isBlockedByDependency {
-                blockerBadge
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.orange)
+                    .help("This issue has open blockers")
             }
 
+            // Recurring — loop icon only (orange if overdue)
             if let recurringMeta = appVM.recurringMetadata(for: issue.id), recurringMeta.isRecurring {
-                recurringBadge(for: recurringMeta)
+                let overdue = recurringMeta.overdueDays(now: Date())
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(overdue > 0 ? WorkstationTheme.orange : WorkstationTheme.textMuted)
+                    .help(recurringHelp(for: recurringMeta, overdue: overdue))
             }
 
+            // Focus — eye icon only
             if appVM.activeFocusIssueID == issue.id {
-                focusBadge()
+                Image(systemName: "eye.fill")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(WorkstationTheme.accent)
+                    .help("Currently in focus mode")
             }
 
+            // Epic progress — compact badge kept (carries numeric context)
             if issue.issueType?.lowercased() == "epic", let progress = appVM.epicProgress(for: issue.id) {
                 epicProgressBadge(done: progress.done, total: progress.total)
             }
 
+            // Child of epic — compact badge kept (hierarchy context)
             if let parentID = issue.parentID, let title = appVM.epicTitle(for: parentID) {
                 childOfBadge(epicTitle: title)
             }
@@ -139,25 +149,16 @@ struct IssueCardView: View {
         }
     }
 
-    private func recurringBadge(for metadata: RecurringMetadata) -> some View {
-        let overdue = metadata.overdueDays(now: Date())
-        let isOverdue = overdue > 0
-        return BadgeView(style: .recurring(isOverdue: isOverdue)) {
-            HStack(spacing: 4) {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 9, weight: .bold))
-                if isOverdue {
-                    Text("Overdue \(overdue)d")
-                } else if metadata.completionCount > 0 {
-                    Text("#\(metadata.completionCount)")
-                } else {
-                    Text("New")
-                }
-            }
-            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-            .lineLimit(1)
+    // MARK: - Helpers
+
+    private func priorityLabel(_ priority: Int) -> String {
+        switch priority {
+        case 0: return "P0 Must"
+        case 1: return "P1 Important"
+        case 2: return "P2 High"
+        case 3: return "P3 Medium"
+        default: return "P4 Backlog"
         }
-        .help(recurringHelp(for: metadata, overdue: overdue))
     }
 
     private func recurringHelp(for metadata: RecurringMetadata, overdue: Int) -> String {
@@ -172,19 +173,6 @@ struct IssueCardView: View {
             parts.append("overdue \(overdue)d")
         }
         return parts.joined(separator: " · ")
-    }
-
-    private func focusBadge() -> some View {
-        BadgeView(style: .focus, horizontalPadding: 5, verticalPadding: 2) {
-            HStack(spacing: 4) {
-                Image(systemName: "eye.fill")
-                    .font(.system(size: 9, weight: .bold))
-                Text("Focus")
-            }
-            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-            .lineLimit(1)
-        }
-        .help("Currently in focus mode")
     }
 
     private func epicProgressBadge(done: Int, total: Int) -> some View {
@@ -215,31 +203,6 @@ struct IssueCardView: View {
         .help("Part of Epic: \(epicTitle)")
     }
 
-    private var blockerBadge: some View {
-        ViewThatFits(in: .horizontal) {
-            blockedBadgeLabel(text: "Blocked", iconSize: 9, spacing: 4)
-            blockedBadgeLabel(text: "Block", iconSize: 8.5, spacing: 3)
-            BadgeView(style: .blocked, horizontalPadding: 5, verticalPadding: 2) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 8.5, weight: .bold))
-            }
-        }
-        .help("This issue has open blockers")
-    }
-
-    private func blockedBadgeLabel(text: String, iconSize: CGFloat, spacing: CGFloat) -> some View {
-        BadgeView(style: .blocked, horizontalPadding: 6, verticalPadding: 2) {
-            HStack(spacing: spacing) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: iconSize, weight: .bold))
-                Text(text)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-            }
-            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-        }
-    }
-
     private var footer: some View {
         HStack(alignment: .center, spacing: 8) {
             if issue.assignee?.isEmpty == false {
@@ -260,22 +223,6 @@ struct IssueCardView: View {
                     .labelStyle(.titleAndIcon)
                     .lineLimit(1)
             }
-        }
-    }
-
-    private func difficultyBadge(_ label: String, priority: Int) -> some View {
-        let color = WorkstationTheme.difficultyColor(priority)
-        return BadgeView(style: .priority(priority)) {
-            HStack(spacing: 4) {
-                if priority <= 1 {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 5, height: 5)
-                }
-                Text(label)
-            }
-            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
-            .lineLimit(1)
         }
     }
 
