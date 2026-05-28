@@ -551,6 +551,117 @@ public struct GitWorktreeService: @unchecked Sendable {
     }
 }
 
+// MARK: - Worktree Discovery
+
+public struct DiscoveredWorktree: Hashable, Sendable {
+    public enum WorktreeStatus: Hashable, Sendable {
+        /// Issue exists and is NOT closed (open / in_progress / review)
+        case active
+        /// Issue exists but is closed → safe to clean up
+        case stale
+        /// No matching Beads issue found in the provided list
+        case orphan
+    }
+
+    public let location: GitWorktreeLocation
+    /// Extracted from the branch name; may be nil if the branch is not an `agent/` branch
+    public let issueID: String?
+    /// nil when orphan or issue not in the provided list
+    public let issue: BeadIssue?
+    public let status: WorktreeStatus
+}
+
+extension GitWorktreeService {
+    /// Scan the worktrees root directory and classify every discovered worktree
+    /// against the supplied list of Beads issues.
+    public func discoverWorktrees(
+        in workspace: ProjectWorkspace,
+        issues: [BeadIssue]
+    ) async -> [DiscoveredWorktree] {
+        // 1. Compute the root URL (issue slug "x" is a throwaway — we only want the root)
+        let rootURL = worktreeLocation(for: workspace, issueID: "x").worktreeRootURL
+
+        // 2. Root doesn't exist → nothing to discover
+        guard fileManager.fileExists(atPath: rootURL.path) else { return [] }
+
+        // 3. List all subdirectories in the root
+        let subdirs: [URL]
+        do {
+            let contents = try fileManager.contentsOfDirectory(
+                at: rootURL,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            )
+            subdirs = contents.filter { url in
+                (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+            }
+        } catch {
+            return []
+        }
+
+        guard !subdirs.isEmpty else { return [] }
+
+        // 4. Get authoritative path → branchName map from git
+        let pathToBranch: [String: String]
+        do {
+            let worktreeInfos = try await listWorktrees(in: workspace.inspectionURL)
+            var dict: [String: String] = [:]
+            for info in worktreeInfos {
+                if let branch = info.branchName {
+                    dict[info.path] = branch
+                }
+            }
+            pathToBranch = dict
+        } catch {
+            pathToBranch = [:]
+        }
+
+        // 5. Build a slug → issue reverse map
+        var slugToIssue: [String: BeadIssue] = [:]
+        for issue in issues {
+            let slug = Self.slug(from: issue.id, fallback: "issue")
+            slugToIssue[slug] = issue
+        }
+
+        // 6. Classify each subdirectory
+        return subdirs.map { subdirURL in
+            let resolvedPath = subdirURL.resolvingSymlinksInPath().path
+            let branchName = pathToBranch[resolvedPath] ?? "agent/\(subdirURL.lastPathComponent)"
+
+            let location = GitWorktreeLocation(
+                worktreeRootURL: rootURL,
+                worktreeURL: subdirURL,
+                branchName: branchName
+            )
+
+            // Extract issueSlug by stripping "agent/" prefix
+            let issueSlug: String?
+            if branchName.hasPrefix("agent/") {
+                issueSlug = String(branchName.dropFirst("agent/".count))
+            } else {
+                issueSlug = nil
+            }
+
+            guard let slug = issueSlug, let matchedIssue = slugToIssue[slug] else {
+                return DiscoveredWorktree(
+                    location: location,
+                    issueID: issueSlug,
+                    issue: nil,
+                    status: .orphan
+                )
+            }
+
+            let status: DiscoveredWorktree.WorktreeStatus = matchedIssue.status == "closed" ? .stale : .active
+            return DiscoveredWorktree(
+                location: location,
+                issueID: matchedIssue.id,
+                issue: matchedIssue,
+                status: status
+            )
+        }
+    }
+}
+
 public struct GitWorktreeInfo: Hashable, Sendable, Identifiable {
     public var id: String { path }
     public let path: String
