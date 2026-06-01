@@ -13,3 +13,10 @@
 
 # Release artifacts (uploaded to GitHub Releases, not committed)
 *.dmg
+
+# Internal development docs (not relevant for public)
+.build.log
+GUIDE.md
+LAUNCH_DEBUGGING.md
+agent_run_timeline_prd.md
+prd_*.md
