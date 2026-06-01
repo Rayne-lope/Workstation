@@ -10,3 +10,6 @@
 .cache/
 .derivedData/
 .swiftpm/
+
+# Release artifacts (uploaded to GitHub Releases, not committed)
+*.dmg
