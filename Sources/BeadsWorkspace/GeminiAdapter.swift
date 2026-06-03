@@ -1,287 +1,318 @@
 import Foundation
 
 /// Adapter for Google Gemini CLI (`agy`).
-/// Since `agy` doesn't have structured stdout, this adapter:
+/// `agy` has no structured stdout, so this adapter:
 /// 1. Spawns `agy --dangerously-skip-permissions "<prompt>"`
 /// 2. Detects the newly created session dir under `~/.gemini/antigravity-cli/brain/`
-/// 3. Tails `transcript.jsonl` via a polling file watcher
-/// 4. Maps each JSONL entry to a TimelineDelta
+///    (chosen by creation time, only dirs created after launch)
+/// 3. Tails `transcript.jsonl` and maps each entry to a TimelineDelta
+/// 4. Completes when the process terminates
 public final class GeminiAdapter: AgentOutputAdapter, @unchecked Sendable {
     private let lock = NSLock()
     nonisolated(unsafe) private var process: Process?
-    nonisolated(unsafe) private var streamTask: Task<Void, Never>?
+    nonisolated(unsafe) private var pollTask: Task<Void, Never>?
+    nonisolated(unsafe) private var finished = false
+    nonisolated(unsafe) private var _lastExitCode: Int32?
+
+    public var lastExitCode: Int32? { lock.withLock { _lastExitCode } }
 
     private static let brainDir = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".gemini/antigravity-cli/brain")
 
     public init() {}
 
-    private func storeProcess(_ proc: Process) { lock.withLock { process = proc } }
-    private func storeTask(_ task: Task<Void, Never>) { lock.withLock { streamTask = task } }
-
     public func start(runID: UUID, prompt: String, worktreeURL: URL) async throws -> AsyncStream<TimelineDelta> {
-        let seq = SequenceCounter()
-        let existingSessionDirs = Set((try? snapshotBrainDir()) ?? [])
+        let launchTime = Date()
+        let process = AgentProcessEnvironment.makeProcess(
+            binary: "agy",
+            arguments: ["--dangerously-skip-permissions", prompt],
+            workingDirectory: worktreeURL
+        )
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
 
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        proc.arguments = ["agy", "--dangerously-skip-permissions", prompt]
-        proc.currentDirectoryURL = worktreeURL
-        proc.standardOutput = Pipe()
-        proc.standardError = Pipe()
-
-        try proc.run()
-        storeProcess(proc)
+        let parser = GeminiTranscriptParser(runID: runID)
 
         return AsyncStream { continuation in
-            let task = Task.detached {
-                defer { continuation.finish() }
+            continuation.yield(parser.startedDelta())
 
-                // Emit started event
-                let startEvent = AgentTimelineEvent(
+            do {
+                try process.run()
+            } catch {
+                continuation.yield(.insert(AgentTimelineEvent(
                     stableKey: "gemini-start-\(runID)",
                     runID: runID,
-                    sequence: seq.next(),
-                    type: .started,
-                    title: "Gemini started",
-                    status: .working,
+                    sequence: 0,
+                    type: .problem,
+                    title: "Failed to launch Gemini",
+                    subtitle: error.localizedDescription,
+                    status: .failure,
                     source: .structuredHook,
                     confidence: .high
-                )
-                continuation.yield(.insert(startEvent))
-
-                // Wait up to 5s for the session directory to appear
-                var sessionDir: URL?
-                for _ in 0..<100 {
-                    guard !Task.isCancelled else { return }
-                    if let newDir = try? self.detectNewSessionDir(excluding: existingSessionDirs) {
-                        sessionDir = newDir
-                        break
-                    }
-                    try? await Task.sleep(nanoseconds: 50_000_000)
-                }
-
-                guard let transcriptURL = sessionDir?.appendingPathComponent("transcript.jsonl") else {
-                    // Can't find session dir — wait for process to finish and emit done
-                    proc.waitUntilExit()
-                    let exitCode = proc.terminationStatus
-                    let doneEvent = AgentTimelineEvent(
-                        stableKey: "gemini-done-\(runID)",
-                        runID: runID,
-                        sequence: seq.next(),
-                        type: .done,
-                        title: exitCode == 0 ? "Done" : "Run failed",
-                        status: exitCode == 0 ? .success : .failure,
-                        source: .structuredHook,
-                        confidence: .low
-                    )
-                    continuation.yield(.insert(doneEvent))
-                    return
-                }
-
-                // Tail transcript.jsonl while process runs
-                var byteOffset: Int = 0
-                var seenStepIndices = Set<Int>()
-
-                while proc.isRunning || byteOffset < (try? transcriptURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) ?? 0 {
-                    guard !Task.isCancelled else { return }
-                    if let newDeltas = GeminiAdapter.readNewEntries(
-                        from: transcriptURL,
-                        byteOffset: &byteOffset,
-                        seenStepIndices: &seenStepIndices,
-                        runID: runID,
-                        seq: seq
-                    ) {
-                        for delta in newDeltas {
-                            continuation.yield(delta)
-                        }
-                    }
-                    try? await Task.sleep(nanoseconds: 200_000_000)
-                }
-
-                // Final drain
-                _ = GeminiAdapter.readNewEntries(
-                    from: transcriptURL,
-                    byteOffset: &byteOffset,
-                    seenStepIndices: &seenStepIndices,
-                    runID: runID,
-                    seq: seq
-                )?.forEach { continuation.yield($0) }
-
-                let exitCode = proc.terminationStatus
-                let doneEvent = AgentTimelineEvent(
-                    stableKey: "gemini-done-\(runID)",
-                    runID: runID,
-                    sequence: seq.next(),
-                    type: .done,
-                    title: exitCode == 0 ? "Done" : "Run failed (exit \(exitCode))",
-                    status: exitCode == 0 ? .success : .failure,
-                    source: .structuredHook,
-                    confidence: .high
-                )
-                continuation.yield(.insert(doneEvent))
+                )))
+                continuation.finish()
+                return
             }
-            self.storeTask(task)
-            continuation.onTermination = { _ in task.cancel() }
+            self.lock.withLock { self.process = process }
+
+            let task = Task.detached { [weak self] in
+                await self?.tail(
+                    process: process,
+                    launchTime: launchTime,
+                    parser: parser,
+                    continuation: continuation
+                )
+                continuation.finish()
+            }
+            self.lock.withLock { self.pollTask = task }
+            continuation.onTermination = { [weak self] _ in
+                self?.terminate()
+            }
         }
     }
 
     public func kill() {
-        let (proc, task) = lock.withLock { (process, streamTask) }
+        terminate()
+    }
+
+    private func terminate() {
+        let (proc, task) = lock.withLock { () -> (Process?, Task<Void, Never>?) in
+            guard !finished else { return (nil, nil) }
+            finished = true
+            return (process, pollTask)
+        }
         task?.cancel()
         proc?.interrupt()
     }
 
-    // MARK: - Session Dir Detection
+    // MARK: - Tailing
 
-    private func snapshotBrainDir() throws -> [String] {
-        try FileManager.default.contentsOfDirectory(atPath: Self.brainDir.path)
+    private func tail(
+        process: Process,
+        launchTime: Date,
+        parser: GeminiTranscriptParser,
+        continuation: AsyncStream<TimelineDelta>.Continuation
+    ) async {
+        // Wait up to 8s for the session directory to appear.
+        var transcriptURL: URL?
+        for _ in 0..<160 {
+            if Task.isCancelled { return }
+            if let dir = Self.newestSessionDir(after: launchTime) {
+                transcriptURL = dir.appendingPathComponent("transcript.jsonl")
+                break
+            }
+            if !process.isRunning { break }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+
+        guard let transcriptURL else {
+            process.waitUntilExit()
+            lock.withLock { _lastExitCode = process.terminationStatus }
+            for delta in parser.finish(exitCode: process.terminationStatus, confidence: .low) {
+                continuation.yield(delta)
+            }
+            return
+        }
+
+        var byteOffset = 0
+        // Keep tailing while the process runs (plus a final drain after exit).
+        while true {
+            if Task.isCancelled { return }
+            let running = process.isRunning
+            for delta in parser.readNewEntries(from: transcriptURL, byteOffset: &byteOffset) {
+                continuation.yield(delta)
+            }
+            if !running { break }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        }
+        // Final drain.
+        for delta in parser.readNewEntries(from: transcriptURL, byteOffset: &byteOffset) {
+            continuation.yield(delta)
+        }
+        let exitCode = process.isRunning ? 0 : process.terminationStatus
+        lock.withLock { _lastExitCode = exitCode }
+        for delta in parser.finish(exitCode: exitCode, confidence: .high) {
+            continuation.yield(delta)
+        }
     }
 
-    private func detectNewSessionDir(excluding existing: Set<String>) throws -> URL? {
-        let current = try FileManager.default.contentsOfDirectory(atPath: Self.brainDir.path)
-        let newDirs = current.filter { !existing.contains($0) }
-        guard let newest = newDirs.sorted().last else { return nil }
-        return Self.brainDir.appendingPathComponent(newest)
+    /// Returns the session dir created most recently after `time`, or nil.
+    private static func newestSessionDir(after time: Date) -> URL? {
+        let fm = FileManager.default
+        guard let entries = try? fm.contentsOfDirectory(
+            at: brainDir,
+            includingPropertiesForKeys: [.creationDateKey, .isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return nil }
+
+        let candidates = entries.compactMap { url -> (URL, Date)? in
+            guard let values = try? url.resourceValues(forKeys: [.creationDateKey, .isDirectoryKey]),
+                  values.isDirectory == true,
+                  let created = values.creationDate,
+                  created >= time.addingTimeInterval(-1) else { return nil }
+            return (url, created)
+        }
+        return candidates.max(by: { $0.1 < $1.1 })?.0
+    }
+}
+
+// MARK: - Transcript Parser
+
+final class GeminiTranscriptParser: @unchecked Sendable {
+    private let runID: UUID
+    private var sequence: Int64 = 0
+    private var seenStepIndices = Set<Int>()
+    private var emittedDone = false
+
+    init(runID: UUID) {
+        self.runID = runID
     }
 
-    // MARK: - Transcript Parsing
+    private func nextSeq() -> Int64 {
+        sequence += 1
+        return sequence
+    }
 
-    private static func readNewEntries(
-        from url: URL,
-        byteOffset: inout Int,
-        seenStepIndices: inout Set<Int>,
-        runID: UUID,
-        seq: SequenceCounter
-    ) -> [TimelineDelta]? {
-        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+    func startedDelta() -> TimelineDelta {
+        .insert(AgentTimelineEvent(
+            stableKey: "gemini-start-\(runID)",
+            runID: runID,
+            sequence: nextSeq(),
+            type: .started,
+            title: "Gemini started",
+            status: .working,
+            source: .structuredHook,
+            confidence: .high
+        ))
+    }
+
+    func readNewEntries(from url: URL, byteOffset: inout Int) -> [TimelineDelta] {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return [] }
         defer { try? handle.close() }
-        handle.seek(toFileOffset: UInt64(byteOffset))
+        try? handle.seek(toOffset: UInt64(byteOffset))
         let newData = handle.readDataToEndOfFile()
-        guard !newData.isEmpty else { return nil }
+        guard !newData.isEmpty else { return [] }
         byteOffset += newData.count
 
-        guard let text = String(data: newData, encoding: .utf8) else { return nil }
+        guard let text = String(data: newData, encoding: .utf8) else { return [] }
         var deltas: [TimelineDelta] = []
-        for line in text.components(separatedBy: "\n") {
+        for line in text.split(separator: "\n") {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty,
                   let lineData = trimmed.data(using: .utf8),
                   let obj = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any] else { continue }
             let stepIndex = obj["step_index"] as? Int ?? -1
-            if stepIndex >= 0 && seenStepIndices.contains(stepIndex) { continue }
-            if stepIndex >= 0 { seenStepIndices.insert(stepIndex) }
-            if let delta = parseEntry(obj, runID: runID, seq: seq) {
+            if stepIndex >= 0 {
+                if seenStepIndices.contains(stepIndex) { continue }
+                seenStepIndices.insert(stepIndex)
+            }
+            if let delta = parseEntry(obj, stepIndex: stepIndex) {
                 deltas.append(delta)
             }
         }
-        return deltas.isEmpty ? nil : deltas
+        return deltas
     }
 
-    private static func parseEntry(_ obj: [String: Any], runID: UUID, seq: SequenceCounter) -> TimelineDelta? {
+    func finish(exitCode: Int32, confidence: TimelineEventConfidence) -> [TimelineDelta] {
+        guard !emittedDone else { return [] }
+        emittedDone = true
+        let success = exitCode == 0
+        return [.insert(AgentTimelineEvent(
+            stableKey: "gemini-done-\(runID)",
+            runID: runID,
+            sequence: nextSeq(),
+            type: .done,
+            title: success ? "Done" : "Run failed",
+            subtitle: success ? nil : "exit \(exitCode)",
+            status: success ? .success : .failure,
+            source: .structuredHook,
+            confidence: confidence
+        ))]
+    }
+
+    private func parseEntry(_ obj: [String: Any], stepIndex: Int) -> TimelineDelta? {
         let type = obj["type"] as? String ?? ""
-        let stepIndex = obj["step_index"] as? Int ?? Int(seq.next())
-        let stableKey = "gemini-step-\(runID)-\(stepIndex)"
+        let keySuffix = stepIndex >= 0 ? "\(stepIndex)" : "\(nextSeq())"
+        let stableKey = "gemini-step-\(runID)-\(keySuffix)"
 
         switch type {
         case "PLANNER_RESPONSE":
-            guard let toolCalls = obj["tool_calls"] as? [[String: Any]], !toolCalls.isEmpty else { return nil }
-            let toolName = toolCalls.first?["name"] as? String ?? "tool"
-            let args = toolCalls.first?["args"] as? [String: Any]
-            return toolCallDelta(toolName: toolName, args: args, stableKey: stableKey, runID: runID, seq: seq)
+            guard let toolCalls = obj["tool_calls"] as? [[String: Any]],
+                  let first = toolCalls.first else { return nil }
+            let toolName = first["name"] as? String ?? "tool"
+            let args = first["args"] as? [String: Any]
+            return toolCallDelta(toolName: toolName, args: args, stableKey: stableKey)
 
         case "READ_FILE", "WRITE_FILE", "EDIT_FILE", "REPLACE_IN_FILE":
-            let args = obj["tool_calls"] as? [[String: Any]],
-                filePath = (args?.first?["args"] as? [String: Any])?["file_path"] as? String
-                    ?? (args?.first?["args"] as? [String: Any])?["FilePath"] as? String
+            let filePath = stringArg(obj, keys: ["file_path", "FilePath"])
             let isWrite = type != "READ_FILE"
-            let name = filePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
-            let event = AgentTimelineEvent(
+            return .insert(AgentTimelineEvent(
                 stableKey: stableKey,
                 runID: runID,
-                sequence: seq.next(),
+                sequence: nextSeq(),
                 type: .fileChange,
-                title: isWrite ? "Writing \(name)" : "Reading \(name)",
+                title: isWrite ? "Writing \(fileName(filePath))" : "Reading \(fileName(filePath))",
                 subtitle: filePath,
                 status: .success,
                 source: .structuredHook,
                 confidence: .high,
                 relatedFile: filePath
-            )
-            return .insert(event)
+            ))
 
         case "LIST_DIRECTORY", "GLOB_SEARCH", "GREP_SEARCH", "SEARCH":
-            let event = AgentTimelineEvent(
+            return .insert(AgentTimelineEvent(
                 stableKey: stableKey,
                 runID: runID,
-                sequence: seq.next(),
+                sequence: nextSeq(),
                 type: .command,
                 title: "Searching…",
                 status: .success,
                 source: .structuredHook,
                 confidence: .high
-            )
-            return .insert(event)
+            ))
 
         case "RUN_COMMAND", "RUN_BASH", "BASH":
-            let args = obj["tool_calls"] as? [[String: Any]]
-            let cmd = (args?.first?["args"] as? [String: Any])?["command"] as? String ?? "command"
-            let truncated = cmd.count > 60 ? String(cmd.prefix(60)) + "…" : cmd
-            let event = AgentTimelineEvent(
+            let cmd = stringArg(obj, keys: ["command"]) ?? "command"
+            return .insert(AgentTimelineEvent(
                 stableKey: stableKey,
                 runID: runID,
-                sequence: seq.next(),
+                sequence: nextSeq(),
                 type: .command,
-                title: "$ \(truncated)",
+                title: "$ \(truncate(cmd))",
                 status: .success,
                 source: .structuredHook,
                 confidence: .high,
                 relatedCommand: cmd
-            )
-            return .insert(event)
-
-        case "FINAL_ANSWER", "FINAL_RESPONSE":
-            // Done event is emitted separately when process exits
-            return nil
+            ))
 
         case "ERROR":
             let content = obj["content"] as? String ?? "Error"
-            let problem = AgentRunProblem(
-                stableKey: "gemini-err-\(runID)-\(stepIndex)",
+            return .appendProblem(AgentRunProblem(
+                stableKey: "gemini-err-\(runID)-\(keySuffix)",
                 runID: runID,
                 severity: .error,
                 message: content,
                 source: .structuredHook,
                 confidence: .high
-            )
-            return .appendProblem(problem)
+            ))
 
         default:
             return nil
         }
     }
 
-    private static func toolCallDelta(
-        toolName: String,
-        args: [String: Any]?,
-        stableKey: String,
-        runID: UUID,
-        seq: SequenceCounter
-    ) -> TimelineDelta {
+    private func toolCallDelta(toolName: String, args: [String: Any]?, stableKey: String) -> TimelineDelta {
         let filePath = (args?["file_path"] as? String) ?? (args?["FilePath"] as? String)
         let cmd = args?["command"] as? String
 
         let (type, title, subtitle, relatedFile): (TimelineEventType, String, String?, String?) = {
             switch toolName.lowercased() {
             case "read_file":
-                let name = filePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
-                return (.fileChange, "Reading \(name)", filePath, filePath)
+                return (.fileChange, "Reading \(fileName(filePath))", filePath, filePath)
             case "write_file", "create_file", "edit_file":
-                let name = filePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
-                return (.fileChange, "Editing \(name)", filePath, filePath)
+                return (.fileChange, "Editing \(fileName(filePath))", filePath, filePath)
             case "run_command", "bash":
-                let c = cmd ?? "command"
-                return (.command, "$ \(String(c.prefix(60)))", nil, nil)
+                return (.command, "$ \(truncate(cmd ?? "command"))", nil, nil)
             case "list_dir", "list_directory", "glob_search", "grep_search":
                 return (.command, "Searching…", nil, nil)
             default:
@@ -289,10 +320,10 @@ public final class GeminiAdapter: AgentOutputAdapter, @unchecked Sendable {
             }
         }()
 
-        let event = AgentTimelineEvent(
+        return .insert(AgentTimelineEvent(
             stableKey: stableKey,
             runID: runID,
-            sequence: seq.next(),
+            sequence: nextSeq(),
             type: type,
             title: title,
             subtitle: subtitle,
@@ -301,7 +332,34 @@ public final class GeminiAdapter: AgentOutputAdapter, @unchecked Sendable {
             confidence: .high,
             relatedFile: relatedFile,
             relatedCommand: cmd
-        )
-        return .insert(event)
+        ))
+    }
+
+    private func stringArg(_ obj: [String: Any], keys: [String]) -> String? {
+        if let calls = obj["tool_calls"] as? [[String: Any]],
+           let args = calls.first?["args"] as? [String: Any] {
+            for key in keys {
+                if let value = args[key] as? String { return value }
+            }
+        }
+        for key in keys {
+            if let value = obj[key] as? String { return value }
+        }
+        return nil
+    }
+
+    private func fileName(_ path: String?) -> String {
+        path.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
+    }
+
+    private func truncate(_ s: String) -> String {
+        s.count > 60 ? String(s.prefix(60)) + "…" : s
+    }
+}
+
+private extension NSLock {
+    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+        lock(); defer { unlock() }
+        return try body()
     }
 }

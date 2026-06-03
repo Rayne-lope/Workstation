@@ -103,6 +103,7 @@
 		924DD8B9293A11F245C4ABD0 /* IssueFileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 573D11F28CE8BB30BC0028B3 /* IssueFileWatcher.swift */; };
 		93C54C1F493139C7481EC5B4 /* FocusStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D27F04B1AC6BCDE59657C6B5 /* FocusStripView.swift */; };
 		93FBAC12E7117AC9A540F0DE /* PromptGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5719C283759185E973FB3CA /* PromptGenerator.swift */; };
+		94A600ED2391982F10EE8BF7 /* AgentProcessSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FCDA1439F91B94B9F0D5C3 /* AgentProcessSupport.swift */; };
 		95D8ECF710F47F5E29EE0610 /* LocalAISettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B683B26AD79C94797EF8BC0B /* LocalAISettings.swift */; };
 		967F0DF50F61AAFC113C108C /* AgentProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFA2C08A9675E292DDC3463 /* AgentProfileStore.swift */; };
 		9926BC17F1066C0C699D12A6 /* StatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A426C3CF17A97D5D9A653E94 /* StatusBarView.swift */; };
@@ -329,6 +330,7 @@
 		D4C845336B13EF1ABF4D799A /* PendingLanding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingLanding.swift; sourceTree = "<group>"; };
 		D514CE8962DEF8049BF1A63D /* WorkstationWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkstationWidget.swift; sourceTree = "<group>"; };
 		D698E39441548D4D521C3A52 /* WorkstationWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WorkstationWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D6FCDA1439F91B94B9F0D5C3 /* AgentProcessSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProcessSupport.swift; sourceTree = "<group>"; };
 		D7A712E04C5859F87AEB14AA /* minimax.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = minimax.png; sourceTree = "<group>"; };
 		D7C22673D4291FAEF4A2F24D /* LocalAISuggestionPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAISuggestionPreviewSheet.swift; sourceTree = "<group>"; };
 		DA2AB843AF6322C28881678A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -396,6 +398,7 @@
 			children = (
 				C1FD61717604607BEB12CCC4 /* AgentLaunchFlowCoordinator.swift */,
 				52AC3C0F06F21D3D13DA9BCA /* AgentOutputAdapter.swift */,
+				D6FCDA1439F91B94B9F0D5C3 /* AgentProcessSupport.swift */,
 				6BFA2C08A9675E292DDC3463 /* AgentProfileStore.swift */,
 				21136495113009F87FFC43FA /* AgentRunHistoryStore.swift */,
 				C21EDA36E01DC179204FA67C /* AgentRunLaunchCoordinator.swift */,
@@ -696,6 +699,7 @@
 				E8892FEAC40F2D9F2DCCDA12 /* AgentLaunchFlowCoordinator.swift in Sources */,
 				F6D5AA568EB30667CC8DFFD5 /* AgentLaunchState.swift in Sources */,
 				DE0CEED62FAA668E93D1E3E3 /* AgentOutputAdapter.swift in Sources */,
+				94A600ED2391982F10EE8BF7 /* AgentProcessSupport.swift in Sources */,
 				011C93431FCCA7053C284A94 /* AgentProfile.swift in Sources */,
 				967F0DF50F61AAFC113C108C /* AgentProfileStore.swift in Sources */,
 				5978565CFD30ED7122F6627C /* AgentProfilesSettingsPanelView.swift in Sources */,

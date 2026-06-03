@@ -122,6 +122,9 @@ final class AppViewModel {
     @ObservationIgnored private var fileWatcher: IssueFileWatcher?
     @ObservationIgnored private var ptyFlushTimers: [UUID: Timer] = [:]
     @ObservationIgnored private var timelineIngestors: [UUID: AgentTimelineIngestor] = [:]
+    /// Structured-output adapter runs keyed by runID (Claude/OpenCode/Gemini).
+    /// Held so the Kill button and app teardown can terminate them.
+    @ObservationIgnored private var activeAdapters: [UUID: any AgentOutputAdapter] = [:]
 
     init(
         shellRunner: ShellCommandRunner = ShellCommandRunner(),
@@ -1177,6 +1180,10 @@ final class AppViewModel {
     }
 
     func killActiveAgent(runID: UUID) {
+        // Structured adapters (Claude/OpenCode/Gemini) run outside the PTY registry.
+        if let adapter = activeAdapters.removeValue(forKey: runID) {
+            adapter.kill()
+        }
         PTYProcessRegistry.shared.killProcess(for: runID)
         flushBufferImmediately(runID: runID)
         agentRunTranscriptStore.skipPersist = false
@@ -1514,7 +1521,7 @@ final class AppViewModel {
             SoundscapeManager.shared.playAgentLaunch()
             if isAdapterProfile(profile) {
                 do {
-                    try agentLaunchFlowCoordinator.launchWithAdapter(
+                    let adapter = try agentLaunchFlowCoordinator.launchWithAdapter(
                         for: session,
                         profile: profile,
                         worktreeURL: worktree.worktreeURL,
@@ -1523,12 +1530,14 @@ final class AppViewModel {
                             self?.persistWidgetState()
                         },
                         onTerminated: { [weak self] exitCode in
+                            self?.activeAdapters.removeValue(forKey: session.id)
                             self?.updateAgentRunStatus(
                                 id: session.id,
                                 status: exitCode == 0 ? .needsReview : .failed
                             )
                         }
                     )
+                    activeAdapters[session.id] = adapter
                     terminalErrorMessage = nil
                 } catch {
                     terminalErrorMessage = error.localizedDescription

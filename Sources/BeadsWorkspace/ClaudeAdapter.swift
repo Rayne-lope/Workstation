@@ -4,193 +4,216 @@ import Foundation
 public final class ClaudeAdapter: AgentOutputAdapter, @unchecked Sendable {
     private let lock = NSLock()
     nonisolated(unsafe) private var process: Process?
-    nonisolated(unsafe) private var streamTask: Task<Void, Never>?
+    nonisolated(unsafe) private var finished = false
+    nonisolated(unsafe) private var _lastExitCode: Int32?
+
+    public var lastExitCode: Int32? { lock.withLock { _lastExitCode } }
 
     public init() {}
 
-    private func storeProcess(_ proc: Process) {
-        lock.withLock { process = proc }
-    }
-
-    private func storeTask(_ task: Task<Void, Never>) {
-        lock.withLock { streamTask = task }
-    }
-
     public func start(runID: UUID, prompt: String, worktreeURL: URL) async throws -> AsyncStream<TimelineDelta> {
-        let seq = SequenceCounter()
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        proc.arguments = [
-            "claude",
-            "--output-format", "stream-json",
-            "--dangerously-skip-permissions",
-            prompt
-        ]
-        proc.currentDirectoryURL = worktreeURL
+        let process = AgentProcessEnvironment.makeProcess(
+            binary: "claude",
+            arguments: [
+                "--output-format", "stream-json",
+                "--verbose",
+                "--dangerously-skip-permissions",
+                prompt
+            ],
+            workingDirectory: worktreeURL
+        )
 
         let stdoutPipe = Pipe()
-        proc.standardOutput = stdoutPipe
-        proc.standardError = Pipe()
+        process.standardOutput = stdoutPipe
+        process.standardError = Pipe()
 
-        try proc.run()
-        storeProcess(proc)
+        let parser = ClaudeStreamParser(runID: runID)
+        let lineBuffer = LineBuffer()
+        let handlerLock = NSLock()
 
-        let fileHandle = stdoutPipe.fileHandleForReading
         return AsyncStream { continuation in
-            let task: Task<Void, Never> = Task.detached {
-                defer { continuation.finish() }
-                var buffer = Data()
-                while true {
-                    guard !Task.isCancelled else { return }
-                    let chunk = fileHandle.availableData
-                    if chunk.isEmpty {
-                        if !proc.isRunning { break }
-                        try? await Task.sleep(nanoseconds: 50_000_000)
-                        continue
-                    }
-                    buffer.append(chunk)
-                    while let newlineRange = buffer.range(of: Data([0x0A])) {
-                        let lineData = buffer[buffer.startIndex..<newlineRange.lowerBound]
-                        buffer.removeSubrange(buffer.startIndex...newlineRange.lowerBound)
-                        guard !lineData.isEmpty,
-                              let line = String(data: lineData, encoding: .utf8)?.trimmingCharacters(in: .whitespaces),
-                              !line.isEmpty else { continue }
-                        if let delta = ClaudeAdapter.parse(line: line, runID: runID, seq: seq) {
-                            continuation.yield(delta)
-                        }
-                    }
-                }
-                // Drain remaining buffer
-                let remaining = fileHandle.readDataToEndOfFile()
-                buffer.append(remaining)
-                while let newlineRange = buffer.range(of: Data([0x0A])) {
-                    let lineData = buffer[buffer.startIndex..<newlineRange.lowerBound]
-                    buffer.removeSubrange(buffer.startIndex...newlineRange.lowerBound)
-                    if let line = String(data: lineData, encoding: .utf8)?.trimmingCharacters(in: .whitespaces),
-                       !line.isEmpty,
-                       let delta = ClaudeAdapter.parse(line: line, runID: runID, seq: seq) {
-                        continuation.yield(delta)
-                    }
-                }
-                // Final done event if not already emitted
-                let exitCode = proc.terminationStatus
-                if exitCode != 0 {
-                    let doneEvent = AgentTimelineEvent(
-                        stableKey: "claude-done-\(runID)",
-                        runID: runID,
-                        sequence: seq.next(),
-                        type: .done,
-                        title: "Run failed (exit \(exitCode))",
-                        status: .failure,
-                        source: .structuredHook,
-                        confidence: .high
-                    )
-                    continuation.yield(.insert(doneEvent))
-                }
+            stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
+                let data = handle.availableData
+                guard !data.isEmpty else { return }
+                handlerLock.lock()
+                let lines = lineBuffer.append(data)
+                let deltas = lines.flatMap { parser.parse(line: $0) }
+                handlerLock.unlock()
+                for delta in deltas { continuation.yield(delta) }
             }
-            self.storeTask(task)
-            continuation.onTermination = { _ in task.cancel() }
+
+            process.terminationHandler = { proc in
+                self.lock.withLock { self._lastExitCode = proc.terminationStatus }
+                stdoutPipe.fileHandleForReading.readabilityHandler = nil
+                handlerLock.lock()
+                var tail: [TimelineDelta] = []
+                if let remainder = lineBuffer.flush() {
+                    tail = parser.parse(line: remainder)
+                }
+                tail.append(contentsOf: parser.finish(exitCode: proc.terminationStatus))
+                handlerLock.unlock()
+                for delta in tail { continuation.yield(delta) }
+                continuation.finish()
+            }
+
+            do {
+                try process.run()
+            } catch {
+                continuation.yield(.insert(AgentTimelineEvent(
+                    stableKey: "claude-start-\(runID)",
+                    runID: runID,
+                    sequence: 1,
+                    type: .problem,
+                    title: "Failed to launch Claude",
+                    subtitle: error.localizedDescription,
+                    status: .failure,
+                    source: .structuredHook,
+                    confidence: .high
+                )))
+                continuation.finish()
+                return
+            }
+
+            self.lock.withLock { self.process = process }
+            continuation.onTermination = { [weak self] _ in
+                self?.terminateProcess()
+            }
         }
     }
 
     public func kill() {
-        let (proc, task) = lock.withLock { (process, streamTask) }
-        task?.cancel()
-        proc?.interrupt()
+        terminateProcess()
     }
 
-    // MARK: - JSON Parsing
+    private func terminateProcess() {
+        let proc = lock.withLock { () -> Process? in
+            guard !finished else { return nil }
+            finished = true
+            return process
+        }
+        proc?.interrupt()
+    }
+}
 
-    private static func parse(line: String, runID: UUID, seq: SequenceCounter) -> TimelineDelta? {
+// MARK: - Stream Parser
+
+/// Parses Claude `stream-json` lines, tracking in-flight tool calls so completion
+/// events preserve the original card title/file rather than clobbering them.
+/// Access is serialized by the adapter's handlerLock.
+final class ClaudeStreamParser: @unchecked Sendable {
+    private let runID: UUID
+    private var sequence: Int64 = 0
+    private var pendingTools: [String: AgentTimelineEvent] = [:]
+    private var emittedDone = false
+
+    init(runID: UUID) {
+        self.runID = runID
+    }
+
+    private func nextSeq() -> Int64 {
+        sequence += 1
+        return sequence
+    }
+
+    func parse(line: String) -> [TimelineDelta] {
         guard let data = line.data(using: .utf8),
               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let type = obj["type"] as? String else { return nil }
+              let type = obj["type"] as? String else { return [] }
 
         switch type {
         case "system":
-            guard (obj["subtype"] as? String) == "init" else { return nil }
-            let event = AgentTimelineEvent(
+            guard (obj["subtype"] as? String) == "init" else { return [] }
+            return [.insert(AgentTimelineEvent(
                 stableKey: "claude-start-\(runID)",
                 runID: runID,
-                sequence: seq.next(),
+                sequence: nextSeq(),
                 type: .started,
                 title: "Claude Code started",
                 status: .working,
                 source: .structuredHook,
                 confidence: .high
-            )
-            return .insert(event)
+            ))]
 
         case "assistant":
             guard let message = obj["message"] as? [String: Any],
-                  let contents = message["content"] as? [[String: Any]] else { return nil }
+                  let contents = message["content"] as? [[String: Any]] else { return [] }
+            var deltas: [TimelineDelta] = []
             for content in contents {
                 guard let contentType = content["type"] as? String,
                       contentType == "tool_use",
                       let toolName = content["name"] as? String,
                       let toolID = content["id"] as? String else { continue }
                 let input = content["input"] as? [String: Any]
-                return toolCallDelta(
-                    toolName: toolName,
-                    toolID: toolID,
-                    input: input,
-                    runID: runID,
-                    seq: seq
-                )
+                let event = toolCallEvent(toolName: toolName, toolID: toolID, input: input)
+                pendingTools[toolID] = event
+                deltas.append(.insert(event))
             }
-            return nil
+            return deltas
 
-        case "tool":
-            guard let contents = obj["content"] as? [[String: Any]] else { return nil }
+        case "user", "tool":
+            // Tool results arrive as a user turn with tool_result content blocks.
+            let contents: [[String: Any]]
+            if let message = obj["message"] as? [String: Any],
+               let c = message["content"] as? [[String: Any]] {
+                contents = c
+            } else if let c = obj["content"] as? [[String: Any]] {
+                contents = c
+            } else {
+                return []
+            }
+            var deltas: [TimelineDelta] = []
             for content in contents {
-                guard let contentType = content["type"] as? String,
-                      contentType == "tool_result",
+                guard (content["type"] as? String) == "tool_result",
                       let toolUseID = content["tool_use_id"] as? String else { continue }
                 let isError = content["is_error"] as? Bool ?? false
-                let stableKey = "claude-tool-\(runID)-\(toolUseID)"
-                // We update whatever event has this stableKey
-                let updatedEvent = AgentTimelineEvent(
-                    stableKey: stableKey,
-                    runID: runID,
-                    sequence: seq.next(),
-                    type: .command,
-                    title: isError ? "Tool failed" : "Tool completed",
-                    status: isError ? .failure : .success,
-                    source: .structuredHook,
-                    confidence: .high
-                )
-                return .update(stableKey: stableKey, updatedEvent)
+                if let original = pendingTools.removeValue(forKey: toolUseID) {
+                    // Preserve the original card; only flip status.
+                    let updated = AgentTimelineEvent(
+                        id: original.id,
+                        stableKey: original.stableKey,
+                        runID: runID,
+                        sequence: original.sequence,
+                        type: original.type,
+                        title: original.title,
+                        subtitle: original.subtitle,
+                        timestamp: original.timestamp,
+                        status: isError ? .failure : .success,
+                        source: .structuredHook,
+                        confidence: .high,
+                        relatedFile: original.relatedFile,
+                        relatedCommand: original.relatedCommand
+                    )
+                    deltas.append(.update(stableKey: original.stableKey, updated))
+                }
             }
-            return nil
+            return deltas
 
         case "result":
-            let subtype = obj["subtype"] as? String ?? ""
-            let isError = obj["is_error"] as? Bool ?? false
-            let isSuccess = subtype == "success" && !isError
-            let event = AgentTimelineEvent(
-                stableKey: "claude-done-\(runID)",
-                runID: runID,
-                sequence: seq.next(),
-                type: .done,
-                title: isSuccess ? "Done" : "Run failed",
-                status: isSuccess ? .success : .failure,
-                source: .structuredHook,
-                confidence: .high
-            )
-            return .insert(event)
+            return finish(exitCode: (obj["is_error"] as? Bool ?? false) ? 1 : 0)
 
         default:
-            return nil
+            return []
         }
     }
 
-    private static func toolCallDelta(
-        toolName: String,
-        toolID: String,
-        input: [String: Any]?,
-        runID: UUID,
-        seq: SequenceCounter
-    ) -> TimelineDelta {
+    func finish(exitCode: Int32) -> [TimelineDelta] {
+        guard !emittedDone else { return [] }
+        emittedDone = true
+        let success = exitCode == 0
+        return [.insert(AgentTimelineEvent(
+            stableKey: "claude-done-\(runID)",
+            runID: runID,
+            sequence: nextSeq(),
+            type: .done,
+            title: success ? "Done" : "Run failed",
+            subtitle: success ? nil : "exit \(exitCode)",
+            status: success ? .success : .failure,
+            source: .structuredHook,
+            confidence: .high
+        ))]
+    }
+
+    private func toolCallEvent(toolName: String, toolID: String, input: [String: Any]?) -> AgentTimelineEvent {
         let stableKey = "claude-tool-\(runID)-\(toolID)"
         let filePath = input?["file_path"] as? String
         let command = input?["command"] as? String
@@ -199,15 +222,14 @@ public final class ClaudeAdapter: AgentOutputAdapter, @unchecked Sendable {
         let (eventType, title, subtitle, relatedFile): (TimelineEventType, String, String?, String?) = {
             switch toolName {
             case "Read", "NotebookRead":
-                return (.fileChange, "Reading \(filePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file")", filePath, filePath)
+                return (.fileChange, "Reading \(fileName(filePath))", filePath, filePath)
             case "Write":
-                return (.fileChange, "Writing \(filePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file")", filePath, filePath)
+                return (.fileChange, "Writing \(fileName(filePath))", filePath, filePath)
             case "Edit", "MultiEdit", "NotebookEdit":
-                return (.fileChange, "Editing \(filePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file")", filePath, filePath)
+                return (.fileChange, "Editing \(fileName(filePath))", filePath, filePath)
             case "Bash":
                 let cmd = command ?? description ?? "shell command"
-                let truncated = cmd.count > 60 ? String(cmd.prefix(60)) + "…" : cmd
-                return (.command, "$ \(truncated)", nil, nil)
+                return (.command, "$ \(truncate(cmd))", nil, nil)
             case "Glob", "Grep", "LS":
                 return (.command, "Searching: \(toolName)", description, nil)
             case "WebFetch", "WebSearch":
@@ -219,10 +241,10 @@ public final class ClaudeAdapter: AgentOutputAdapter, @unchecked Sendable {
             }
         }()
 
-        let event = AgentTimelineEvent(
+        return AgentTimelineEvent(
             stableKey: stableKey,
             runID: runID,
-            sequence: seq.next(),
+            sequence: nextSeq(),
             type: eventType,
             title: title,
             subtitle: subtitle,
@@ -232,19 +254,20 @@ public final class ClaudeAdapter: AgentOutputAdapter, @unchecked Sendable {
             relatedFile: relatedFile,
             relatedCommand: command
         )
-        return .insert(event)
+    }
+
+    private func fileName(_ path: String?) -> String {
+        path.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
+    }
+
+    private func truncate(_ s: String) -> String {
+        s.count > 60 ? String(s.prefix(60)) + "…" : s
     }
 }
 
-// MARK: - Helpers
-
-final class SequenceCounter: @unchecked Sendable {
-    private let lock = NSLock()
-    private var value: Int64 = 0
-    func next() -> Int64 {
-        lock.lock()
-        defer { lock.unlock() }
-        value += 1
-        return value
+private extension NSLock {
+    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+        lock(); defer { unlock() }
+        return try body()
     }
 }

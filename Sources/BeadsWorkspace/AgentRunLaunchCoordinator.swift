@@ -114,7 +114,8 @@ public final class AgentRunLaunchCoordinator {
                 for await delta in stream {
                     await MainActor.run { onDelta(delta) }
                 }
-                await MainActor.run { onTerminated(0) }
+                let exitCode = adapter.lastExitCode ?? 0
+                await MainActor.run { onTerminated(exitCode) }
             } catch {
                 await MainActor.run { onTerminated(1) }
             }

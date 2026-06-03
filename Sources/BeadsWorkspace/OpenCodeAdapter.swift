@@ -1,159 +1,167 @@
 import Foundation
 
-/// Adapter for OpenCode's `--format json` JSONL output.
-/// Supports all OpenCode models: Kimi, Zhipu, DeepSeek, MiniMax, Codex.
+/// Adapter for OpenCode's `run --format json` JSONL output.
+/// Supports all OpenCode models: Kimi, Zhipu, DeepSeek, MiniMax.
 /// Extracts the model flag from commandArgsTemplate (e.g. `-m opencode-go/kimi-k2.5`).
+///
+/// NOTE: The exact `--format json` schema is not officially documented; the parser
+/// below handles the common event shapes and degrades gracefully (unknown lines are
+/// ignored, not fatal). Verify against real output and adjust `OpenCodeStreamParser`.
 public final class OpenCodeAdapter: AgentOutputAdapter, @unchecked Sendable {
     private let commandArgsTemplate: String
     private let lock = NSLock()
     nonisolated(unsafe) private var process: Process?
-    nonisolated(unsafe) private var streamTask: Task<Void, Never>?
+    nonisolated(unsafe) private var finished = false
+    nonisolated(unsafe) private var _lastExitCode: Int32?
+
+    public var lastExitCode: Int32? { lock.withLock { _lastExitCode } }
 
     public init(commandArgsTemplate: String) {
         self.commandArgsTemplate = commandArgsTemplate
     }
 
-    private func storeProcess(_ proc: Process) { lock.withLock { process = proc } }
-    private func storeTask(_ task: Task<Void, Never>) { lock.withLock { streamTask = task } }
-
     public func start(runID: UUID, prompt: String, worktreeURL: URL) async throws -> AsyncStream<TimelineDelta> {
         let model = extractModel(from: commandArgsTemplate)
-        let seq = SequenceCounter()
-
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        var args = ["opencode", "run", "--format", "json"]
-        if let model {
-            args += ["-m", model]
-        }
+        var args = ["run", "--format", "json"]
+        if let model { args += ["-m", model] }
         args.append(prompt)
-        proc.arguments = args
-        proc.currentDirectoryURL = worktreeURL
 
+        let process = AgentProcessEnvironment.makeProcess(
+            binary: "opencode",
+            arguments: args,
+            workingDirectory: worktreeURL
+        )
         let stdoutPipe = Pipe()
-        proc.standardOutput = stdoutPipe
-        proc.standardError = Pipe()
+        process.standardOutput = stdoutPipe
+        process.standardError = Pipe()
 
-        try proc.run()
-        storeProcess(proc)
+        let parser = OpenCodeStreamParser(runID: runID, modelLabel: model ?? "OpenCode")
+        let lineBuffer = LineBuffer()
+        let handlerLock = NSLock()
 
-        let fileHandle = stdoutPipe.fileHandleForReading
-        let modelLabel = model ?? "OpenCode"
         return AsyncStream { continuation in
-            let task = Task.detached {
-                defer { continuation.finish() }
-                // Emit started event
-                let startEvent = AgentTimelineEvent(
+            // Emit a started event immediately.
+            continuation.yield(parser.startedDelta())
+
+            stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
+                let data = handle.availableData
+                guard !data.isEmpty else { return }
+                handlerLock.lock()
+                let lines = lineBuffer.append(data)
+                let deltas = lines.flatMap { parser.parse(line: $0) }
+                handlerLock.unlock()
+                for delta in deltas { continuation.yield(delta) }
+            }
+
+            process.terminationHandler = { proc in
+                self.lock.withLock { self._lastExitCode = proc.terminationStatus }
+                stdoutPipe.fileHandleForReading.readabilityHandler = nil
+                handlerLock.lock()
+                var tail: [TimelineDelta] = []
+                if let remainder = lineBuffer.flush() {
+                    tail = parser.parse(line: remainder)
+                }
+                tail.append(contentsOf: parser.finish(exitCode: proc.terminationStatus))
+                handlerLock.unlock()
+                for delta in tail { continuation.yield(delta) }
+                continuation.finish()
+            }
+
+            do {
+                try process.run()
+            } catch {
+                continuation.yield(.insert(AgentTimelineEvent(
                     stableKey: "opencode-start-\(runID)",
                     runID: runID,
-                    sequence: seq.next(),
-                    type: .started,
-                    title: "\(modelLabel) started",
-                    status: .working,
+                    sequence: 1,
+                    type: .problem,
+                    title: "Failed to launch OpenCode",
+                    subtitle: error.localizedDescription,
+                    status: .failure,
                     source: .structuredHook,
                     confidence: .high
-                )
-                continuation.yield(.insert(startEvent))
-
-                var buffer = Data()
-                while true {
-                    guard !Task.isCancelled else { return }
-                    let chunk = fileHandle.availableData
-                    if chunk.isEmpty {
-                        if !proc.isRunning { break }
-                        try? await Task.sleep(nanoseconds: 50_000_000)
-                        continue
-                    }
-                    buffer.append(chunk)
-                    while let newlineRange = buffer.range(of: Data([0x0A])) {
-                        let lineData = buffer[buffer.startIndex..<newlineRange.lowerBound]
-                        buffer.removeSubrange(buffer.startIndex...newlineRange.lowerBound)
-                        guard !lineData.isEmpty,
-                              let line = String(data: lineData, encoding: .utf8)?.trimmingCharacters(in: .whitespaces),
-                              !line.isEmpty else { continue }
-                        if let delta = OpenCodeAdapter.parse(line: line, runID: runID, seq: seq) {
-                            continuation.yield(delta)
-                        }
-                    }
-                }
-
-                // Drain remaining
-                let remaining = fileHandle.readDataToEndOfFile()
-                buffer.append(remaining)
-                while let newlineRange = buffer.range(of: Data([0x0A])) {
-                    let lineData = buffer[buffer.startIndex..<newlineRange.lowerBound]
-                    buffer.removeSubrange(buffer.startIndex...newlineRange.lowerBound)
-                    if let line = String(data: lineData, encoding: .utf8)?.trimmingCharacters(in: .whitespaces),
-                       !line.isEmpty,
-                       let delta = OpenCodeAdapter.parse(line: line, runID: runID, seq: seq) {
-                        continuation.yield(delta)
-                    }
-                }
-
-                let exitCode = proc.terminationStatus
-                let doneEvent = AgentTimelineEvent(
-                    stableKey: "opencode-done-\(runID)",
-                    runID: runID,
-                    sequence: seq.next(),
-                    type: .done,
-                    title: exitCode == 0 ? "Done" : "Run failed (exit \(exitCode))",
-                    status: exitCode == 0 ? .success : .failure,
-                    source: .structuredHook,
-                    confidence: .high
-                )
-                continuation.yield(.insert(doneEvent))
+                )))
+                continuation.finish()
+                return
             }
-            self.storeTask(task)
-            continuation.onTermination = { _ in task.cancel() }
+
+            self.lock.withLock { self.process = process }
+            continuation.onTermination = { [weak self] _ in
+                self?.terminateProcess()
+            }
         }
     }
 
     public func kill() {
-        let (proc, task) = lock.withLock { (process, streamTask) }
-        task?.cancel()
+        terminateProcess()
+    }
+
+    private func terminateProcess() {
+        let proc = lock.withLock { () -> Process? in
+            guard !finished else { return nil }
+            finished = true
+            return process
+        }
         proc?.interrupt()
     }
 
-    // MARK: - Model extraction
-
     private func extractModel(from template: String) -> String? {
-        // Template looks like: "run -m opencode-go/kimi-k2.5 \"{{prompt}}\""
         let parts = template.components(separatedBy: " ")
         guard let mIndex = parts.firstIndex(of: "-m"), parts.indices.contains(mIndex + 1) else {
             return nil
         }
         return parts[mIndex + 1]
     }
+}
 
-    // MARK: - JSON Parsing
+// MARK: - Stream Parser
 
-    /// OpenCode `--format json` outputs one JSON object per line.
-    /// The schema is based on OpenCode's Part[] types.
-    private static func parse(line: String, runID: UUID, seq: SequenceCounter) -> TimelineDelta? {
+final class OpenCodeStreamParser: @unchecked Sendable {
+    private let runID: UUID
+    private let modelLabel: String
+    private var sequence: Int64 = 0
+    private var pendingTools: [String: AgentTimelineEvent] = [:]
+    private var emittedDone = false
+
+    init(runID: UUID, modelLabel: String) {
+        self.runID = runID
+        self.modelLabel = modelLabel
+    }
+
+    private func nextSeq() -> Int64 {
+        sequence += 1
+        return sequence
+    }
+
+    func startedDelta() -> TimelineDelta {
+        .insert(AgentTimelineEvent(
+            stableKey: "opencode-start-\(runID)",
+            runID: runID,
+            sequence: nextSeq(),
+            type: .started,
+            title: "\(modelLabel) started",
+            status: .working,
+            source: .structuredHook,
+            confidence: .high
+        ))
+    }
+
+    func parse(line: String) -> [TimelineDelta] {
         guard let data = line.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
-
-        // OpenCode event types observed in practice:
-        // {"type":"tool_use","tool":"read_file","input":{"file_path":"..."}}
-        // {"type":"tool_result","tool":"read_file","output":"...","exit_code":0}
-        // {"type":"text","content":"..."}
-        // {"type":"session_complete"}
-        // {"type":"error","message":"..."}
-
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [] }
         let type = obj["type"] as? String ?? ""
-        let stableKey: String
 
         switch type {
         case "tool_use":
             let tool = obj["tool"] as? String ?? "tool"
             let input = obj["input"] as? [String: Any]
             let toolID = obj["id"] as? String ?? UUID().uuidString
-            stableKey = "opencode-tool-\(runID)-\(toolID)"
+            let stableKey = "opencode-tool-\(runID)-\(toolID)"
             let (eventType, title, subtitle, relatedFile) = toolUseMapping(tool: tool, input: input)
             let event = AgentTimelineEvent(
                 stableKey: stableKey,
                 runID: runID,
-                sequence: seq.next(),
+                sequence: nextSeq(),
                 type: eventType,
                 title: title,
                 subtitle: subtitle,
@@ -162,56 +170,67 @@ public final class OpenCodeAdapter: AgentOutputAdapter, @unchecked Sendable {
                 confidence: .high,
                 relatedFile: relatedFile
             )
-            return .insert(event)
+            pendingTools[toolID] = event
+            return [.insert(event)]
 
         case "tool_result":
-            let tool = obj["tool"] as? String ?? "tool"
             let toolID = obj["id"] as? String ?? ""
             let exitCode = obj["exit_code"] as? Int ?? 0
-            stableKey = "opencode-tool-\(runID)-\(toolID)"
-            let updatedEvent = AgentTimelineEvent(
-                stableKey: stableKey,
+            guard let original = pendingTools.removeValue(forKey: toolID) else { return [] }
+            let updated = AgentTimelineEvent(
+                id: original.id,
+                stableKey: original.stableKey,
                 runID: runID,
-                sequence: seq.next(),
-                type: .command,
-                title: exitCode == 0 ? "\(tool) done" : "\(tool) failed",
+                sequence: original.sequence,
+                type: original.type,
+                title: original.title,
+                subtitle: original.subtitle,
+                timestamp: original.timestamp,
                 status: exitCode == 0 ? .success : .failure,
                 source: .structuredHook,
-                confidence: .high
+                confidence: .high,
+                relatedFile: original.relatedFile,
+                relatedCommand: original.relatedCommand
             )
-            return .update(stableKey: stableKey, updatedEvent)
+            return [.update(stableKey: original.stableKey, updated)]
 
         case "session_complete":
-            let event = AgentTimelineEvent(
-                stableKey: "opencode-done-\(runID)",
-                runID: runID,
-                sequence: seq.next(),
-                type: .done,
-                title: "Done",
-                status: .success,
-                source: .structuredHook,
-                confidence: .high
-            )
-            return .insert(event)
+            return finish(exitCode: 0)
 
         case "error":
             let msg = obj["message"] as? String ?? "Unknown error"
-            let problem = AgentRunProblem(
-                stableKey: "opencode-err-\(runID)-\(seq.next())",
+            return [.appendProblem(AgentRunProblem(
+                stableKey: "opencode-err-\(runID)-\(nextSeq())",
                 runID: runID,
                 severity: .error,
                 message: msg,
                 source: .structuredHook,
                 confidence: .high
-            )
-            return .appendProblem(problem)
+            ))]
 
         default:
-            return nil
+            return []
         }
     }
 
-    private static func toolUseMapping(
+    func finish(exitCode: Int32) -> [TimelineDelta] {
+        guard !emittedDone else { return [] }
+        emittedDone = true
+        let success = exitCode == 0
+        return [.insert(AgentTimelineEvent(
+            stableKey: "opencode-done-\(runID)",
+            runID: runID,
+            sequence: nextSeq(),
+            type: .done,
+            title: success ? "Done" : "Run failed",
+            subtitle: success ? nil : "exit \(exitCode)",
+            status: success ? .success : .failure,
+            source: .structuredHook,
+            confidence: .high
+        ))]
+    }
+
+    private func toolUseMapping(
         tool: String,
         input: [String: Any]?
     ) -> (TimelineEventType, String, String?, String?) {
@@ -220,22 +239,33 @@ public final class OpenCodeAdapter: AgentOutputAdapter, @unchecked Sendable {
 
         switch tool {
         case "read_file":
-            let name = filePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
-            return (.fileChange, "Reading \(name)", filePath, filePath)
+            return (.fileChange, "Reading \(fileName(filePath))", filePath, filePath)
         case "write_file", "create_file":
-            let name = filePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
-            return (.fileChange, "Writing \(name)", filePath, filePath)
+            return (.fileChange, "Writing \(fileName(filePath))", filePath, filePath)
         case "edit_file", "patch_file":
-            let name = filePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
-            return (.fileChange, "Editing \(name)", filePath, filePath)
+            return (.fileChange, "Editing \(fileName(filePath))", filePath, filePath)
         case "bash", "run_command", "execute":
             let cmd = command ?? "shell command"
-            let truncated = cmd.count > 60 ? String(cmd.prefix(60)) + "…" : cmd
-            return (.command, "$ \(truncated)", nil, nil)
+            return (.command, "$ \(truncate(cmd))", nil, nil)
         case "list_directory", "glob", "search_files", "grep":
             return (.command, "Searching…", filePath, nil)
         default:
             return (.command, tool, nil, nil)
         }
+    }
+
+    private func fileName(_ path: String?) -> String {
+        path.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
+    }
+
+    private func truncate(_ s: String) -> String {
+        s.count > 60 ? String(s.prefix(60)) + "…" : s
+    }
+}
+
+private extension NSLock {
+    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+        lock(); defer { unlock() }
+        return try body()
     }
 }

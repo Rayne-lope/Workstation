@@ -10,6 +10,9 @@ public protocol AgentOutputAdapter: AnyObject, Sendable {
 
     /// Kill the running agent immediately.
     func kill()
+
+    /// The process exit code, available once the stream has finished. `nil` while running.
+    var lastExitCode: Int32? { get }
 }
 
 /// Selects the right adapter based on profile.command.
