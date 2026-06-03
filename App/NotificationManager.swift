@@ -88,6 +88,17 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
 
+    /// Posts a notification when the scheduler auto-launches an agent.
+    func notifySchedulerLaunch(issueID: String, issueTitle: String, agentName: String) {
+        guard isBundled else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "Agent Auto-Launched"
+        content.body = "\(agentName) mulai mengerjakan \(issueID): \(issueTitle)"
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+    }
+
     // MARK: - UNUserNotificationCenterDelegate
 
     /// Show the banner even when the app is frontmost (macOS suppresses it otherwise).

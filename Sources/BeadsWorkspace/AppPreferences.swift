@@ -15,6 +15,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
     public var localAI: LocalAISettings
     public var kanbanCompactMode: Bool
     public var notificationsEnabled: Bool
+    public var scheduler: SchedulerPreferences
 
     public init(
         lastSelectedPath: String? = nil,
@@ -28,7 +29,8 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         filterState: [String: FilterState] = [:],
         localAI: LocalAISettings = LocalAISettings(),
         kanbanCompactMode: Bool = false,
-        notificationsEnabled: Bool = true
+        notificationsEnabled: Bool = true,
+        scheduler: SchedulerPreferences = SchedulerPreferences()
     ) {
         self.lastSelectedPath = lastSelectedPath
         self.autoRestoreOnLaunch = autoRestoreOnLaunch
@@ -42,6 +44,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         self.localAI = localAI
         self.kanbanCompactMode = kanbanCompactMode
         self.notificationsEnabled = notificationsEnabled
+        self.scheduler = scheduler
     }
 
     enum CodingKeys: String, CodingKey {
@@ -57,6 +60,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         case localAI
         case kanbanCompactMode
         case notificationsEnabled
+        case scheduler
     }
 
     public init(from decoder: Decoder) throws {
@@ -74,5 +78,42 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         localAI = try c.decodeIfPresent(LocalAISettings.self, forKey: .localAI) ?? LocalAISettings()
         kanbanCompactMode = try c.decodeIfPresent(Bool.self, forKey: .kanbanCompactMode) ?? false
         notificationsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+        scheduler = try c.decodeIfPresent(SchedulerPreferences.self, forKey: .scheduler) ?? SchedulerPreferences()
+    }
+}
+
+// MARK: - Scheduler Preferences
+
+public struct SchedulerProfileSettings: Codable, Equatable, Sendable {
+    public var enabled: Bool
+    public var dailyRunLimit: Int
+    public var requireApproval: Bool
+
+    public init(enabled: Bool = true, dailyRunLimit: Int = 10, requireApproval: Bool = false) {
+        self.enabled = enabled
+        self.dailyRunLimit = dailyRunLimit
+        self.requireApproval = requireApproval
+    }
+}
+
+public struct SchedulerPreferences: Codable, Equatable, Sendable {
+    public var isEnabled: Bool
+    public var pollIntervalSeconds: Int
+    public var maxConcurrentRuns: Int
+    public var requireApprovalBeforeLaunch: Bool
+    public var perProfileSettings: [String: SchedulerProfileSettings]
+
+    public init(
+        isEnabled: Bool = false,
+        pollIntervalSeconds: Int = 60,
+        maxConcurrentRuns: Int = 2,
+        requireApprovalBeforeLaunch: Bool = false,
+        perProfileSettings: [String: SchedulerProfileSettings] = [:]
+    ) {
+        self.isEnabled = isEnabled
+        self.pollIntervalSeconds = pollIntervalSeconds
+        self.maxConcurrentRuns = maxConcurrentRuns
+        self.requireApprovalBeforeLaunch = requireApprovalBeforeLaunch
+        self.perProfileSettings = perProfileSettings
     }
 }

@@ -51,6 +51,7 @@ final class AppViewModel {
     let localAIService: LocalAIService
     private let terminalLauncher: any TerminalLaunching
     private let agentLaunchFlowCoordinator: AgentLaunchFlowCoordinator
+    let agentScheduler: AgentScheduler = AgentScheduler()
 
     var sessionPromptTokens: Int = 0
     var sessionCompletionTokens: Int = 0
@@ -252,6 +253,53 @@ final class AppViewModel {
         archiveStore = archive
         Task { await store.reload() }
         startFileWatcher(for: workspace)
+        bindScheduler(workspace: workspace, issueStore: store)
+    }
+
+    private func bindScheduler(workspace: ProjectWorkspace, issueStore: IssueStore) {
+        agentScheduler.stop()
+        agentScheduler.readyIssues = { [weak issueStore, weak self] in
+            guard let store = issueStore, let self else { return [] }
+            return try await store.service.readyIssues(in: self.activeWorkspace?.inspectionURL ?? workspace.inspectionURL)
+        }
+        agentScheduler.activeRunCount = { [weak self] in
+            self?.agentRunHistoryStore.records.filter { !$0.status.isFinalized }.count ?? 0
+        }
+        agentScheduler.dailyRunCount = { [weak self] profileID in
+            let calendar = Calendar.current
+            return self?.agentRunHistoryStore.records.filter { record in
+                record.agentProfileID == profileID && calendar.isDateInToday(record.startedAt)
+            }.count ?? 0
+        }
+        agentScheduler.isIssueAlreadyRunning = { [weak self] issueID in
+            self?.agentRunHistoryStore.records.contains { $0.issueID == issueID && !$0.status.isFinalized } ?? false
+        }
+        agentScheduler.executorProfile = { [weak self] assignee in
+            self?.agentProfileStore.executorProfile(forAssignee: assignee)
+        }
+        agentScheduler.preferences = { [weak self] in
+            self?.preferencesStore.preferences.scheduler ?? SchedulerPreferences()
+        }
+        agentScheduler.onClaimAndLaunch = { [weak self] issueID, profileID in
+            guard let self,
+                  let issue = self.issueStore?.issues.first(where: { $0.id == issueID }),
+                  let profile = self.agentProfileStore.profiles.first(where: { $0.id == profileID }) else { return }
+            await self.beginWorktreeAgentLaunchFromScheduler(for: issue, profile: profile)
+        }
+        if preferencesStore.preferences.scheduler.isEnabled {
+            agentScheduler.start()
+        }
+    }
+
+    func beginWorktreeAgentLaunchFromScheduler(for issue: BeadIssue, profile: AgentProfile) async {
+        guard let workspace = activeWorkspace else { return }
+        let preflight = await gitWorktreeService.preflightLaunch(for: issue, in: workspace)
+        guard !preflight.isBlocked else {
+            agentScheduler.state = .idle
+            return
+        }
+        await performWorktreeAgentLaunch(for: issue, profile: profile, workspace: workspace, preflight: preflight, copyToClipboard: false)
+        NotificationManager.shared.notifySchedulerLaunch(issueID: issue.id, issueTitle: issue.title, agentName: profile.name)
     }
 
     func reloadIssues() {
@@ -1463,21 +1511,48 @@ final class AppViewModel {
             if copyToClipboard {
                 Clipboard.copy(session.payload.prompt)
             }
-            do {
-                SoundscapeManager.shared.playAgentLaunch()
-                try agentLaunchFlowCoordinator.openTerminal(
-                    for: session,
-                    projectURL: worktree.worktreeURL,
-                    terminalCommand: session.payload.command
-                )
-                terminalErrorMessage = nil
-                updateAgentRunStatus(id: session.id, status: .accepted)
-            } catch {
-                terminalErrorMessage = error.localizedDescription
+            SoundscapeManager.shared.playAgentLaunch()
+            if isAdapterProfile(profile) {
+                do {
+                    try agentLaunchFlowCoordinator.launchWithAdapter(
+                        for: session,
+                        profile: profile,
+                        worktreeURL: worktree.worktreeURL,
+                        onDelta: { [weak self] delta in
+                            AgentTimelineStore.shared.apply(delta: delta, forRunID: session.id)
+                            self?.persistWidgetState()
+                        },
+                        onTerminated: { [weak self] exitCode in
+                            self?.updateAgentRunStatus(
+                                id: session.id,
+                                status: exitCode == 0 ? .needsReview : .failed
+                            )
+                        }
+                    )
+                    terminalErrorMessage = nil
+                } catch {
+                    terminalErrorMessage = error.localizedDescription
+                }
+            } else {
+                do {
+                    try agentLaunchFlowCoordinator.openTerminal(
+                        for: session,
+                        projectURL: worktree.worktreeURL,
+                        terminalCommand: session.payload.command
+                    )
+                    terminalErrorMessage = nil
+                    updateAgentRunStatus(id: session.id, status: .accepted)
+                } catch {
+                    terminalErrorMessage = error.localizedDescription
+                }
             }
         } catch {
             launchErrorMessage = error.localizedDescription
         }
+    }
+
+    private func isAdapterProfile(_ profile: AgentProfile) -> Bool {
+        makeAgentAdapter(forCommand: profile.command, commandArgsTemplate: profile.commandArgsTemplate) != nil
     }
 
     private func performAgentLaunch(

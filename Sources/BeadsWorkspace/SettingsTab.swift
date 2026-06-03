@@ -7,6 +7,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
     case localAI
     case agentProfiles
     case gitWorktrees
+    case scheduler
 
     public var id: String { rawValue }
 
@@ -18,6 +19,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
         case .localAI: return "Local AI"
         case .agentProfiles: return "Agent Profiles"
         case .gitWorktrees: return "Git Worktrees"
+        case .scheduler: return "Scheduler"
         }
     }
 
@@ -29,6 +31,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable, Sendable {
         case .localAI: return "cpu"
         case .agentProfiles: return "person.2"
         case .gitWorktrees: return "arrow.triangle.branch"
+        case .scheduler: return "clock.arrow.2.circlepath"
         }
     }
 }

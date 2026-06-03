@@ -125,4 +125,21 @@ public final class AgentLaunchFlowCoordinator {
             terminalCommand: terminalCommand
         )
     }
+
+    @discardableResult
+    public func launchWithAdapter(
+        for session: AgentRunLaunchSession,
+        profile: AgentProfile,
+        worktreeURL: URL,
+        onDelta: @escaping @Sendable @MainActor (TimelineDelta) -> Void,
+        onTerminated: @escaping @Sendable @MainActor (Int32) -> Void
+    ) throws -> (any AgentOutputAdapter) {
+        try launchCoordinator.launchWithAdapter(
+            for: session,
+            profile: profile,
+            worktreeURL: worktreeURL,
+            onDelta: onDelta,
+            onTerminated: onTerminated
+        )
+    }
 }

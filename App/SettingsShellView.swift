@@ -57,6 +57,8 @@ struct SettingsShellView: View {
             AgentProfilesSettingsPanelView(appVM: appVM)
         case .gitWorktrees:
             GitWorktreesSettingsPanelView(appVM: appVM)
+        case .scheduler:
+            SchedulerSettingsPanelView(appVM: appVM)
         }
     }
 }

@@ -82,4 +82,55 @@ public final class AgentRunLaunchCoordinator {
             throw error
         }
     }
+
+    /// Launch an agent via a structured output adapter instead of opening Terminal.app.
+    /// The adapter streams TimelineDelta values; `onDelta` is called for each one.
+    /// `onTerminated` is called with the process exit code when the agent finishes.
+    /// Returns immediately after starting the adapter; consumption happens in a background Task.
+    @discardableResult
+    public func launchWithAdapter(
+        for session: AgentRunLaunchSession,
+        profile: AgentProfile,
+        worktreeURL: URL,
+        onDelta: @escaping @Sendable @MainActor (TimelineDelta) -> Void,
+        onTerminated: @escaping @Sendable @MainActor (Int32) -> Void
+    ) throws -> (any AgentOutputAdapter) {
+        guard let adapter = makeAgentAdapter(
+            forCommand: profile.command,
+            commandArgsTemplate: profile.commandArgsTemplate
+        ) else {
+            throw AdapterError.noAdapterForCommand(profile.command)
+        }
+
+        historyStore.updateStatus(id: session.id, status: .accepted)
+
+        Task {
+            do {
+                let stream = try await adapter.start(
+                    runID: session.id,
+                    prompt: session.payload.prompt,
+                    worktreeURL: worktreeURL
+                )
+                for await delta in stream {
+                    await MainActor.run { onDelta(delta) }
+                }
+                await MainActor.run { onTerminated(0) }
+            } catch {
+                await MainActor.run { onTerminated(1) }
+            }
+        }
+
+        return adapter
+    }
+}
+
+public enum AdapterError: Error, LocalizedError {
+    case noAdapterForCommand(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .noAdapterForCommand(let cmd):
+            return "No adapter available for command '\(cmd)'. Will fall back to Terminal."
+        }
+    }
 }
