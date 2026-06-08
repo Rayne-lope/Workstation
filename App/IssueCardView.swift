@@ -54,25 +54,19 @@ struct IssueCardView: View {
                 
                 Spacer(minLength: 8)
                 
-                HStack(spacing: 4) {
-                    if issue.status == "in_progress" {
-                        AgentRunSpinnerView(size: 14)
+                if let store = appVM.issueStore {
+                    Menu {
+                        IssueActionsContextMenu(issue: issue, store: store, appVM: appVM)
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.textMuted)
+                            .frame(width: 20, height: 20)
+                            .background(Color.clear)
+                            .contentShape(Rectangle())
                     }
-                    
-                    if let store = appVM.issueStore {
-                        Menu {
-                            IssueActionsContextMenu(issue: issue, store: store, appVM: appVM)
-                        } label: {
-                            Image(systemName: "ellipsis")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(WorkstationTheme.textMuted)
-                                .frame(width: 20, height: 20)
-                                .background(Color.clear)
-                                .contentShape(Rectangle())
-                        }
-                        .menuStyle(.button)
-                        .buttonStyle(.plain)
-                    }
+                    .menuStyle(.button)
+                    .buttonStyle(.plain)
                 }
             }
 

@@ -268,15 +268,9 @@ private struct IssueListRowView: View {
             store.selectIssue(id: issue.id)
         } label: {
             HStack(alignment: .center, spacing: 12) {
-                // Status dot — swaps to animated spinner while in progress
-                if issue.status == "in_progress" {
-                    AgentRunSpinnerView(size: 12)
-                        .frame(width: 12, height: 12)
-                } else {
-                    Circle()
-                        .fill(columnColor)
-                        .frame(width: 6, height: 6)
-                }
+                Circle()
+                    .fill(columnColor)
+                    .frame(width: 6, height: 6)
 
                 // Title + ID
                 VStack(alignment: .leading, spacing: 3) {

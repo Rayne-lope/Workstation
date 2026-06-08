@@ -56,7 +56,9 @@ struct LandingSheet: View {
             }
             Spacer()
             if isAnalysing {
-                AgentRunSpinnerView(size: 16)
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(WorkstationTheme.accent)
                     .padding(.trailing, 4)
             }
         }
