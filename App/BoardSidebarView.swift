@@ -71,6 +71,7 @@ struct BoardSidebarView: View {
 
     @ViewBuilder
     private func brandHeader(workspace: ProjectWorkspace?) -> some View {
+        let isWorkly = PreferencesStore.activeTheme == .workly
         HStack(spacing: 10) {
             let size = CGSize(width: 36, height: 36)
             if let image = bundledImage(named: "workstation_logo", fitting: size) {
@@ -78,31 +79,43 @@ struct BoardSidebarView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 36, height: 36)
-                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: isWorkly ? 6 : WorkstationTheme.Radius.medium, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: isWorkly ? 6 : WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(isWorkly ? Color.white.opacity(0.08) : WorkstationTheme.borderStrong, lineWidth: 1)
                     )
             } else {
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .fill(WorkstationTheme.accentBg)
-                    .overlay(
+                Group {
+                    if isWorkly {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(LinearGradient(colors: [Color(hex: "6f5bf6"), Color(hex: "5b48e8")], startPoint: .top, endPoint: .bottom))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                            )
+                    } else {
                         RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                            .stroke(WorkstationTheme.accentBorder, lineWidth: 1)
-                    )
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Text("B")
-                            .font(WorkstationTheme.Fonts.display(15, weight: .heavy))
-                            .foregroundStyle(WorkstationTheme.accent)
-                    )
+                            .fill(WorkstationTheme.accentBg)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                                    .stroke(WorkstationTheme.accentBorder, lineWidth: 1)
+                            )
+                    }
+                }
+                .frame(width: 36, height: 36)
+                .overlay(
+                    Text("B")
+                        .font(WorkstationTheme.Fonts.display(15, weight: .heavy))
+                        .foregroundStyle(isWorkly ? .white : WorkstationTheme.accent)
+                )
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(workspace?.name ?? "Workspace")
-                    .font(WorkstationTheme.Fonts.display(14, weight: .bold))
+                    .font(WorkstationTheme.Fonts.display(14, weight: isWorkly ? .heavy : .bold))
                     .foregroundStyle(WorkstationTheme.textPrimary)
                     .lineLimit(1)
+                    .tracking(isWorkly ? -0.3 : 0)
                 Text("Beads Kanban")
                     .font(WorkstationTheme.Fonts.body(11, weight: .medium))
                     .foregroundStyle(WorkstationTheme.textDisabled)
@@ -196,13 +209,14 @@ struct BoardSidebarView: View {
 
     @ViewBuilder
     private func counters(store: IssueStore) -> some View {
+        let isWorkly = PreferencesStore.activeTheme == .workly
         VStack(alignment: .leading, spacing: 10) {
             Text("Quick Stats")
                 .font(WorkstationTheme.Fonts.label)
                 .foregroundStyle(WorkstationTheme.textDisabled)
                 .textCase(.uppercase)
                 .tracking(0.8)
-                .padding(.top, 2)
+                .padding(.top, isWorkly ? 0 : 2)
 
             counterRow(label: "Backlog", count: store.backlogIssues.count)
             counterRow(label: "Ready", count: store.readyIssues.count)
@@ -214,11 +228,29 @@ struct BoardSidebarView: View {
                 counterRow(label: "Archived", count: archiveStore.archivedIssues.count)
             }
         }
-        .padding(.top, 6)
+        .padding(.top, isWorkly ? 0 : 6)
+        .padding(isWorkly ? 12 : 0)
+        .background(isWorkly ? Color.white.opacity(0.03) : Color.clear)
+        .overlay {
+            if isWorkly {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: isWorkly ? 12 : 0, style: .continuous))
     }
 
     private func counterRow(label: String, count: Int) -> some View {
-        HStack(spacing: 10) {
+        let isWorkly = PreferencesStore.activeTheme == .workly
+        let baseText = Text("\(count)")
+            .font(WorkstationTheme.Fonts.body(11, weight: .bold))
+            .foregroundStyle(WorkstationTheme.textSecondary)
+            .monospacedDigit()
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(WorkstationTheme.borderSoft)
+
+        return HStack(spacing: 10) {
             Circle()
                 .fill(color(for: label))
                 .frame(width: 6, height: 6)
@@ -226,18 +258,18 @@ struct BoardSidebarView: View {
                 .font(WorkstationTheme.Fonts.body(12, weight: .medium))
                 .foregroundStyle(WorkstationTheme.textMuted)
             Spacer()
-            Text("\(count)")
-                .font(WorkstationTheme.Fonts.body(11, weight: .bold))
-                .foregroundStyle(WorkstationTheme.textSecondary)
-                .monospacedDigit()
-                .padding(.horizontal, 7)
-                .padding(.vertical, 2)
-                .background(WorkstationTheme.borderSoft)
-                .overlay(
-                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                        .stroke(WorkstationTheme.border, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+            
+            Group {
+                if isWorkly {
+                    baseText
+                        .overlay(Capsule().stroke(WorkstationTheme.border, lineWidth: 1))
+                        .clipShape(Capsule())
+                } else {
+                    baseText
+                        .overlay(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous).stroke(WorkstationTheme.border, lineWidth: 1))
+                        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+                }
+            }
         }
         .padding(.vertical, 2)
     }
@@ -264,19 +296,33 @@ private struct SidebarNavButtonStyle: ButtonStyle {
     var isActive: Bool = false
 
     func makeBody(configuration: Configuration) -> some View {
+        let isWorkly = PreferencesStore.activeTheme == .workly
         configuration.label
             .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
-            .foregroundStyle(isActive ? WorkstationTheme.accent : (configuration.isPressed ? WorkstationTheme.textPrimary : WorkstationTheme.textMuted))
+            .foregroundStyle(
+                isActive
+                    ? (isWorkly ? Color(hex: "6f5bf6") : WorkstationTheme.accent)
+                    : (configuration.isPressed ? WorkstationTheme.textPrimary : WorkstationTheme.textMuted)
+            )
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .fill(isActive ? WorkstationTheme.accentBg : (configuration.isPressed ? WorkstationTheme.hover : Color.clear))
+                    .fill(
+                        isActive
+                            ? (isWorkly ? Color(hex: "6f5bf6").opacity(0.15) : WorkstationTheme.accentBg)
+                            : (configuration.isPressed ? WorkstationTheme.hover : Color.clear)
+                    )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .stroke(isActive ? WorkstationTheme.accentBorder : Color.clear, lineWidth: 1)
+                    .stroke(
+                        isActive
+                            ? (isWorkly ? Color(hex: "6f5bf6").opacity(0.3) : WorkstationTheme.accentBorder)
+                            : Color.clear,
+                        lineWidth: 1
+                    )
             )
     }
 }

@@ -7,19 +7,34 @@ struct BadgeView<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        content()
+        let isWorkly = PreferencesStore.activeTheme == .workly
+        let base = content()
             .fixedSize(horizontal: true, vertical: false)
             .foregroundStyle(style.foreground)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
             .background(style.background)
-            .overlay {
-                if let border = style.border {
-                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                        .stroke(border, lineWidth: 1)
-                }
+
+        Group {
+            if isWorkly {
+                base
+                    .overlay {
+                        if let border = style.border {
+                            Capsule().stroke(border, lineWidth: 1)
+                        }
+                    }
+                    .clipShape(Capsule())
+            } else {
+                base
+                    .overlay {
+                        if let border = style.border {
+                            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
+                                .stroke(border, lineWidth: 1)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
             }
-            .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
+        }
     }
 }
 

@@ -413,14 +413,44 @@ extension Color {
 
 struct WorkstationPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
+        let isWorkly = PreferencesStore.activeTheme == .workly
         configuration.label
             .font(WorkstationTheme.Fonts.body(13, weight: .semibold))
-            .foregroundStyle(WorkstationTheme.background)
+            .foregroundStyle(isWorkly ? .white : WorkstationTheme.background)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(configuration.isPressed ? WorkstationTheme.accentHover : WorkstationTheme.accent)
+            .background(
+                Group {
+                    if isWorkly {
+                        ZStack {
+                            LinearGradient(
+                                colors: [Color(hex: "6f5bf6"), Color(hex: "5b48e8")],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.white.opacity(0.20), .clear],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 1
+                                )
+                        }
+                    } else {
+                        configuration.isPressed ? WorkstationTheme.accentHover : WorkstationTheme.accent
+                    }
+                }
+            )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
-            .shadow(color: WorkstationTheme.accent.opacity(configuration.isPressed ? 0.12 : 0.24), radius: 12, x: 0, y: 4)
+            .shadow(
+                color: (isWorkly ? Color(hex: "6f5bf6") : WorkstationTheme.accent)
+                    .opacity(configuration.isPressed ? 0.15 : 0.35),
+                radius: isWorkly ? 10 : 12,
+                x: 0,
+                y: isWorkly ? 3 : 4
+            )
     }
 }
 
@@ -428,15 +458,43 @@ struct WorkstationGhostButtonStyle: ButtonStyle {
     var compact: Bool = false
 
     func makeBody(configuration: Configuration) -> some View {
+        let isWorkly = PreferencesStore.activeTheme == .workly
         configuration.label
             .font(WorkstationTheme.Fonts.body(compact ? 12 : 13, weight: .semibold))
             .foregroundStyle(configuration.isPressed ? WorkstationTheme.textPrimary : WorkstationTheme.textSecondary)
             .padding(.horizontal, compact ? 10 : 12)
             .padding(.vertical, compact ? 6 : 8)
-            .background(configuration.isPressed ? WorkstationTheme.hover : Color.clear)
+            .background(
+                Group {
+                    if isWorkly {
+                        ZStack {
+                            LinearGradient(
+                                colors: [Color(hex: "202024"), Color(hex: "1A1A1D")],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.white.opacity(0.08), .clear],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 1
+                                )
+                        }
+                    } else {
+                        configuration.isPressed ? WorkstationTheme.hover : Color.clear
+                    }
+                }
+            )
             .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                Group {
+                    if !isWorkly {
+                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
+                    }
+                }
             )
             .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous))
     }

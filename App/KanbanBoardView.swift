@@ -82,8 +82,26 @@ struct KanbanBoardView: View {
         .background(WorkstationTheme.cardAlt)
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous)
-                .stroke(isTargeted ? WorkstationTheme.accent : WorkstationTheme.borderSoft, lineWidth: isTargeted ? 2 : 1)
+            Group {
+                let isWorkly = PreferencesStore.activeTheme == .workly
+                if isWorkly {
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    isTargeted ? Color(hex: "6f5bf6") : .white.opacity(0.06),
+                                    isTargeted ? Color(hex: "5b48e8").opacity(0.6) : .white.opacity(0.02)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: isTargeted ? 2 : 1
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous)
+                        .stroke(isTargeted ? WorkstationTheme.accent : WorkstationTheme.borderSoft, lineWidth: isTargeted ? 2 : 1)
+                }
+            }
         )
         .dropDestination(for: String.self) { droppedIDs, _ in
             guard let id = droppedIDs.first else { return false }
@@ -197,18 +215,8 @@ struct KanbanBoardView: View {
                 Text("Add Task")
                     .font(WorkstationTheme.Fonts.body(12, weight: .medium))
             }
-            .foregroundStyle(WorkstationTheme.textMuted)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
-            .background(Color.clear)
-            .contentShape(Rectangle())
-            .overlay(
-                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
-                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                    .foregroundStyle(WorkstationTheme.borderStrong)
-            )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(AddTaskColumnButtonStyle())
         .padding(.top, 2)
     }
 
@@ -376,5 +384,36 @@ private struct SeededRNG {
         state ^= state >> 7
         state ^= state << 17
         return state
+    }
+}
+
+struct AddTaskColumnButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        let isWorkly = PreferencesStore.activeTheme == .workly
+        configuration.label
+            .foregroundStyle(
+                isWorkly
+                    ? (configuration.isPressed ? WorkstationTheme.textPrimary : WorkstationTheme.textSecondary)
+                    : WorkstationTheme.textMuted
+            )
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                isWorkly
+                    ? (configuration.isPressed ? Color.white.opacity(0.08) : Color.white.opacity(0.04))
+                    : (configuration.isPressed ? WorkstationTheme.hover : Color.clear)
+            )
+            .contentShape(Rectangle())
+            .overlay(
+                RoundedRectangle(cornerRadius: isWorkly ? 10 : WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(
+                        style: StrokeStyle(
+                            lineWidth: 1,
+                            dash: isWorkly ? [3, 3] : [4, 4]
+                        )
+                    )
+                    .foregroundStyle(isWorkly ? Color.white.opacity(0.12) : WorkstationTheme.borderStrong)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: isWorkly ? 10 : WorkstationTheme.Radius.medium, style: .continuous))
     }
 }

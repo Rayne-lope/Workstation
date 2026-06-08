@@ -95,12 +95,41 @@ struct IssueCardView: View {
         .padding(.vertical, isCompact ? 10 : 14)
         .background(WorkstationTheme.card)
         .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
-                .stroke(isSelected ? WorkstationTheme.accent : (isHovering ? WorkstationTheme.borderStrong : WorkstationTheme.border), lineWidth: isSelected ? 1.5 : 1)
+            Group {
+                let isWorkly = PreferencesStore.activeTheme == .workly
+                if isWorkly {
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    isSelected ? Color(hex: "6f5bf6") : .white.opacity(isHovering ? 0.14 : 0.08),
+                                    isSelected ? Color(hex: "5b48e8").opacity(0.8) : .white.opacity(isHovering ? 0.04 : 0.02)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: isSelected ? 1.5 : 1
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
+                        .stroke(isSelected ? WorkstationTheme.accent : (isHovering ? WorkstationTheme.borderStrong : WorkstationTheme.border), lineWidth: isSelected ? 1.5 : 1)
+                }
+            }
         )
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
         .shadow(
-            color: isSelected ? WorkstationTheme.accent.opacity(0.08) : (isHovering ? WorkstationTheme.textPrimary.opacity(0.10) : .clear),
+            color: {
+                let isWorkly = PreferencesStore.activeTheme == .workly
+                if isWorkly {
+                    return isSelected
+                        ? Color(hex: "6f5bf6").opacity(0.3)
+                        : (isHovering ? Color.black.opacity(0.4) : .clear)
+                } else {
+                    return isSelected
+                        ? WorkstationTheme.accent.opacity(0.08)
+                        : (isHovering ? WorkstationTheme.textPrimary.opacity(0.10) : .clear)
+                }
+            }(),
             radius: isSelected || isHovering ? 16 : 0,
             x: 0,
             y: 8
