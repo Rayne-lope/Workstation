@@ -29,7 +29,20 @@ struct BoardView: View {
             StatusBarView(appVM: appVM)
         }
         .overlay(ParticleCelebrationView(triggerID: appVM.doneCelebrationTriggerID))
-        .background(WorkstationTheme.background)
+        .background(
+            Group {
+                if PreferencesStore.activeTheme == .workly {
+                    RadialGradient(
+                        colors: [Color(hex: "19191D"), Color(hex: "0C0C0E")],
+                        center: UnitPoint(x: 0.8, y: -0.1),
+                        startRadius: 0,
+                        endRadius: 1000
+                    )
+                } else {
+                    WorkstationTheme.background
+                }
+            }
+        )
         .frame(minWidth: 1180, minHeight: 640)
         .sheet(isPresented: $appVM.isClosePresented, onDismiss: { appVM.closeIssue = nil }) {
             if let issue = appVM.closeIssue {
@@ -266,10 +279,10 @@ enum WorkstationTheme {
     static let accentBorder = adaptive(light: "D4D4D4", dark: "3A2F0A")
 
     enum Radius {
-        static let small: CGFloat = 4
-        static let medium: CGFloat = 8
-        static let large: CGFloat = 10
-        static let panel: CGFloat = 12
+        static var small: CGFloat { 4 }
+        static var medium: CGFloat { 8 }
+        static var large: CGFloat { PreferencesStore.activeTheme == .workly ? 16 : 10 }
+        static var panel: CGFloat { PreferencesStore.activeTheme == .workly ? 20 : 12 }
     }
 
     enum Fonts {
@@ -325,7 +338,7 @@ enum WorkstationTheme {
             switch activeTheme {
             case .light:
                 isDark = false
-            case .obsidianDark, .beadsDark:
+            case .obsidianDark, .beadsDark, .workly:
                 isDark = true
             case .system:
                 isDark = (appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua)
@@ -343,6 +356,25 @@ enum WorkstationTheme {
                     case "222222": hex = "1C1C1C"
                     case "1E1E1E": hex = "1A1A1A"
                     case "2A2A2A": hex = "242424"
+                    default: hex = dark
+                    }
+                } else if activeTheme == .workly {
+                    switch dark {
+                    case "0F0F0F": hex = "0C0C0E"
+                    case "111111": hex = "141416"
+                    case "141414": hex = "141416"
+                    case "151515": hex = "161618"
+                    case "1A1A1A": hex = "252527"
+                    case "222222": hex = "2E2E32"
+                    case "1E1E1E": hex = "222224"
+                    case "2A2A2A": hex = "303034"
+                    case "F0ECE4": hex = "F4F4F5"
+                    case "888888": hex = "A1A1AA"
+                    case "555555": hex = "6E6E76"
+                    case "333333": hex = "4E4E54"
+                    case "444444": hex = "5C5C62"
+                    case "ECC864": hex = "6F5BF6"
+                    case "F5D980": hex = "5B48E8"
                     default: hex = dark
                     }
                 } else {

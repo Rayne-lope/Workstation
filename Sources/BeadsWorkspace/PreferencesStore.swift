@@ -4,7 +4,7 @@ import Observation
 @MainActor
 @Observable
 public final class PreferencesStore {
-    public static var activeTheme: AppTheme = .system
+    public static nonisolated(unsafe) var activeTheme: AppTheme = .system
 
     public private(set) var preferences: AppPreferences = AppPreferences() {
         didSet {

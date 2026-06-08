@@ -276,11 +276,15 @@ struct DotsBackground: View {
     }()
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
-            let now = timeline.date.timeIntervalSinceReferenceDate
-            Canvas { context, size in
-                let spacing: CGFloat = 24.0
-                let cols = Int(size.width / spacing) + 1
+        Group {
+            if PreferencesStore.activeTheme == .workly {
+                Color.clear
+            } else {
+                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                    let now = timeline.date.timeIntervalSinceReferenceDate
+                    Canvas { context, size in
+                        let spacing: CGFloat = 24.0
+                        let cols = Int(size.width / spacing) + 1
                 let rows = Int(size.height / spacing) + 1
 
                 // 1) Draw base dot grid — subtle, static
@@ -351,6 +355,8 @@ struct DotsBackground: View {
                     }
                 }
             }
+        }
+        }
         }
         .background(WorkstationTheme.background)
     }

@@ -70,7 +70,7 @@ struct ContentView: View {
         switch appVM.preferencesStore.preferences.theme {
         case .light:
             return .light
-        case .obsidianDark, .beadsDark:
+        case .obsidianDark, .beadsDark, .workly:
             return .dark
         case .system:
             return nil
