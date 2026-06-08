@@ -18,8 +18,6 @@ struct AgentRunSpinnerView: View {
     /// Block fill colour. Defaults to the app's gold accent.
     var color: Color = WorkstationTheme.accent
 
-    @State private var isAnimating = false
-
     var body: some View {
         let blockSize = size / 4.2
         let gap       = size / 22.0
@@ -28,21 +26,14 @@ struct AgentRunSpinnerView: View {
             ForEach(0..<3, id: \.self) { row in
                 HStack(spacing: gap) {
                     ForEach(0..<3, id: \.self) { col in
+                        let scale = max(0.15, 1.0 - Double(row + col) * 0.35)
                         Rectangle()
                             .fill(color)
                             .frame(width: blockSize, height: blockSize)
-                            .scaleEffect(isAnimating ? 0.15 : 1.0)
-                            .animation(
-                                .easeInOut(duration: 0.6)
-                                    .delay(Double(row + col) * 0.1)
-                                    .repeatForever(autoreverses: true),
-                                value: isAnimating
-                            )
+                            .scaleEffect(scale)
                     }
                 }
             }
         }
-        .onAppear { isAnimating = true }
-        .onDisappear { isAnimating = false }
     }
 }

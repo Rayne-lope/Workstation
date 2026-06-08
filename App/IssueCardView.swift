@@ -25,22 +25,63 @@ struct IssueCardView: View {
                 .padding(.bottom, 12)
             }
 
-            tagRow
-                .padding(.bottom, isCompact ? 6 : 10)
-
-            Text(issue.title)
-                .font(WorkstationTheme.Fonts.display(13, weight: .semibold))
-                .foregroundStyle(WorkstationTheme.textPrimary)
-                .lineLimit(isCompact ? 2 : 3)
-                .lineSpacing(2)
-                .multilineTextAlignment(.leading)
+            HStack(alignment: .top, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(issue.id)
+                            .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+                            .foregroundStyle(WorkstationTheme.textDisabled)
+                            .monospaced()
+                        
+                        if let priority = issue.priority {
+                            Circle()
+                                .fill(WorkstationTheme.difficultyColor(priority))
+                                .frame(width: 5, height: 5)
+                        }
+                        
+                        if let type = issue.issueType, !type.isEmpty {
+                            typeBadge(type)
+                        }
+                    }
+                    
+                    Text(issue.title)
+                        .font(WorkstationTheme.Fonts.display(13, weight: .bold))
+                        .foregroundStyle(WorkstationTheme.textPrimary)
+                        .lineLimit(isCompact ? 2 : 3)
+                        .lineSpacing(2)
+                        .multilineTextAlignment(.leading)
+                }
+                
+                Spacer(minLength: 8)
+                
+                HStack(spacing: 4) {
+                    if issue.status == "in_progress" {
+                        AgentRunSpinnerView(size: 14)
+                    }
+                    
+                    if let store = appVM.issueStore {
+                        Menu {
+                            IssueActionsContextMenu(issue: issue, store: store, appVM: appVM)
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(WorkstationTheme.textMuted)
+                                .frame(width: 20, height: 20)
+                                .background(Color.clear)
+                                .contentShape(Rectangle())
+                        }
+                        .menuStyle(.button)
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
 
             if !isCompact, let description = issue.description, !description.isEmpty {
                 markdownPreview(description)
                     .foregroundStyle(WorkstationTheme.textMuted)
                     .lineLimit(2)
                     .lineSpacing(4)
-                    .padding(.top, 6)
+                    .padding(.top, 8)
             }
 
             if hasUnknownStatus, let status = issue.status {
@@ -48,8 +89,13 @@ struct IssueCardView: View {
                     .padding(.top, isCompact ? 6 : 10)
             }
 
+            Rectangle()
+                .fill(WorkstationTheme.borderSoft)
+                .frame(height: 1)
+                .padding(.top, 12)
+                .padding(.bottom, 10)
+
             footer
-                .padding(.top, isCompact ? 10 : 14)
         }
         .padding(.horizontal, isCompact ? 12 : 16)
         .padding(.vertical, isCompact ? 10 : 14)
@@ -59,13 +105,6 @@ struct IssueCardView: View {
                 .stroke(isSelected ? WorkstationTheme.accent : (isHovering ? WorkstationTheme.borderStrong : WorkstationTheme.border), lineWidth: isSelected ? 1.5 : 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous))
-        .overlay(alignment: .topTrailing) {
-            if issue.status == "in_progress" {
-                AgentRunSpinnerView(size: 16)
-                    .padding(8)
-                    .transition(.opacity.animation(.easeInOut(duration: 0.25)))
-            }
-        }
         .shadow(
             color: isSelected ? WorkstationTheme.accent.opacity(0.08) : (isHovering ? WorkstationTheme.textPrimary.opacity(0.10) : .clear),
             radius: isSelected || isHovering ? 16 : 0,
@@ -205,23 +244,32 @@ struct IssueCardView: View {
 
     private var footer: some View {
         HStack(alignment: .center, spacing: 8) {
-            if issue.assignee?.isEmpty == false {
-                AssigneeBadgeView(assignee: issue.assignee, profiles: profiles, compact: true)
-                    .frame(maxWidth: 160, alignment: .leading)
-            } else {
-                Text("Unassigned")
-                    .font(WorkstationTheme.Fonts.body(11, weight: .medium))
-                    .foregroundStyle(WorkstationTheme.textDisabled)
+            if let created = issue.createdAt, !created.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "pin")
+                        .font(.system(size: 10))
+                    Text("Created: \(shortDate(created))")
+                }
+                .font(WorkstationTheme.Fonts.body(10, weight: .medium))
+                .foregroundStyle(Color(hex: "FB7185")) // Pinkish color for created as in the screenshot
+            } else if let updated = issue.updatedAt, !updated.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 10))
+                    Text("Due: \(shortDate(updated))")
+                }
+                .font(WorkstationTheme.Fonts.body(10, weight: .medium))
+                .foregroundStyle(WorkstationTheme.blue) // Blue color for due/updated
             }
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 4)
 
-            if let updated = issue.updatedAt, !updated.isEmpty {
-                Label(shortDate(updated), systemImage: "clock")
+            if issue.assignee?.isEmpty == false {
+                AssigneeBadgeView(assignee: issue.assignee, profiles: profiles, compact: true)
+            } else {
+                Text("Unassigned")
                     .font(WorkstationTheme.Fonts.body(10, weight: .medium))
                     .foregroundStyle(WorkstationTheme.textDisabled)
-                    .labelStyle(.titleAndIcon)
-                    .lineLimit(1)
             }
         }
     }

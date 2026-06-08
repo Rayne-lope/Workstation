@@ -31,14 +31,11 @@ struct KanbanBoardView: View {
     private func columnView(column: KanbanColumn) -> some View {
         let items = store.issues(in: column)
         let isTargeted = hoverTargetColumn == column
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 12) {
             columnHeader(column: column, count: items.count)
 
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(alignment: .leading, spacing: 10) {
-                    if items.isEmpty {
-                        emptyState(column: column)
-                    }
                     ForEach(items) { issue in
                         Button {
                             handleCardClick(issue: issue, column: column, items: items)
@@ -71,19 +68,22 @@ struct KanbanBoardView: View {
                             .scaleEffect(0.96)
                         }
                     }
+
+                    addTaskButton(column: column)
                 }
+                .padding(.bottom, 8)
                 .animation(.spring(response: 0.35, dampingFraction: 0.7), value: items)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
-        .frame(width: 300, alignment: .topLeading)
-        .contentShape(Rectangle())
+        .padding(12)
+        .frame(width: 310)
+        .frame(maxHeight: .infinity, alignment: .topLeading)
+        .background(WorkstationTheme.cardAlt)
+        .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.large, style: .continuous)
-                .stroke(WorkstationTheme.accent, lineWidth: 2)
-                .opacity(isTargeted ? 1 : 0)
-                .animation(.easeOut(duration: 0.12), value: isTargeted)
-                .allowsHitTesting(false)
+            RoundedRectangle(cornerRadius: WorkstationTheme.Radius.panel, style: .continuous)
+                .stroke(isTargeted ? WorkstationTheme.accent : WorkstationTheme.borderSoft, lineWidth: isTargeted ? 2 : 1)
         )
         .dropDestination(for: String.self) { droppedIDs, _ in
             guard let id = droppedIDs.first else { return false }
@@ -153,39 +153,63 @@ struct KanbanBoardView: View {
     }
 
     private func columnHeader(column: KanbanColumn, count: Int) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(WorkstationTheme.accent(for: column))
-                    .frame(width: 8, height: 8)
+        HStack(spacing: 8) {
+            Circle()
+                .fill(WorkstationTheme.accent(for: column))
+                .frame(width: 6, height: 6)
 
-                Text(column.rawValue.uppercased())
-                    .font(WorkstationTheme.Fonts.display(12, weight: .bold))
-                    .tracking(1.1)
-                    .foregroundStyle(WorkstationTheme.textPrimary)
+            Text(column.rawValue.uppercased())
+                .font(WorkstationTheme.Fonts.display(12, weight: .bold))
+                .tracking(1.1)
+                .foregroundStyle(WorkstationTheme.textPrimary)
 
-                Text("\(count)")
-                    .font(WorkstationTheme.Fonts.body(10, weight: .bold))
+            Text("\(count)")
+                .font(WorkstationTheme.Fonts.body(11, weight: .semibold))
+                .foregroundStyle(WorkstationTheme.textMuted)
+
+            Spacer()
+
+            Button {
+                appVM.presentCreateIssue()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(WorkstationTheme.textMuted)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 2)
-                    .background(WorkstationTheme.borderSoft)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous)
-                            .stroke(WorkstationTheme.borderStrong, lineWidth: 1)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: WorkstationTheme.Radius.small, style: .continuous))
-
-                Spacer()
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
             }
-
-            Rectangle()
-                .fill(WorkstationTheme.borderSoft)
-                .frame(height: 1)
+            .buttonStyle(.plain)
         }
-        .padding(.horizontal, 2)
+        .padding(.horizontal, 4)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(column.rawValue) column, \(count) issues")
+    }
+
+    private func addTaskButton(column: KanbanColumn) -> some View {
+        Button {
+            appVM.presentCreateIssue()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "plus")
+                    .font(.system(size: 10, weight: .bold))
+                Text("Add Task")
+                    .font(WorkstationTheme.Fonts.body(12, weight: .medium))
+            }
+            .foregroundStyle(WorkstationTheme.textMuted)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(Color.clear)
+            .contentShape(Rectangle())
+            .overlay(
+                RoundedRectangle(cornerRadius: WorkstationTheme.Radius.medium, style: .continuous)
+                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                    .foregroundStyle(WorkstationTheme.borderStrong)
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 2)
     }
 
     private func emptyState(column: KanbanColumn) -> some View {
