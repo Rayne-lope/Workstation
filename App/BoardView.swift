@@ -109,7 +109,7 @@ struct BoardView: View {
                         .textCase(.uppercase)
                         .tracking(0.8)
 
-                    Text("Beads Kanban")
+                    Text("Beads \(appVM.viewMode.label)")
                         .font(WorkstationTheme.Fonts.display(26, weight: .heavy))
                         .foregroundStyle(WorkstationTheme.textPrimary)
                         .lineLimit(1)
@@ -165,27 +165,10 @@ struct BoardView: View {
                     onClearAll: { store.clearFilters() }
                 )
             }
-
-            HStack(spacing: 26) {
-                viewModeTab(.kanban, systemName: "rectangle.grid.1x2")
-                viewModeTab(.list, systemName: "list.bullet")
-                viewModeTab(.graph, systemName: "point.3.connected.trianglepath.dotted")
-                viewModeTab(.workspaceDetail, systemName: "building.2")
-                viewModeTab(.archive, systemName: "archivebox")
-
-                Spacer()
-
-                Button {
-                    appVM.presentDebugPanel()
-                } label: {
-                    Label("Debug", systemImage: "ladybug")
-                }
-                .buttonStyle(WorkstationGhostButtonStyle(compact: true))
-            }
         }
         .padding(.top, 16)
         .padding(.horizontal, 28)
-        .padding(.bottom, 12)
+        .padding(.bottom, 16)
         .background(WorkstationTheme.surface)
         .overlay(alignment: .bottom) {
             Rectangle()
@@ -195,28 +178,6 @@ struct BoardView: View {
         .onChange(of: store.filterState) { _, newValue in
             appVM.persistFilterState(newValue)
         }
-    }
-
-    private func viewModeTab(_ mode: BoardViewMode, systemName: String) -> some View {
-        let isActive = appVM.viewMode == mode
-        return Button {
-            appVM.viewMode = mode
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: systemName)
-                    .font(.system(size: 15, weight: .semibold))
-                Text(mode.label)
-                    .font(WorkstationTheme.Fonts.display(14, weight: .semibold))
-            }
-            .foregroundStyle(isActive ? WorkstationTheme.textPrimary : WorkstationTheme.textDisabled)
-            .padding(.vertical, 10)
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(isActive ? WorkstationTheme.accent : Color.clear)
-                    .frame(height: 2)
-            }
-        }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder

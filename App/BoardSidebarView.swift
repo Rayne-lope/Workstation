@@ -11,26 +11,22 @@ struct BoardSidebarView: View {
 
         VStack(alignment: .leading, spacing: 18) {
             brandHeader(workspace: workspace)
-            navSection
+            
+            viewsSection
+            
+            Divider()
+                .padding(.vertical, 2)
+                .overlay(WorkstationTheme.borderSoft)
+                
+            actionsSection
+            
+            Divider()
+                .padding(.vertical, 2)
+                .overlay(WorkstationTheme.borderSoft)
+
             counters(store: store)
 
             Spacer()
-
-            if let workspace {
-                Button {
-                    appVM.openTerminal(at: workspace.inspectionURL)
-                } label: {
-                    Label("Terminal", systemImage: "terminal")
-                }
-                .buttonStyle(WorkstationGhostButtonStyle())
-            }
-
-            Button {
-                appVM.presentDebugPanel()
-            } label: {
-                Label("Debug Panel", systemImage: "ladybug")
-            }
-            .buttonStyle(WorkstationGhostButtonStyle())
 
             Button {
                 appVM.presentSettings()
@@ -136,13 +132,40 @@ struct BoardSidebarView: View {
         return resizedImage
     }
 
-    private var navSection: some View {
+    private var viewsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Views")
+                .font(WorkstationTheme.Fonts.label)
+                .foregroundStyle(WorkstationTheme.textDisabled)
+                .textCase(.uppercase)
+                .tracking(0.8)
+                .padding(.bottom, 2)
+
+            viewModeButton(.kanban, systemName: "rectangle.grid.1x2")
+            viewModeButton(.list, systemName: "list.bullet")
+            viewModeButton(.graph, systemName: "point.3.connected.trianglepath.dotted")
+            viewModeButton(.workspaceDetail, systemName: "building.2")
+            viewModeButton(.archive, systemName: "archivebox")
+        }
+    }
+
+    private func viewModeButton(_ mode: BoardViewMode, systemName: String) -> some View {
+        Button {
+            appVM.viewMode = mode
+        } label: {
+            Label(mode.label, systemImage: systemName)
+        }
+        .buttonStyle(SidebarNavButtonStyle(isActive: appVM.viewMode == mode))
+    }
+
+    private var actionsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Workspace")
                 .font(WorkstationTheme.Fonts.label)
                 .foregroundStyle(WorkstationTheme.textDisabled)
                 .textCase(.uppercase)
                 .tracking(0.8)
+                .padding(.bottom, 2)
 
             Button {
                 workspaceVM.chooseProjectFolder()
@@ -166,28 +189,8 @@ struct BoardSidebarView: View {
             } label: {
                 Label("New Issue", systemImage: "plus.square")
             }
-            .buttonStyle(SidebarNavButtonStyle(isActive: true))
+            .buttonStyle(SidebarNavButtonStyle())
             .keyboardShortcut("n", modifiers: [.command])
-
-            Divider()
-                .padding(.vertical, 2)
-                .overlay(WorkstationTheme.borderSoft)
-
-            Button {
-                appVM.viewMode = appVM.viewMode == .workspaceDetail ? .list : .workspaceDetail
-            } label: {
-                Label("Workspace Detail", systemImage: "building.2")
-            }
-            .buttonStyle(SidebarNavButtonStyle(isActive: appVM.viewMode == .workspaceDetail))
-            .help("View workspace statistics and overview")
-
-            Button {
-                appVM.viewMode = .archive
-            } label: {
-                Label("Archive & History", systemImage: "archivebox")
-            }
-            .buttonStyle(SidebarNavButtonStyle(isActive: appVM.viewMode == .archive))
-            .help("View archived closed issues")
         }
     }
 
