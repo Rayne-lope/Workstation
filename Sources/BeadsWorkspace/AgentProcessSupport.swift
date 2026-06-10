@@ -96,6 +96,37 @@ public enum AgentProcessEnvironment {
     }
 }
 
+/// Thread-safe buffer that keeps only the last `cap` bytes appended.
+/// Used to capture a stderr tail for failure cards without unbounded growth;
+/// draining stderr also prevents the child blocking on a full pipe.
+public final class CappedDataBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data = Data()
+    private let cap: Int
+
+    public init(cap: Int = 8192) {
+        self.cap = cap
+    }
+
+    public func append(_ chunk: Data) {
+        lock.lock()
+        defer { lock.unlock() }
+        data.append(chunk)
+        if data.count > cap {
+            data.removeFirst(data.count - cap)
+        }
+    }
+
+    public var text: String? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !data.isEmpty else { return nil }
+        let trimmed = String(decoding: data, as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
 /// Accumulates streamed bytes and yields complete UTF-8 lines.
 /// Not thread-safe on its own; callers serialize access (e.g. a single
 /// readabilityHandler queue) or guard externally.

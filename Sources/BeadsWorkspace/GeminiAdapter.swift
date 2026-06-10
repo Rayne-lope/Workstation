@@ -25,11 +25,25 @@ public final class GeminiAdapter: AgentOutputAdapter, @unchecked Sendable {
         let launchTime = Date()
         let process = AgentProcessEnvironment.makeProcess(
             binary: "agy",
-            arguments: ["--dangerously-skip-permissions", prompt],
+            // --print runs the prompt non-interactively; a bare positional
+            // prompt would drop agy into its interactive UI and hang. Flags go
+            // before the prompt: Go's flag parser stops at the first positional.
+            arguments: ["--dangerously-skip-permissions", "--print", prompt],
             workingDirectory: worktreeURL
         )
-        process.standardOutput = Pipe()
-        process.standardError = Pipe()
+        process.standardInput = FileHandle.nullDevice
+        let drainPipe = Pipe()
+        process.standardOutput = drainPipe
+        let stderrPipe = Pipe()
+        process.standardError = stderrPipe
+        // Drain both pipes so agy never blocks on a full buffer; output is
+        // unstructured, the transcript file is the real data source.
+        drainPipe.fileHandleForReading.readabilityHandler = { _ = $0.availableData }
+        stderrPipe.fileHandleForReading.readabilityHandler = { _ = $0.availableData }
+        process.terminationHandler = { _ in
+            drainPipe.fileHandleForReading.readabilityHandler = nil
+            stderrPipe.fileHandleForReading.readabilityHandler = nil
+        }
 
         let parser = GeminiTranscriptParser(runID: runID)
 
@@ -40,7 +54,8 @@ public final class GeminiAdapter: AgentOutputAdapter, @unchecked Sendable {
                 try process.run()
             } catch {
                 continuation.yield(.insert(AgentTimelineEvent(
-                    stableKey: "gemini-start-\(runID)",
+                    // Distinct from the started card's key or the store dedups it away.
+                    stableKey: "gemini-launchfail-\(runID)",
                     runID: runID,
                     sequence: 0,
                     type: .problem,
@@ -93,16 +108,27 @@ public final class GeminiAdapter: AgentOutputAdapter, @unchecked Sendable {
         parser: GeminiTranscriptParser,
         continuation: AsyncStream<TimelineDelta>.Continuation
     ) async {
-        // Wait up to 8s for the session directory to appear.
+        // Wait up to 15s for the transcript file to appear. The session dir is
+        // created first; the transcript lands in .system_generated/logs a bit later.
         var transcriptURL: URL?
-        for _ in 0..<160 {
+        for _ in 0..<300 {
             if Task.isCancelled { return }
             if let dir = Self.newestSessionDir(after: launchTime) {
-                transcriptURL = dir.appendingPathComponent("transcript.jsonl")
-                break
+                let candidate = dir.appendingPathComponent(".system_generated/logs/transcript.jsonl")
+                if FileManager.default.fileExists(atPath: candidate.path) {
+                    transcriptURL = candidate
+                    break
+                }
             }
             if !process.isRunning { break }
             try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+        // Fast runs can exit between checks; look once more after the loop.
+        if transcriptURL == nil, let dir = Self.newestSessionDir(after: launchTime) {
+            let candidate = dir.appendingPathComponent(".system_generated/logs/transcript.jsonl")
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                transcriptURL = candidate
+            }
         }
 
         guard let transcriptURL else {
@@ -161,7 +187,12 @@ public final class GeminiAdapter: AgentOutputAdapter, @unchecked Sendable {
 final class GeminiTranscriptParser: @unchecked Sendable {
     private let runID: UUID
     private var sequence: Int64 = 0
-    private var seenStepIndices = Set<Int>()
+    /// Last seen `status` per step_index; a step reappears with a new status
+    /// (RUNNING → DONE) and should update its card instead of duplicating it.
+    private var lastStatusByStep: [Int: String] = [:]
+    /// Sequence assigned on first encounter, reused on updates so the card
+    /// keeps its position in the timeline.
+    private var stepSequences: [Int: Int64] = [:]
     private var emittedDone = false
 
     init(runID: UUID) {
@@ -171,6 +202,13 @@ final class GeminiTranscriptParser: @unchecked Sendable {
     private func nextSeq() -> Int64 {
         sequence += 1
         return sequence
+    }
+
+    private func seq(forStep stepIndex: Int) -> Int64 {
+        if stepIndex >= 0, let existing = stepSequences[stepIndex] { return existing }
+        let next = nextSeq()
+        if stepIndex >= 0 { stepSequences[stepIndex] = next }
+        return next
     }
 
     func startedDelta() -> TimelineDelta {
@@ -202,11 +240,14 @@ final class GeminiTranscriptParser: @unchecked Sendable {
                   let lineData = trimmed.data(using: .utf8),
                   let obj = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any] else { continue }
             let stepIndex = obj["step_index"] as? Int ?? -1
+            var isUpdate = false
             if stepIndex >= 0 {
-                if seenStepIndices.contains(stepIndex) { continue }
-                seenStepIndices.insert(stepIndex)
+                let status = obj["status"] as? String ?? "DONE"
+                if lastStatusByStep[stepIndex] == status { continue }
+                isUpdate = lastStatusByStep[stepIndex] != nil
+                lastStatusByStep[stepIndex] = status
             }
-            if let delta = parseEntry(obj, stepIndex: stepIndex) {
+            if let delta = parseEntry(obj, stepIndex: stepIndex, isUpdate: isUpdate) {
                 deltas.append(delta)
             }
         }
@@ -230,10 +271,11 @@ final class GeminiTranscriptParser: @unchecked Sendable {
         ))]
     }
 
-    private func parseEntry(_ obj: [String: Any], stepIndex: Int) -> TimelineDelta? {
+    private func parseEntry(_ obj: [String: Any], stepIndex: Int, isUpdate: Bool) -> TimelineDelta? {
         let type = obj["type"] as? String ?? ""
         let keySuffix = stepIndex >= 0 ? "\(stepIndex)" : "\(nextSeq())"
         let stableKey = "gemini-step-\(runID)-\(keySuffix)"
+        let status: TimelineEventStatus = (obj["status"] as? String ?? "DONE") == "RUNNING" ? .working : .success
 
         switch type {
         case "PLANNER_RESPONSE":
@@ -241,119 +283,103 @@ final class GeminiTranscriptParser: @unchecked Sendable {
                   let first = toolCalls.first else { return nil }
             let toolName = first["name"] as? String ?? "tool"
             let args = first["args"] as? [String: Any]
-            return toolCallDelta(toolName: toolName, args: args, stableKey: stableKey)
-
-        case "READ_FILE", "WRITE_FILE", "EDIT_FILE", "REPLACE_IN_FILE":
-            let filePath = stringArg(obj, keys: ["file_path", "FilePath"])
-            let isWrite = type != "READ_FILE"
-            return .insert(AgentTimelineEvent(
+            return toolCallDelta(
+                toolName: toolName,
+                args: args,
                 stableKey: stableKey,
-                runID: runID,
-                sequence: nextSeq(),
-                type: .fileChange,
-                title: isWrite ? "Writing \(fileName(filePath))" : "Reading \(fileName(filePath))",
-                subtitle: filePath,
-                status: .success,
-                source: .structuredHook,
-                confidence: .high,
-                relatedFile: filePath
-            ))
+                sequence: seq(forStep: stepIndex),
+                status: status,
+                isUpdate: isUpdate
+            )
 
-        case "LIST_DIRECTORY", "GLOB_SEARCH", "GREP_SEARCH", "SEARCH":
-            return .insert(AgentTimelineEvent(
-                stableKey: stableKey,
-                runID: runID,
-                sequence: nextSeq(),
-                type: .command,
-                title: "Searching…",
-                status: .success,
-                source: .structuredHook,
-                confidence: .high
-            ))
-
-        case "RUN_COMMAND", "RUN_BASH", "BASH":
-            let cmd = stringArg(obj, keys: ["command"]) ?? "command"
-            return .insert(AgentTimelineEvent(
-                stableKey: stableKey,
-                runID: runID,
-                sequence: nextSeq(),
-                type: .command,
-                title: "$ \(truncate(cmd))",
-                status: .success,
-                source: .structuredHook,
-                confidence: .high,
-                relatedCommand: cmd
-            ))
-
-        case "ERROR":
+        case "ERROR_MESSAGE":
             let content = obj["content"] as? String ?? "Error"
             return .appendProblem(AgentRunProblem(
                 stableKey: "gemini-err-\(runID)-\(keySuffix)",
                 runID: runID,
                 severity: .error,
-                message: content,
+                message: truncate(content, max: 300),
                 source: .structuredHook,
                 confidence: .high
             ))
 
         default:
+            // Tool *result* steps (VIEW_FILE, RUN_COMMAND, CODE_ACTION, GREP_SEARCH,
+            // LIST_DIRECTORY, …) duplicate the PLANNER_RESPONSE tool_calls that
+            // requested them; the tool_call args are richer, so results are skipped.
             return nil
         }
     }
 
-    private func toolCallDelta(toolName: String, args: [String: Any]?, stableKey: String) -> TimelineDelta {
-        let filePath = (args?["file_path"] as? String) ?? (args?["FilePath"] as? String)
-        let cmd = args?["command"] as? String
+    private func toolCallDelta(
+        toolName: String,
+        args: [String: Any]?,
+        stableKey: String,
+        sequence: Int64,
+        status: TimelineEventStatus,
+        isUpdate: Bool
+    ) -> TimelineDelta {
+        let filePath = decodedArg(args, "AbsolutePath") ?? decodedArg(args, "TargetFile")
+        let cmd = decodedArg(args, "CommandLine")
+        let action = decodedArg(args, "toolAction") ?? decodedArg(args, "toolSummary")
 
         let (type, title, subtitle, relatedFile): (TimelineEventType, String, String?, String?) = {
-            switch toolName.lowercased() {
-            case "read_file":
+            switch toolName {
+            case "view_file":
                 return (.fileChange, "Reading \(fileName(filePath))", filePath, filePath)
-            case "write_file", "create_file", "edit_file":
+            case "write_to_file":
+                return (.fileChange, "Writing \(fileName(filePath))", filePath, filePath)
+            case "replace_file_content", "multi_replace_file_content":
                 return (.fileChange, "Editing \(fileName(filePath))", filePath, filePath)
-            case "run_command", "bash":
+            case "run_command":
                 return (.command, "$ \(truncate(cmd ?? "command"))", nil, nil)
-            case "list_dir", "list_directory", "glob_search", "grep_search":
-                return (.command, "Searching…", nil, nil)
+            case "grep_search":
+                let query = decodedArg(args, "Query")
+                return (.command, "Searching: \(truncate(query ?? "files"))", action, nil)
+            case "list_dir":
+                return (.command, action ?? "Listing directory", decodedArg(args, "DirectoryPath"), nil)
+            case "search_web":
+                return (.command, "Web search", decodedArg(args, "query"), nil)
+            case "manage_task":
+                return (.phase, action ?? "Updating task list", nil, nil)
             default:
-                return (.command, toolName, nil, nil)
+                return (.command, action ?? toolName, nil, nil)
             }
         }()
 
-        return .insert(AgentTimelineEvent(
+        let event = AgentTimelineEvent(
             stableKey: stableKey,
             runID: runID,
-            sequence: nextSeq(),
+            sequence: sequence,
             type: type,
             title: title,
             subtitle: subtitle,
-            status: .working,
+            status: status,
             source: .structuredHook,
             confidence: .high,
             relatedFile: relatedFile,
             relatedCommand: cmd
-        ))
+        )
+        return isUpdate ? .update(stableKey: stableKey, event) : .insert(event)
     }
 
-    private func stringArg(_ obj: [String: Any], keys: [String]) -> String? {
-        if let calls = obj["tool_calls"] as? [[String: Any]],
-           let args = calls.first?["args"] as? [String: Any] {
-            for key in keys {
-                if let value = args[key] as? String { return value }
-            }
+    /// agy serializes every tool_call arg value as a JSON fragment
+    /// (`"\"text\""`, `"5000"`, `"false"`); decode string fragments to plain text.
+    private func decodedArg(_ args: [String: Any]?, _ key: String) -> String? {
+        guard let raw = args?[key] as? String, !raw.isEmpty else { return nil }
+        if raw.hasPrefix("\""), let data = raw.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode(String.self, from: data) {
+            return decoded.isEmpty ? nil : decoded
         }
-        for key in keys {
-            if let value = obj[key] as? String { return value }
-        }
-        return nil
+        return raw
     }
 
     private func fileName(_ path: String?) -> String {
         path.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
     }
 
-    private func truncate(_ s: String) -> String {
-        s.count > 60 ? String(s.prefix(60)) + "…" : s
+    private func truncate(_ s: String, max: Int = 60) -> String {
+        s.count > max ? String(s.prefix(max)) + "…" : s
     }
 }
 

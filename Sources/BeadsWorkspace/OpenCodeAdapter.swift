@@ -4,9 +4,10 @@ import Foundation
 /// Supports all OpenCode models: Kimi, Zhipu, DeepSeek, MiniMax.
 /// Extracts the model flag from commandArgsTemplate (e.g. `-m opencode-go/kimi-k2.5`).
 ///
-/// NOTE: The exact `--format json` schema is not officially documented; the parser
-/// below handles the common event shapes and degrades gracefully (unknown lines are
-/// ignored, not fatal). Verify against real output and adjust `OpenCodeStreamParser`.
+/// Each line is `{"type":..., "timestamp":..., "sessionID":..., ...data}` where data
+/// holds a `part` (message part) or `error`. `tool_use` is emitted only once the tool
+/// reaches `completed`/`error`, so cards land with a final status (no pending phase).
+/// Unknown lines are ignored, not fatal.
 public final class OpenCodeAdapter: AgentOutputAdapter, @unchecked Sendable {
     private let commandArgsTemplate: String
     private let lock = NSLock()
@@ -33,7 +34,16 @@ public final class OpenCodeAdapter: AgentOutputAdapter, @unchecked Sendable {
         )
         let stdoutPipe = Pipe()
         process.standardOutput = stdoutPipe
-        process.standardError = Pipe()
+        process.standardInput = FileHandle.nullDevice
+
+        let stderrPipe = Pipe()
+        process.standardError = stderrPipe
+        let stderrTail = CappedDataBuffer()
+        stderrPipe.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            stderrTail.append(data)
+        }
 
         let parser = OpenCodeStreamParser(runID: runID, modelLabel: model ?? "OpenCode")
         let lineBuffer = LineBuffer()
@@ -56,10 +66,21 @@ public final class OpenCodeAdapter: AgentOutputAdapter, @unchecked Sendable {
             process.terminationHandler = { proc in
                 self.lock.withLock { self._lastExitCode = proc.terminationStatus }
                 stdoutPipe.fileHandleForReading.readabilityHandler = nil
+                stderrPipe.fileHandleForReading.readabilityHandler = nil
                 handlerLock.lock()
                 var tail: [TimelineDelta] = []
                 if let remainder = lineBuffer.flush() {
                     tail = parser.parse(line: remainder)
+                }
+                if proc.terminationStatus != 0, let stderrText = stderrTail.text {
+                    tail.append(.appendProblem(AgentRunProblem(
+                        stableKey: "opencode-stderr-\(runID)",
+                        runID: runID,
+                        severity: .error,
+                        message: stderrText,
+                        source: .structuredHook,
+                        confidence: .high
+                    )))
                 }
                 tail.append(contentsOf: parser.finish(exitCode: proc.terminationStatus))
                 handlerLock.unlock()
@@ -71,7 +92,8 @@ public final class OpenCodeAdapter: AgentOutputAdapter, @unchecked Sendable {
                 try process.run()
             } catch {
                 continuation.yield(.insert(AgentTimelineEvent(
-                    stableKey: "opencode-start-\(runID)",
+                    // Distinct from the started card's key or the store dedups it away.
+                    stableKey: "opencode-launchfail-\(runID)",
                     runID: runID,
                     sequence: 1,
                     type: .problem,
@@ -120,7 +142,6 @@ final class OpenCodeStreamParser: @unchecked Sendable {
     private let runID: UUID
     private let modelLabel: String
     private var sequence: Int64 = 0
-    private var pendingTools: [String: AgentTimelineEvent] = [:]
     private var emittedDone = false
 
     init(runID: UUID, modelLabel: String) {
@@ -153,52 +174,37 @@ final class OpenCodeStreamParser: @unchecked Sendable {
 
         switch type {
         case "tool_use":
-            let tool = obj["tool"] as? String ?? "tool"
-            let input = obj["input"] as? [String: Any]
-            let toolID = obj["id"] as? String ?? UUID().uuidString
-            let stableKey = "opencode-tool-\(runID)-\(toolID)"
+            guard let part = obj["part"] as? [String: Any] else { return [] }
+            let tool = part["tool"] as? String ?? "tool"
+            let state = part["state"] as? [String: Any]
+            let input = state?["input"] as? [String: Any]
+            let failed = (state?["status"] as? String) == "error"
+            let callID = (part["callID"] as? String) ?? (part["id"] as? String) ?? UUID().uuidString
+            let stableKey = "opencode-tool-\(runID)-\(callID)"
             let (eventType, title, subtitle, relatedFile) = toolUseMapping(tool: tool, input: input)
-            let event = AgentTimelineEvent(
+            return [.insert(AgentTimelineEvent(
                 stableKey: stableKey,
                 runID: runID,
                 sequence: nextSeq(),
                 type: eventType,
                 title: title,
                 subtitle: subtitle,
-                status: .working,
+                status: failed ? .failure : .success,
                 source: .structuredHook,
                 confidence: .high,
-                relatedFile: relatedFile
-            )
-            pendingTools[toolID] = event
-            return [.insert(event)]
-
-        case "tool_result":
-            let toolID = obj["id"] as? String ?? ""
-            let exitCode = obj["exit_code"] as? Int ?? 0
-            guard let original = pendingTools.removeValue(forKey: toolID) else { return [] }
-            let updated = AgentTimelineEvent(
-                id: original.id,
-                stableKey: original.stableKey,
-                runID: runID,
-                sequence: original.sequence,
-                type: original.type,
-                title: original.title,
-                subtitle: original.subtitle,
-                timestamp: original.timestamp,
-                status: exitCode == 0 ? .success : .failure,
-                source: .structuredHook,
-                confidence: .high,
-                relatedFile: original.relatedFile,
-                relatedCommand: original.relatedCommand
-            )
-            return [.update(stableKey: original.stableKey, updated)]
-
-        case "session_complete":
-            return finish(exitCode: 0)
+                relatedFile: relatedFile,
+                relatedCommand: input?["command"] as? String
+            ))]
 
         case "error":
-            let msg = obj["message"] as? String ?? "Unknown error"
+            let msg: String
+            if let error = obj["error"] as? [String: Any] {
+                msg = ((error["data"] as? [String: Any])?["message"] as? String)
+                    ?? (error["name"] as? String)
+                    ?? "Unknown error"
+            } else {
+                msg = obj["message"] as? String ?? "Unknown error"
+            }
             return [.appendProblem(AgentRunProblem(
                 stableKey: "opencode-err-\(runID)-\(nextSeq())",
                 runID: runID,
@@ -207,6 +213,9 @@ final class OpenCodeStreamParser: @unchecked Sendable {
                 source: .structuredHook,
                 confidence: .high
             ))]
+
+        case "step_start", "step_finish", "text", "reasoning":
+            return []
 
         default:
             return []
@@ -234,21 +243,26 @@ final class OpenCodeStreamParser: @unchecked Sendable {
         tool: String,
         input: [String: Any]?
     ) -> (TimelineEventType, String, String?, String?) {
-        let filePath = input?["file_path"] as? String ?? input?["path"] as? String
+        let filePath = input?["filePath"] as? String ?? input?["path"] as? String
         let command = input?["command"] as? String
 
         switch tool {
-        case "read_file":
+        case "read":
             return (.fileChange, "Reading \(fileName(filePath))", filePath, filePath)
-        case "write_file", "create_file":
+        case "write":
             return (.fileChange, "Writing \(fileName(filePath))", filePath, filePath)
-        case "edit_file", "patch_file":
+        case "edit", "multiedit", "patch":
             return (.fileChange, "Editing \(fileName(filePath))", filePath, filePath)
-        case "bash", "run_command", "execute":
-            let cmd = command ?? "shell command"
+        case "bash":
+            let cmd = command ?? input?["description"] as? String ?? "shell command"
             return (.command, "$ \(truncate(cmd))", nil, nil)
-        case "list_directory", "glob", "search_files", "grep":
-            return (.command, "Searching…", filePath, nil)
+        case "grep", "glob", "list":
+            let pattern = input?["pattern"] as? String
+            return (.command, "Searching: \(truncate(pattern ?? tool))", filePath, nil)
+        case "webfetch":
+            return (.command, "Fetching URL", input?["url"] as? String, nil)
+        case "todowrite", "todoread":
+            return (.phase, "Updating task list", nil, nil)
         default:
             return (.command, tool, nil, nil)
         }

@@ -15,17 +15,27 @@ public final class ClaudeAdapter: AgentOutputAdapter, @unchecked Sendable {
         let process = AgentProcessEnvironment.makeProcess(
             binary: "claude",
             arguments: [
+                // --output-format only works in --print (non-interactive) mode.
+                "--print", prompt,
                 "--output-format", "stream-json",
                 "--verbose",
-                "--dangerously-skip-permissions",
-                prompt
+                "--dangerously-skip-permissions"
             ],
             workingDirectory: worktreeURL
         )
 
         let stdoutPipe = Pipe()
         process.standardOutput = stdoutPipe
-        process.standardError = Pipe()
+        process.standardInput = FileHandle.nullDevice
+
+        let stderrPipe = Pipe()
+        process.standardError = stderrPipe
+        let stderrTail = CappedDataBuffer()
+        stderrPipe.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            stderrTail.append(data)
+        }
 
         let parser = ClaudeStreamParser(runID: runID)
         let lineBuffer = LineBuffer()
@@ -45,10 +55,21 @@ public final class ClaudeAdapter: AgentOutputAdapter, @unchecked Sendable {
             process.terminationHandler = { proc in
                 self.lock.withLock { self._lastExitCode = proc.terminationStatus }
                 stdoutPipe.fileHandleForReading.readabilityHandler = nil
+                stderrPipe.fileHandleForReading.readabilityHandler = nil
                 handlerLock.lock()
                 var tail: [TimelineDelta] = []
                 if let remainder = lineBuffer.flush() {
                     tail = parser.parse(line: remainder)
+                }
+                if proc.terminationStatus != 0, let stderrText = stderrTail.text {
+                    tail.append(.appendProblem(AgentRunProblem(
+                        stableKey: "claude-stderr-\(runID)",
+                        runID: runID,
+                        severity: .error,
+                        message: stderrText,
+                        source: .structuredHook,
+                        confidence: .high
+                    )))
                 }
                 tail.append(contentsOf: parser.finish(exitCode: proc.terminationStatus))
                 handlerLock.unlock()

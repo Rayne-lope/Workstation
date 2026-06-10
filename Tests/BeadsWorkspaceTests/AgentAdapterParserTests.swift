@@ -94,68 +94,133 @@ struct ClaudeStreamParserTests {
 @Suite("OpenCodeStreamParser")
 struct OpenCodeStreamParserTests {
 
-    @Test("tool_use then tool_result preserves title and flips status")
-    func toolLifecycle() {
+    @Test("completed tool_use part becomes a success card")
+    func completedToolUse() {
         let runID = UUID()
         let parser = OpenCodeStreamParser(runID: runID, modelLabel: "kimi-k2.5")
-        let use = parser.parse(line: #"{"type":"tool_use","id":"x1","tool":"read_file","input":{"file_path":"/a/Baz.go"}}"#)
-        #expect(use.count == 1)
-        guard case .insert(let card) = use[0] else { Issue.record("expected insert"); return }
+        let line = #"{"type":"tool_use","timestamp":1,"sessionID":"s1","part":{"type":"tool","tool":"read","callID":"x1","state":{"status":"completed","input":{"filePath":"/a/Baz.go"}}}}"#
+        let deltas = parser.parse(line: line)
+        #expect(deltas.count == 1)
+        guard case .insert(let card) = deltas[0] else { Issue.record("expected insert"); return }
         #expect(card.title == "Reading Baz.go")
+        #expect(card.relatedFile == "/a/Baz.go")
+        #expect(card.status == .success)
+        #expect(card.stableKey == "opencode-tool-\(runID)-x1")
+    }
 
-        let done = parser.parse(line: #"{"type":"tool_result","id":"x1","exit_code":0}"#)
-        guard case .update(_, let updated) = done.first else { Issue.record("expected update"); return }
-        #expect(updated.title == "Reading Baz.go")
-        #expect(updated.status == .success)
+    @Test("errored tool_use part becomes a failure card")
+    func erroredToolUse() {
+        let parser = OpenCodeStreamParser(runID: UUID(), modelLabel: "kimi-k2.5")
+        let line = #"{"type":"tool_use","timestamp":1,"sessionID":"s1","part":{"type":"tool","tool":"bash","callID":"x2","state":{"status":"error","input":{"command":"swift test"}}}}"#
+        let deltas = parser.parse(line: line)
+        guard case .insert(let card) = deltas.first else { Issue.record("expected insert"); return }
+        #expect(card.title == "$ swift test")
+        #expect(card.status == .failure)
+        #expect(card.relatedCommand == "swift test")
     }
 
     @Test("error event becomes a problem")
     func errorProblem() {
         let parser = OpenCodeStreamParser(runID: UUID(), modelLabel: "glm-5")
-        let deltas = parser.parse(line: #"{"type":"error","message":"boom"}"#)
+        let deltas = parser.parse(line: #"{"type":"error","timestamp":1,"sessionID":"s1","error":{"name":"ProviderError","data":{"message":"boom"}}}"#)
         guard case .appendProblem(let problem) = deltas.first else {
             Issue.record("expected problem"); return
         }
         #expect(problem.message == "boom")
         #expect(problem.severity == .error)
     }
+
+    @Test("text and step events are ignored")
+    func textIgnored() {
+        let parser = OpenCodeStreamParser(runID: UUID(), modelLabel: "kimi-k2.5")
+        #expect(parser.parse(line: #"{"type":"text","timestamp":1,"sessionID":"s1","part":{"type":"text","text":"hi"}}"#).isEmpty)
+        #expect(parser.parse(line: #"{"type":"step_start","timestamp":1,"sessionID":"s1","part":{}}"#).isEmpty)
+        #expect(parser.parse(line: #"{"type":"step_finish","timestamp":1,"sessionID":"s1","part":{}}"#).isEmpty)
+    }
 }
 
 @Suite("GeminiTranscriptParser")
 struct GeminiTranscriptParserTests {
 
-    @Test("PLANNER_RESPONSE tool call maps to a file card")
+    @Test("PLANNER_RESPONSE view_file maps to a file card with decoded args")
     func plannerToolCall() {
         let runID = UUID()
         let parser = GeminiTranscriptParser(runID: runID)
-        let obj: [String: Any] = [
-            "step_index": 5,
-            "type": "PLANNER_RESPONSE",
-            "tool_calls": [["name": "read_file", "args": ["file_path": "/x/Qux.ts"]]]
-        ]
-        let line = String(data: try! JSONSerialization.data(withJSONObject: obj), encoding: .utf8)!
+        // agy JSON-encodes every arg value, hence the embedded quotes.
+        let line = #"{"step_index":5,"type":"PLANNER_RESPONSE","status":"DONE","tool_calls":[{"name":"view_file","args":{"AbsolutePath":"\"/x/Qux.ts\"","toolAction":"\"Reading Qux.ts\""}}]}"#
         let deltas = writeAndRead(parser: parser, lines: [line])
         guard case .insert(let event) = deltas.first else {
             Issue.record("expected insert"); return
         }
+        #expect(event.type == .fileChange)
         #expect(event.title == "Reading Qux.ts")
         #expect(event.relatedFile == "/x/Qux.ts")
+        #expect(event.status == .success)
     }
 
-    @Test("duplicate step_index is ignored")
+    @Test("run_command card uses the decoded CommandLine")
+    func runCommandCard() {
+        let parser = GeminiTranscriptParser(runID: UUID())
+        let line = #"{"step_index":3,"type":"PLANNER_RESPONSE","status":"DONE","tool_calls":[{"name":"run_command","args":{"CommandLine":"\"swift test\"","Cwd":"\"/proj\""}}]}"#
+        let deltas = writeAndRead(parser: parser, lines: [line])
+        guard case .insert(let event) = deltas.first else {
+            Issue.record("expected insert"); return
+        }
+        #expect(event.type == .command)
+        #expect(event.title == "$ swift test")
+        #expect(event.relatedCommand == "swift test")
+    }
+
+    @Test("duplicate step_index with same status is ignored")
     func dedupByStepIndex() {
         let runID = UUID()
         let parser = GeminiTranscriptParser(runID: runID)
-        let obj: [String: Any] = [
-            "step_index": 1,
-            "type": "RUN_COMMAND",
-            "tool_calls": [["name": "run_command", "args": ["command": "ls"]]]
-        ]
-        let line = String(data: try! JSONSerialization.data(withJSONObject: obj), encoding: .utf8)!
+        let line = #"{"step_index":1,"type":"PLANNER_RESPONSE","status":"DONE","tool_calls":[{"name":"run_command","args":{"CommandLine":"\"ls\""}}]}"#
         let first = writeAndRead(parser: parser, lines: [line])
         let second = writeAndRead(parser: parser, lines: [line])
         #expect(first.count == 1)
         #expect(second.isEmpty)
+    }
+
+    @Test("RUNNING then DONE re-emits the card as an update, keeping its key")
+    func runningToDoneUpdates() {
+        let parser = GeminiTranscriptParser(runID: UUID())
+        let running = #"{"step_index":2,"type":"PLANNER_RESPONSE","status":"RUNNING","tool_calls":[{"name":"run_command","args":{"CommandLine":"\"make build\""}}]}"#
+        let done = #"{"step_index":2,"type":"PLANNER_RESPONSE","status":"DONE","tool_calls":[{"name":"run_command","args":{"CommandLine":"\"make build\""}}]}"#
+        let first = writeAndRead(parser: parser, lines: [running])
+        guard case .insert(let started) = first.first else {
+            Issue.record("expected insert"); return
+        }
+        #expect(started.status == .working)
+        let second = writeAndRead(parser: parser, lines: [done])
+        guard case .update(let stableKey, let finished) = second.first else {
+            Issue.record("expected update"); return
+        }
+        #expect(stableKey == started.stableKey)
+        #expect(finished.status == .success)
+        #expect(finished.sequence == started.sequence)
+    }
+
+    @Test("ERROR_MESSAGE becomes a problem")
+    func errorMessageProblem() {
+        let parser = GeminiTranscriptParser(runID: UUID())
+        let line = #"{"step_index":7,"type":"ERROR_MESSAGE","status":"DONE","content":"model quota exceeded"}"#
+        let deltas = writeAndRead(parser: parser, lines: [line])
+        guard case .appendProblem(let problem) = deltas.first else {
+            Issue.record("expected problem"); return
+        }
+        #expect(problem.message == "model quota exceeded")
+    }
+
+    @Test("tool result steps are skipped (tool_calls already made the card)")
+    func resultStepsSkipped() {
+        let parser = GeminiTranscriptParser(runID: UUID())
+        let lines = [
+            #"{"step_index":4,"type":"VIEW_FILE","status":"DONE","content":"File Path: `file:///x/A.md`"}"#,
+            #"{"step_index":5,"type":"RUN_COMMAND","status":"DONE","content":"The command completed successfully."}"#,
+            #"{"step_index":6,"type":"CODE_ACTION","status":"DONE","content":"Created file file:///x/B.md"}"#
+        ]
+        #expect(writeAndRead(parser: parser, lines: lines).isEmpty)
     }
 
     /// Helper: writes JSONL lines to a temp file and runs them through readNewEntries.

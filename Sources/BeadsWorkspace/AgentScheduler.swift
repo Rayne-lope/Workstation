@@ -55,6 +55,11 @@ public final class AgentScheduler {
 
     public func start() {
         pollTask?.cancel()
+        // Recover from a paused state (3 consecutive poll failures) so toggling
+        // the scheduler off/on in Settings restarts polling cleanly.
+        consecutiveFailures = 0
+        errorMessage = nil
+        state = .idle
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.poll()
