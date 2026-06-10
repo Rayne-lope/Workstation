@@ -1,9 +1,13 @@
 import Foundation
+import Observation
 
+/// @Observable so SwiftUI views re-render the moment a delta lands; without it
+/// the timeline only refreshed when the panel was reopened.
+@Observable
 public final class AgentTimelineStore: @unchecked Sendable {
     public static let shared = AgentTimelineStore()
 
-    private let lock = NSLock()
+    @ObservationIgnored private let lock = NSLock()
 
     // Store in-memory states per runID
     private var eventsMap: [UUID: [AgentTimelineEvent]] = [:]
