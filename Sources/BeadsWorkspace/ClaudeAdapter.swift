@@ -210,24 +210,29 @@ final class ClaudeStreamParser: @unchecked Sendable {
             return deltas
 
         case "result":
-            return finish(exitCode: (obj["is_error"] as? Bool ?? false) ? 1 : 0)
+            // On error the `result` field carries the reason (e.g. "Failed to
+            // authenticate. API Error: 401 …"); surface it on the failure card.
+            let isError = obj["is_error"] as? Bool ?? false
+            let detail = isError ? obj["result"] as? String : nil
+            return finish(exitCode: isError ? 1 : 0, detail: detail)
 
         default:
             return []
         }
     }
 
-    func finish(exitCode: Int32) -> [TimelineDelta] {
+    func finish(exitCode: Int32, detail: String? = nil) -> [TimelineDelta] {
         guard !emittedDone else { return [] }
         emittedDone = true
         let success = exitCode == 0
+        let failureSubtitle = detail.map { truncate($0, max: 160) } ?? "exit \(exitCode)"
         return [.insert(AgentTimelineEvent(
             stableKey: "claude-done-\(runID)",
             runID: runID,
             sequence: nextSeq(),
             type: .done,
             title: success ? "Done" : "Run failed",
-            subtitle: success ? nil : "exit \(exitCode)",
+            subtitle: success ? nil : failureSubtitle,
             status: success ? .success : .failure,
             source: .structuredHook,
             confidence: .high
@@ -281,8 +286,8 @@ final class ClaudeStreamParser: @unchecked Sendable {
         path.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "file"
     }
 
-    private func truncate(_ s: String) -> String {
-        s.count > 60 ? String(s.prefix(60)) + "…" : s
+    private func truncate(_ s: String, max: Int = 60) -> String {
+        s.count > max ? String(s.prefix(max)) + "…" : s
     }
 }
 

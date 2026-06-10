@@ -82,6 +82,19 @@ struct ClaudeStreamParserTests {
         #expect(again.isEmpty)
     }
 
+    @Test("error result surfaces the reason on the failure card")
+    func errorResultDetail() {
+        let parser = ClaudeStreamParser(runID: UUID())
+        let line = #"{"type":"result","subtype":"success","is_error":true,"result":"Failed to authenticate. API Error: 401 Invalid authentication credentials"}"#
+        let deltas = parser.parse(line: line)
+        guard case .insert(let event) = deltas.first else {
+            Issue.record("expected insert"); return
+        }
+        #expect(event.title == "Run failed")
+        #expect(event.subtitle?.contains("401") == true)
+        #expect(event.status == .failure)
+    }
+
     @Test("unknown/garbage lines are ignored, not fatal")
     func garbageIgnored() {
         let parser = ClaudeStreamParser(runID: UUID())
